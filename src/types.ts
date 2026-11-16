@@ -82,6 +82,8 @@ interface SectionBase {
   icon?: IconKey
   /** Header style "sidebar": show this section in the sidebar (default: list sections) */
   sidebar?: boolean
+  /** Don't print the section title (e.g. key figures under the header) */
+  hideTitle?: boolean
 }
 
 export interface TimelineSection extends SectionBase {
@@ -104,7 +106,67 @@ export interface TextSection extends SectionBase {
   text: string
 }
 
-export type Section = TimelineSection | ListSection | TextSection
+/** Skill or language with a level, always written as text ("C1", "Expert"); the rating only draws dots / a bar */
+export interface LevelItem {
+  id: string
+  name: string
+  level: string
+  rating: number // 0–5, 0 = no meter
+  hidden: boolean
+}
+
+export type LevelMeter = 'none' | 'dots' | 'bar'
+
+export interface LevelSection extends SectionBase {
+  kind: 'levels'
+  items: LevelItem[]
+  meter: LevelMeter
+}
+
+/** Short fact: "Permis : B", "Disponibilité : immédiate" (value may be empty) */
+export interface FactItem {
+  id: string
+  key: string
+  value: string
+  hidden: boolean
+}
+
+export interface FactSection extends SectionBase {
+  kind: 'facts'
+  items: FactItem[]
+}
+
+export interface ReferenceItem {
+  id: string
+  name: string
+  role: string
+  company: string
+  contact: string // e-mail or phone, linked automatically
+  hidden: boolean
+}
+
+export interface ReferenceSection extends SectionBase {
+  kind: 'references'
+  items: ReferenceItem[]
+  /** Show a single line instead of the references */
+  onRequest: boolean
+  onRequestText: string
+}
+
+/** Big figure: value "1 M+", label "téléchargements" */
+export interface HighlightItem {
+  id: string
+  value: string
+  label: string
+  hidden: boolean
+}
+
+export interface HighlightSection extends SectionBase {
+  kind: 'highlights'
+  items: HighlightItem[]
+}
+
+export type Section = TimelineSection | ListSection | TextSection | LevelSection | FactSection | ReferenceSection | HighlightSection
 export type SectionKind = Section['kind']
 
 export type FontKey = 'source-sans' | 'inter' | 'roboto' | 'open-sans' | 'lora'

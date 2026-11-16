@@ -1,6 +1,6 @@
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
-import type { Contact, ListItem, Section, SectionKind, TimelineEntry } from './types'
+import type { Contact, FactItem, HighlightItem, LevelItem, ListItem, ReferenceItem, Section, SectionKind, TimelineEntry } from './types'
 
 export const uid = () => Math.random().toString(36).slice(2, 10)
 
@@ -68,7 +68,60 @@ export function newSection(kind: SectionKind | 'tags'): Section {
       return { ...base, kind, title: 'Nouvelle liste', items: [newListItem()] }
     case 'text':
       return { ...base, kind, title: 'Nouveau texte', text: '' }
+    case 'levels':
+      return {
+        ...base,
+        kind,
+        title: 'Langues',
+        meter: 'dots',
+        items: [newLevelItem('Français', 'Langue maternelle', 5), newLevelItem('Anglais', 'C1', 4)],
+      }
+    case 'facts':
+      return {
+        ...base,
+        kind,
+        title: 'Informations',
+        items: [newFactItem('Permis', 'B'), newFactItem('Disponibilité', 'Immédiate'), newFactItem('Mobilité', 'France, Canada')],
+      }
+    case 'references':
+      return {
+        ...base,
+        kind,
+        title: 'Références',
+        onRequest: false,
+        onRequestText: 'Références disponibles sur demande',
+        items: [newReferenceItem()],
+      }
+    case 'highlights':
+      return {
+        ...base,
+        kind,
+        title: 'Chiffres clés',
+        hideTitle: true,
+        items: [newHighlightItem('3', 'jeux publiés'), newHighlightItem('1 M+', 'téléchargements'), newHighlightItem('8 ans', "d'expérience")],
+      }
   }
+}
+
+export function newLevelItem(name = '', level = '', rating = 0): LevelItem {
+  return { id: uid(), name, level, rating, hidden: false }
+}
+
+export function newFactItem(key = '', value = ''): FactItem {
+  return { id: uid(), key, value, hidden: false }
+}
+
+export function newReferenceItem(): ReferenceItem {
+  return { id: uid(), name: 'Prénom Nom', role: 'Poste', company: 'Entreprise', contact: 'contact@example.com', hidden: false }
+}
+
+export function newHighlightItem(value = '', label = ''): HighlightItem {
+  return { id: uid(), value, label, hidden: false }
+}
+
+/** mailto: / tel: link for a free-text contact (references) */
+export function autoHref(text: string): string | undefined {
+  return contactHref({ id: '', icon: 'none', label: text, url: '' })
 }
 
 /** Downscale an uploaded image to keep localStorage small. */

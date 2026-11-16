@@ -19,7 +19,8 @@ const A4_W_MM = 210
 const A4_H_MM = 297
 
 type Rect = { x: number; y: number; w: number; h: number }
-type ItemKind = 'entry' | 'list'
+/** data-item-kind: 'entry' (timeline), 'list', or the section kind for levels / facts / references / highlights */
+type ItemKind = string
 type MarginSide = 'left' | 'right' | 'top' | 'bottom'
 
 type Drag =
@@ -153,6 +154,10 @@ export function LayoutOverlay({ shellRef, resume, setResume, zoom, selection }: 
       let label = ''
       if (owner?.kind === 'timeline') label = owner.entries.find((e) => e.id === hover.itemId)?.title ?? ''
       if (owner?.kind === 'list') label = owner.items.find((i) => i.id === hover.itemId)?.text ?? ''
+      if (owner && owner.kind !== 'timeline' && owner.kind !== 'list' && owner.kind !== 'text') {
+        const it = (owner.items as { id: string }[]).find((i) => i.id === hover.itemId) as Record<string, unknown> | undefined
+        label = String(it?.name ?? it?.key ?? it?.value ?? '')
+      }
       next.item = {
         id: hover.itemId!,
         owner: itemEl.dataset.owner!,

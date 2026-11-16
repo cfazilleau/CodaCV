@@ -1219,3 +1219,21 @@ body.is-layout-dragging * {
   font-size: 12px;
   font-weight: 500;
 }
+
+/* ---------------------------------------------------------------- Record items (levels, facts…) */
+
+.item--record .item-head {
+  padding-left: 4px;
+  cursor: default;
+}
+
+.record-grid {
+  display: grid;
+  flex: 1;
+  gap: 5px;
+  min-width: 0;
+}
+
+.record-grid select.item-input {
+  padding: 0 4px;
+}

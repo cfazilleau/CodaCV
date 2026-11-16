@@ -2,10 +2,12 @@ import { useEffect, useRef, useState, type ClipboardEvent, type ReactNode } from
 import {
   ChevronRight,
   Columns2,
+  Contact2,
   Copy,
   Eye,
   EyeOff,
   FileText,
+  Gauge,
   Image as ImageIcon,
   ImagePlus,
   LayoutTemplate,
@@ -14,6 +16,8 @@ import {
   Palette,
   PenLine,
   Plus,
+  Rows3,
+  Sparkles,
   Tags,
   Text,
   Trash2,
@@ -22,12 +26,21 @@ import {
 } from 'lucide-react'
 import type {
   Contact,
+  FactItem,
+  FactSection,
+  HighlightItem,
+  HighlightSection,
+  LevelItem,
+  LevelMeter,
+  LevelSection,
   EntryStyle,
   HeaderStyle,
   ListItem,
   ListDisplay,
   ListSection,
   Profile,
+  ReferenceItem,
+  ReferenceSection,
   Resume,
   Section,
   SectionKind,
@@ -36,7 +49,7 @@ import type {
   TimelineSection,
   TitleStyle,
 } from '../../types'
-import { newEntry, newListItem, newSection, readImageFile, uid } from '../../utils'
+import { newEntry, newFactItem, newHighlightItem, newLevelItem, newListItem, newReferenceItem, newSection, readImageFile, uid } from '../../utils'
 import { FONT_FAMILIES, sectionIcon } from '../ResumeDocument'
 import { isInSidebar, orderForSidebar } from '../../layout'
 import { COUNTRIES, ColorField, IconButton, LinesField, Select, Slider, TextArea, TextField, Toggle } from './fields'
@@ -127,11 +140,18 @@ export function Editor({ resume, setResume, selection, onSelect }: Props) {
 
   const addSection = (kind: SectionKind | 'tags') => {
     const s = newSection(kind)
-    setResume((r) => ({ ...r, sections: [...r.sections, s] }))
+    // Key figures belong right under the header; everything else goes at the end
+    setResume((r) => ({ ...r, sections: s.kind === 'highlights' ? [s, ...r.sections] : [...r.sections, s] }))
     setOpenCard(s.id)
     onSelect({ kind: 'section', sectionId: s.id })
     requestAnimationFrame(() => cardRefs.current.get(s.id)?.scrollIntoView({ behavior: 'smooth' }))
   }
+
+  const itemSel = (sectionId: string): ItemSel => ({
+    openItem,
+    focusItem: (id) => openItem !== id && toggleItem(sectionId, id),
+    registerItem,
+  })
 
   const registerCard = (id: string) => (el: HTMLElement | null) => {
     if (el) cardRefs.current.set(id, el)
@@ -185,19 +205,7 @@ export function Editor({ resume, setResume, selection, onSelect }: Props) {
               <Card
                 handle={handle}
                 ref={registerCard(s.id)}
-                icon={
-                  s.kind === 'timeline' ? (
-                    <ListTree size={16} />
-                  ) : s.kind === 'list' ? (
-                    s.display === 'inline' || s.display === 'chips' ? (
-                      <Tags size={16} />
-                    ) : (
-                      <List size={16} />
-                    )
-                  ) : (
-                    <Text size={16} />
-                  )
-                }
+                icon={kindIcon(s)}
                 title={s.title || 'Sans titre'}
                 muted={!s.visible}
                 open={openCard === s.id}
@@ -275,6 +283,97 @@ export function Editor({ resume, setResume, selection, onSelect }: Props) {
                     onChange={(v) => setSection(s.id, (x) => ({ ...x, text: v }))}
                   />
                 )}
+                {s.kind === 'levels' && (
+                  <>
+                    <Select<LevelMeter>
+                      label="Indicateur"
+                      value={s.meter}
+                      options={[
+                        { value: 'dots', label: 'Points' },
+                        { value: 'bar', label: 'Barre' },
+                        { value: 'none', label: 'Texte seul' },
+                      ]}
+                      onChange={(v) => setSection(s.id, (x) => ({ ...(x as LevelSection), meter: v }))}
+                      hint="Le niveau est toujours écrit en texte : les logiciels de recrutement ne lisent pas les points ni les barres."
+                    />
+                    <RecordListEditor<LevelItem>
+                      items={s.items}
+                      setItems={(fn) => setSection(s.id, (x) => ({ ...(x as LevelSection), items: fn((x as LevelSection).items) }))}
+                      columns="minmax(0, 1fr) 96px 64px"
+                      fields={[
+                        { key: 'name', placeholder: 'Anglais, C++…' },
+                        { key: 'level', placeholder: 'C1, Expert…' },
+                        { key: 'rating', type: 'rating' },
+                      ]}
+                      make={() => newLevelItem()}
+                      addLabel="Ajouter un niveau"
+                      sel={itemSel(s.id)}
+                    />
+                  </>
+                )}
+                {s.kind === 'facts' && (
+                  <RecordListEditor<FactItem>
+                    items={s.items}
+                    setItems={(fn) => setSection(s.id, (x) => ({ ...(x as FactSection), items: fn((x as FactSection).items) }))}
+                    columns="minmax(0, 0.8fr) minmax(0, 1.2fr)"
+                    fields={[
+                      { key: 'key', placeholder: 'Permis, Disponibilité…' },
+                      { key: 'value', placeholder: 'B, immédiate… (facultatif)' },
+                    ]}
+                    make={() => newFactItem()}
+                    addLabel="Ajouter une info"
+                    sel={itemSel(s.id)}
+                  />
+                )}
+                {s.kind === 'references' && (
+                  <>
+                    <Toggle
+                      label="Une seule ligne « sur demande »"
+                      checked={s.onRequest}
+                      onChange={(v) => setSection(s.id, (x) => ({ ...(x as ReferenceSection), onRequest: v }))}
+                    />
+                    {s.onRequest ? (
+                      <TextField
+                        label="Texte"
+                        value={s.onRequestText}
+                        onChange={(v) => setSection(s.id, (x) => ({ ...(x as ReferenceSection), onRequestText: v }))}
+                      />
+                    ) : (
+                      <RecordListEditor<ReferenceItem>
+                        items={s.items}
+                        setItems={(fn) =>
+                          setSection(s.id, (x) => ({ ...(x as ReferenceSection), items: fn((x as ReferenceSection).items) }))
+                        }
+                        columns="minmax(0, 1fr) minmax(0, 1fr)"
+                        fields={[
+                          { key: 'name', placeholder: 'Nom' },
+                          { key: 'role', placeholder: 'Poste' },
+                          { key: 'company', placeholder: 'Entreprise' },
+                          { key: 'contact', placeholder: 'E-mail ou téléphone' },
+                        ]}
+                        make={() => newReferenceItem()}
+                        addLabel="Ajouter une référence"
+                        sel={itemSel(s.id)}
+                      />
+                    )}
+                  </>
+                )}
+                {s.kind === 'highlights' && (
+                  <RecordListEditor<HighlightItem>
+                    items={s.items}
+                    setItems={(fn) => setSection(s.id, (x) => ({ ...(x as HighlightSection), items: fn((x as HighlightSection).items) }))}
+                    columns="88px minmax(0, 1fr)"
+                    fields={[
+                      { key: 'value', placeholder: '1 M+' },
+                      { key: 'label', placeholder: 'téléchargements' },
+                    ]}
+                    make={() => newHighlightItem()}
+                    addLabel="Ajouter un chiffre"
+                    max={4}
+                    sel={itemSel(s.id)}
+                  />
+                )}
+                <Toggle label="Masquer le titre" checked={!!s.hideTitle} onChange={(v) => setSection(s.id, (x) => ({ ...x, hideTitle: v }))} />
               </Card>
             )}
           </SortableList>
@@ -294,9 +393,137 @@ export function Editor({ resume, setResume, selection, onSelect }: Props) {
               <button type="button" onClick={() => addSection('text')}>
                 <Text size={15} /> Texte libre
               </button>
+              <button type="button" onClick={() => addSection('levels')}>
+                <Gauge size={15} /> Niveaux
+              </button>
+              <button type="button" onClick={() => addSection('facts')}>
+                <Rows3 size={15} /> Infos clés
+              </button>
+              <button type="button" onClick={() => addSection('references')}>
+                <Contact2 size={15} /> Références
+              </button>
+              <button type="button" onClick={() => addSection('highlights')}>
+                <Sparkles size={15} /> Chiffres clés
+              </button>
             </div>
           </div>
         </>
+      )}
+    </div>
+  )
+}
+
+/** Icon of a section card in the sidebar, by section type */
+function kindIcon(s: Section): ReactNode {
+  switch (s.kind) {
+    case 'timeline':
+      return <ListTree size={16} />
+    case 'list':
+      return s.display === 'inline' || s.display === 'chips' ? <Tags size={16} /> : <List size={16} />
+    case 'levels':
+      return <Gauge size={16} />
+    case 'facts':
+      return <Rows3 size={16} />
+    case 'references':
+      return <Contact2 size={16} />
+    case 'highlights':
+      return <Sparkles size={16} />
+    default:
+      return <Text size={16} />
+  }
+}
+
+/* ---------------------------------------------------------------- Simple item lists */
+
+interface ItemSel {
+  openItem: string | null
+  /** Select the item (highlight on the page) when one of its fields gets focus */
+  focusItem: (id: string) => void
+  registerItem: (id: string) => (el: HTMLElement | null) => void
+}
+
+interface RecordField<T> {
+  key: keyof T & string
+  placeholder?: string
+  type?: 'text' | 'rating'
+}
+
+/** Editor for sections whose items are a few short fields (levels, facts, references, highlights). */
+function RecordListEditor<T extends { id: string; hidden: boolean }>({
+  items,
+  setItems,
+  fields,
+  columns,
+  make,
+  addLabel,
+  max,
+  sel,
+}: {
+  items: T[]
+  setItems: (fn: (items: T[]) => T[]) => void
+  fields: RecordField<T>[]
+  columns: string
+  make: () => T
+  addLabel: string
+  max?: number
+  sel: ItemSel
+}) {
+  const patch = (id: string, p: Partial<T>) => setItems((xs) => xs.map((x) => (x.id === id ? { ...x, ...p } : x)))
+  return (
+    <div className="items">
+      <SortableList items={items} onReorder={(next) => setItems(() => next)}>
+        {(it, handle) => (
+          <div
+            ref={sel.registerItem(it.id)}
+            className={`item item--record${sel.openItem === it.id ? ' is-open' : ''}${it.hidden ? ' is-muted' : ''}`}
+          >
+            <div className="item-head">
+              {handle}
+              <div className="record-grid" style={{ gridTemplateColumns: columns }}>
+                {fields.map((f) =>
+                  f.type === 'rating' ? (
+                    <select
+                      key={f.key}
+                      className="item-input"
+                      title="Note (dessine les points / la barre)"
+                      value={Number(it[f.key])}
+                      onFocus={() => sel.focusItem(it.id)}
+                      onChange={(e) => patch(it.id, { [f.key]: Number(e.target.value) } as Partial<T>)}
+                    >
+                      {[0, 1, 2, 3, 4, 5].map((n) => (
+                        <option key={n} value={n}>
+                          {n === 0 ? '—' : `${n} / 5`}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      key={f.key}
+                      className="item-input"
+                      placeholder={f.placeholder}
+                      value={String(it[f.key] ?? '')}
+                      onFocus={() => sel.focusItem(it.id)}
+                      onChange={(e) => patch(it.id, { [f.key]: e.target.value } as Partial<T>)}
+                    />
+                  ),
+                )}
+              </div>
+              <div className="row-actions">
+                <IconButton title={it.hidden ? 'Afficher' : 'Masquer'} onClick={() => patch(it.id, { hidden: !it.hidden } as Partial<T>)}>
+                  {it.hidden ? <EyeOff size={14} /> : <Eye size={14} />}
+                </IconButton>
+                <IconButton title="Supprimer" danger onClick={() => setItems((xs) => xs.filter((x) => x.id !== it.id))}>
+                  <Trash2 size={14} />
+                </IconButton>
+              </div>
+            </div>
+          </div>
+        )}
+      </SortableList>
+      {(!max || items.length < max) && (
+        <button type="button" className="btn btn--small btn--ghost" onClick={() => setItems((xs) => [...xs, make()])}>
+          <Plus size={14} /> {addLabel}
+        </button>
       )}
     </div>
   )

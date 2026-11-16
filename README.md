@@ -18,6 +18,10 @@ npm run build    # static site in dist/
   - *Liste* (languages, skills…) shown as bullets, inline tags (`C++ · Unity · Git`) or chips;
     pasting `A, B, C` into an item splits it into several items
   - *Texte libre* (free markdown text)
+  - *Niveaux*: skills / languages with a level written as text ("Anglais — C1"), optional dots or bar
+  - *Infos clés*: key / value facts ("Permis : B"), *Références* (or one "sur demande" line),
+    *Chiffres clés*: 2–4 big figures in a row under the header
+  - Any section title can be hidden
   - Drag and drop (grip handle ⋮⋮) to reorder sections, entries, list items and contacts —
     also with the keyboard: focus the grip, Space, arrows, Space. Hide / duplicate / delete.
   - Apparence: 12 curated palettes (or custom colours), header style (photo left / centered / colour band /

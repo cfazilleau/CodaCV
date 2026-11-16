@@ -1,9 +1,13 @@
 import type { CSSProperties, HTMLAttributes, KeyboardEvent, MouseEvent, ReactNode } from 'react'
 import type {
   EntryStyle,
+  FactSection,
+  HighlightSection,
   FontKey,
   IconKey,
+  LevelSection,
   ListSection,
+  ReferenceSection,
   Resume,
   Section,
   Selection,
@@ -11,7 +15,7 @@ import type {
   TimelineEntry,
   TimelineSection,
 } from '../types'
-import { blockMd, contactHref, inlineMd } from '../utils'
+import { autoHref, blockMd, contactHref, inlineMd } from '../utils'
 import { buildRows, isInSidebar } from '../layout'
 import { ExternalIcon, Icon, IconBadge } from './icons'
 
@@ -73,7 +77,7 @@ export function sectionIcon(s: Section): IconKey {
   if (/profil|propos|about|summary|resume/.test(t)) return 'user'
   if (/contact/.test(t)) return 'mail'
   if (/jeu|game/.test(t)) return 'gamepad'
-  return s.kind === 'timeline' ? 'briefcase' : 'star'
+  return s.kind === 'timeline' ? 'briefcase' : s.kind === 'references' ? 'user' : s.kind === 'highlights' ? 'award' : 'star'
 }
 
 const initialsCache = new Map<string, string>()
@@ -150,17 +154,23 @@ export function ResumeDocument({ resume, selection, onSelect }: Props) {
     const sectionSel = clickable({ kind: 'section', sectionId: s.id }, isSel(s.id))
     return (
       <section key={s.id} className={`cv-section cv-section--${s.kind}`} data-section-id={s.id} {...sectionSel}>
-        <h2 className="cv-section-title">
-          {theme.titleStyle === 'icon' && (
-            <span className="cv-title-icon">
-              <Icon name={sectionIcon(s)} size={12} />
-            </span>
-          )}
-          <span>{s.title}</span>
-        </h2>
+        {!s.hideTitle && (
+          <h2 className="cv-section-title">
+            {theme.titleStyle === 'icon' && (
+              <span className="cv-title-icon">
+                <Icon name={sectionIcon(s)} size={12} />
+              </span>
+            )}
+            <span>{s.title}</span>
+          </h2>
+        )}
         {s.kind === 'timeline' && renderTimeline(s)}
         {s.kind === 'list' && renderList(s)}
         {s.kind === 'text' && renderText(s)}
+        {s.kind === 'levels' && renderLevels(s)}
+        {s.kind === 'facts' && renderFacts(s)}
+        {s.kind === 'references' && renderReferences(s)}
+        {s.kind === 'highlights' && renderHighlights(s)}
       </section>
     )
   }
@@ -214,6 +224,89 @@ export function ResumeDocument({ resume, selection, onSelect }: Props) {
       {...clickable({ kind: 'section', sectionId: s.id, itemId: 'text' }, isSel(s.id, 'text'))}
       dangerouslySetInnerHTML={{ __html: blockMd(s.text) }}
     />
+  )
+
+  /** Props shared by every item of the simple item sections (click to edit + on-page drag) */
+  const itemProps = (s: Section, id: string, flow?: 'inline') => ({
+    'data-item-id': id,
+    'data-item-kind': s.kind,
+    'data-item-flow': flow,
+    'data-owner': s.id,
+    ...clickable({ kind: 'section', sectionId: s.id, itemId: id }, isSel(s.id, id)),
+  })
+
+  // Skills / languages with a level: read as "Anglais — C1" (the dash is invisible, the meter has no text)
+  const renderLevels = (s: LevelSection) => (
+    <ul className={`cv-levels cv-levels--${s.meter}`}>
+      {s.items
+        .filter((it) => !it.hidden)
+        .map((it) => (
+          <li key={it.id} {...itemProps(s, it.id)}>
+            {/* Name and level stay together on the left, so layout-based readers keep them on one line */}
+            <span className="cv-level-label">
+              <span className="cv-level-name">{it.name}</span>
+              {it.level && (
+                <span className="cv-level-text">
+                  <span className="cv-level-sep"> — </span>
+                  {it.level}
+                </span>
+              )}
+            </span>
+            {s.meter !== 'none' && it.rating > 0 && (
+              <span className={`cv-meter cv-meter--${s.meter}`} aria-hidden="true" style={{ '--v': it.rating / 5 } as CSSProperties}>
+                {s.meter === 'dots' && [1, 2, 3, 4, 5].map((n) => <i key={n} className={n <= it.rating ? 'on' : undefined} />)}
+              </span>
+            )}
+          </li>
+        ))}
+    </ul>
+  )
+
+  // Key / value facts: "Permis : B"; a fact without value takes the whole line
+  const renderFacts = (s: FactSection) => (
+    <dl className="cv-facts">
+      {s.items
+        .filter((it) => !it.hidden)
+        .map((it) => (
+          <div key={it.id} className={`cv-fact${it.value ? '' : ' cv-fact--single'}`} {...itemProps(s, it.id)}>
+            <dt>{it.key}</dt>
+            {it.value && <dd>{it.value}</dd>}
+          </div>
+        ))}
+    </dl>
+  )
+
+  const renderReferences = (s: ReferenceSection) =>
+    s.onRequest ? (
+      <p className="cv-ref-request">{s.onRequestText}</p>
+    ) : (
+      <div className="cv-refs">
+        {s.items
+          .filter((it) => !it.hidden)
+          .map((it) => {
+            const href = it.contact ? autoHref(it.contact.trim()) : undefined
+            return (
+              <div key={it.id} className="cv-ref" {...itemProps(s, it.id, 'inline')}>
+                <strong>{it.name}</strong>
+                {(it.role || it.company) && <div className="cv-ref-role">{[it.role, it.company].filter(Boolean).join(', ')}</div>}
+                {it.contact && <div className="cv-ref-contact">{href ? <a href={href}>{it.contact}</a> : it.contact}</div>}
+              </div>
+            )
+          })}
+      </div>
+    )
+
+  // Key figures in a row; an invisible comma separates them for parsers
+  const renderHighlights = (s: HighlightSection) => (
+    <ul className="cv-highlights">
+      {s.items
+        .filter((it) => !it.hidden)
+        .map((it) => (
+          <li key={it.id} {...itemProps(s, it.id, 'inline')}>
+            <span className="cv-highlight-value">{it.value}</span> <span className="cv-highlight-label">{it.label}</span>
+          </li>
+        ))}
+    </ul>
   )
 
   const renderRows = () =>

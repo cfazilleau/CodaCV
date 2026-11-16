@@ -3,7 +3,7 @@
  * section's `place` flag. The sections array order stays the reading order (and the PDF text
  * order), so every operation here rewrites that order plus the flags.
  */
-import type { ListItem, Section, TimelineEntry } from './types'
+import type { Section } from './types'
 
 export const COL_GAP_MM = 4
 
@@ -153,16 +153,19 @@ export function setColumnWidths(sections: Section[], widths: { sectionId: string
   return fromStructure(sections, rows)
 }
 
-type Item = TimelineEntry | ListItem
+type Item = { id: string }
 
+/** Items of any section that has some (timeline entries, list / levels / facts / references / highlights items). */
 function itemsOf(s: Section): Item[] | null {
-  return s.kind === 'timeline' ? s.entries : s.kind === 'list' ? s.items : null
+  if (s.kind === 'timeline') return s.entries
+  if (s.kind === 'text') return null
+  return s.items
 }
 
 function withItems(s: Section, items: Item[]): Section {
-  if (s.kind === 'timeline') return { ...s, entries: items as TimelineEntry[] }
-  if (s.kind === 'list') return { ...s, items: items as ListItem[] }
-  return s
+  if (s.kind === 'timeline') return { ...s, entries: items as typeof s.entries }
+  if (s.kind === 'text') return s
+  return { ...s, items: items as typeof s.items } as Section
 }
 
 /** Move an entry / list item before or after another one, possibly into another section of the same kind. */
@@ -196,7 +199,7 @@ export function moveItem(
 /* ------------------------------------------------------------- Sidebar header style */
 
 /** In the "sidebar" header style: does this section go in the coloured column? (default: lists) */
-export const isInSidebar = (s: Section) => s.sidebar ?? s.kind === 'list'
+export const isInSidebar = (s: Section) => s.sidebar ?? (s.kind === 'list' || s.kind === 'levels' || s.kind === 'facts')
 
 /** Keep main sections first and sidebar sections last: that is the document (and PDF text) order. */
 export function orderForSidebar(sections: Section[]): Section[] {
