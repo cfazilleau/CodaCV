@@ -82,11 +82,11 @@ export function formatDate(stored: string, locale: string, format: DateFormat): 
 }
 
 /**
- * "mars 2019 – juin 2022", "2022 – aujourd'hui", "2021" (same period once). A regular space around
- * the en dash: Intl's own range format uses thin spaces in some languages, which parsers handle badly.
+ * "mars 2019 - juin 2022", "2022 - aujourd'hui", "2021" (same period once). A regular space around
+ * the hyphen: Intl's own range format uses thin spaces in some languages, which parsers handle badly.
  */
 export function formatDateRange(range: DateRange, locale: ResumeLocale, format: DateFormat): string {
-  return dateRangeParts(range, locale, format).join(' – ')
+  return dateRangeParts(range, locale, format).join(' - ')
 }
 
 type DateRange = { start: string; end: string; current: boolean }

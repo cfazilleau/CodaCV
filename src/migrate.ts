@@ -178,7 +178,7 @@ function migrateSection(s: Obj, id: IdFn): Section | null {
         kind: 'timeline',
         entries: objs(s.entries).map((e) => ({
           ...item(e),
-          // Dates are "YYYY/MM/DD" (also accepted with dashes). The old free-text `date` ("2019 – 2022")
+          // Dates are "YYYY/MM/DD" (also accepted with dashes). The old free-text `date` ("2019 - 2022")
           // is dropped on purpose: dates are now entered as start / end and written in the resume's language.
           start: normalizeDate(e.start),
           end: normalizeDate(e.end),

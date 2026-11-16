@@ -89,7 +89,7 @@ headless printing, and PDF text extraction (see "Testing" below).
   accepts `-`; invalid dates become ''), `current` = ongoing. Shown with `Intl.DateTimeFormat` in the
   resume's locale, UTC on both sides, precision `theme.dateFormat` (year · month-numeric ·
   month-short · month-long · full). Same formatted start and end collapse to one ("2023").
-- A range is rendered as two `nowrap` spans around a plain " – " (not Intl `formatRange`, which uses
+- A range is rendered as two `nowrap` spans around a plain " - " (not Intl `formatRange`, which uses
   thin spaces in some locales), so the narrow date column breaks at the dash, never inside a date.
 - `subDate` ("8 mois") stays free text.
 
@@ -159,6 +159,9 @@ with **pypdf** (stream order, like most ATS / LLM loaders) and **pdfminer** (lay
   frame steps aside when the section is selected.
 - Removed on purpose (don't bring back unless asked): the "Page web" / `#/view` interactive page and
   per-item "Détails", per-section spacing, the one-column layout option, sidebar Position select.
+- **No en dash (–) anywhere in the interface or the rendered CV** (owner's choice): use a plain
+  hyphen "-" (date ranges are "2019 - 2022"). Em dashes (—) are a separate character and are kept
+  (e.g. "Anglais — C1", "— Aucun —"). Input parsing may still accept "–" (phone-number check).
 - 12 curated palettes, each accent ≥ 5.3:1 contrast on white (WCAG AA), text ≥ 13:1.
 - Markdown (`inlineMd` / `blockMd` in `utils.ts`): DOMPurify with a tag / attribute allow-list (no
   `style`, `class`, `id`, forms or media; images only in free-text sections). Markdown headings start

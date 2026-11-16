@@ -456,14 +456,14 @@ interface EntryProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 function EntryView({ entry: e, entryStyle, locale, dateFormat, showLinkIcon, ...rest }: EntryProps) {
-  // Written in the resume's language: "mars 2019 – juin 2022", "Mar 2019 – Present"…
+  // Written in the resume's language: "mars 2019 - juin 2022", "Mar 2019 - Present"…
   // Each date stays on one line, so a narrow date column breaks the range at the dash
   const parts = dateRangeParts(e, locale, dateFormat)
   const date = parts.length > 0 && (
     <span className="cv-date">
       {parts.map((p, i) => (
         <Fragment key={i}>
-          {i > 0 && ' – '}
+          {i > 0 && ' - '}
           <span className="cv-date-part">{p}</span>
         </Fragment>
       ))}

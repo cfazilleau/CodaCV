@@ -29,8 +29,8 @@ npm run build    # static site in dist/
     timeline / cards), photo ring and initials, font, size, density, date column, margins.
   - Language and dates: each version has its own resume language (French, English US / UK, German,
     Spanish, Italian, Dutch, Polish, Portuguese PT / BR). Dates are written in that language with the
-    chosen precision (year, numeric month, short or full month name, full date): "sept. 2022 –
-    aujourd'hui", "Sep 2022 – Present", "Sept. 2022 – heute"…
+    chosen precision (year, numeric month, short or full month name, full date): "sept. 2022 -
+    aujourd'hui", "Sep 2022 - Present", "Sept. 2022 - heute"…
 - **Interface language** – French or English, switched in the top bar (remembered per browser).
 - **Layout on the page** (edit mode, hover the preview):
   - section grip → drop it on a new row, in a new column (left/right edge of a section) or under
