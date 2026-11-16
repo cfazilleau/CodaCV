@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type Pointer
 import { createPortal } from 'react-dom'
 import { GripVertical } from 'lucide-react'
 import type { Resume, Selection } from '../types'
-import { COL_GAP_MM, dateColumnFraction, moveItem, moveSection, setColumnWidths, type SectionDrop } from '../layout'
+import { COL_GAP_MM, dateColumnFraction, moveItem, moveSectionAnywhere, setColumnWidths, type SidebarAwareDrop } from '../layout'
 
 /**
  * Direct-manipulation layer drawn over the A4 preview (edit mode only, never printed):
@@ -29,7 +29,7 @@ type Drag =
   | { kind: 'margin'; side: MarginSide }
 
 type Drop =
-  | { kind: 'section'; drop: SectionDrop }
+  | { kind: 'section'; drop: SidebarAwareDrop }
   | { kind: 'item'; toSectionId: string; anchorId: string; after: boolean }
 
 interface Geometry {
@@ -175,9 +175,28 @@ export function LayoutOverlay({ shellRef, resume, setResume, zoom, selection }: 
   const sectionTarget = (x: number, y: number, draggedId: string): { drop: Drop; line: Rect; vertical: boolean } | null => {
     const f = frame()
     if (!f) return null
-    const rows = [...f.shell.querySelectorAll<HTMLElement>('.cv > .cv-row')]
-    if (!rows.length) return null
     const g = gapPx() * f.scale // client px
+
+    // Sidebar header style: dropping inside the coloured column moves the section into it
+    const aside = f.shell.querySelector<HTMLElement>('.cv-aside')
+    if (aside) {
+      const ar = aside.getBoundingClientRect()
+      if (x >= ar.left && x <= ar.right && y >= ar.top && y <= ar.bottom) {
+        const secs = [...aside.querySelectorAll<HTMLElement>(':scope > [data-section-id]')].filter((s) => s.dataset.sectionId !== draggedId)
+        const sec = secs.find((s) => y <= s.getBoundingClientRect().bottom) ?? secs[secs.length - 1]
+        const sr = sec?.getBoundingClientRect()
+        const after = sr ? y > sr.top + sr.height / 2 : false
+        const lineY = sr ? (after ? sr.bottom + g / 2 : sr.top - g / 2) : ar.bottom - g
+        return {
+          drop: { kind: 'section', drop: { kind: 'sidebar', anchorId: sec?.dataset.sectionId ?? null, after } },
+          line: { x: (ar.left - f.s.left) / f.scale + 8, y: (lineY - f.s.top) / f.scale - 1.5, w: ar.width / f.scale - 16, h: 3 },
+          vertical: false,
+        }
+      }
+    }
+
+    const rows = [...f.shell.querySelectorAll<HTMLElement>(':is(.cv, .cv-main) > .cv-row')]
+    if (!rows.length) return null
     const content = f.rel(rows[0].getBoundingClientRect())
     const hline = (clientY: number, left = content.x, width = content.w): Rect => ({ x: left, y: (clientY - f.s.top) / f.scale - 1.5, w: width, h: 3 })
     const rowDrop = (beforeId: string | null, clientY: number) => ({
@@ -329,7 +348,7 @@ export function LayoutOverlay({ shellRef, resume, setResume, zoom, selection }: 
     const onUp = () => {
       const d = dropRef.current
       if (d && drag.kind === 'section' && d.kind === 'section') {
-        setResume((r) => ({ ...r, sections: moveSection(r.sections, drag.id, d.drop) }))
+        setResume((r) => ({ ...r, sections: moveSectionAnywhere(r.sections, drag.id, d.drop, r.theme.headerStyle === 'sidebar') }))
       } else if (d && drag.kind === 'item' && d.kind === 'item') {
         setResume((r) => ({ ...r, sections: moveItem(r.sections, drag.sectionId, drag.itemId, d.toSectionId, d.anchorId, d.after) }))
       }

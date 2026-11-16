@@ -21,8 +21,16 @@ function usePrintSetup(resume: Resume) {
       style.id = 'print-page-style'
       document.head.appendChild(style)
     }
-    style.textContent = `@page { size: A4; margin: ${resume.theme.marginY}mm ${resume.theme.marginX}mm; }`
-  }, [resume.theme.marginX, resume.theme.marginY])
+    const { marginX: mx, marginY: my, headerStyle } = resume.theme
+    // Band / sidebar bleed to the paper edges: no side margins on the page (the resume pads
+    // itself), and no top margin on the first page (the band / sidebar paints it).
+    style.textContent =
+      headerStyle === 'band'
+        ? `@page { size: A4; margin: ${my}mm 0; } @page :first { margin-top: 0; }`
+        : headerStyle === 'sidebar'
+          ? `@page { size: A4; margin: ${my}mm 0; } @page :first { margin-top: 0; margin-bottom: 0; }`
+          : `@page { size: A4; margin: ${my}mm ${mx}mm; }`
+  }, [resume.theme.marginX, resume.theme.marginY, resume.theme.headerStyle])
 
   useEffect(() => {
     const original = document.title

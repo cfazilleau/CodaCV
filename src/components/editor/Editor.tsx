@@ -8,6 +8,7 @@ import {
   FileText,
   Image as ImageIcon,
   ImagePlus,
+  LayoutTemplate,
   List,
   ListTree,
   Palette,
@@ -21,6 +22,8 @@ import {
 } from 'lucide-react'
 import type {
   Contact,
+  EntryStyle,
+  HeaderStyle,
   ListItem,
   ListDisplay,
   ListSection,
@@ -31,9 +34,11 @@ import type {
   Selection,
   TimelineEntry,
   TimelineSection,
+  TitleStyle,
 } from '../../types'
 import { newEntry, newListItem, newSection, readImageFile, uid } from '../../utils'
-import { FONT_FAMILIES } from '../ResumeDocument'
+import { FONT_FAMILIES, sectionIcon } from '../ResumeDocument'
+import { isInSidebar, orderForSidebar } from '../../layout'
 import { COUNTRIES, ColorField, IconButton, LinesField, Select, Slider, TextArea, TextField, Toggle } from './fields'
 import { IconPicker } from './IconPicker'
 import { SortableList } from './Sortable'
@@ -219,7 +224,30 @@ export function Editor({ resume, setResume, selection, onSelect }: Props) {
                   </>
                 }
               >
-                <TextField label="Titre de la section" value={s.title} onChange={(v) => setSection(s.id, (x) => ({ ...x, title: v }))} />
+                {resume.theme.titleStyle === 'icon' ? (
+                  <div className="field">
+                    <span className="field-label">Titre de la section</span>
+                    <div className="with-icon">
+                      <IconPicker
+                        value={sectionIcon(s)}
+                        accent={resume.theme.accent}
+                        onChange={(v) => setSection(s.id, (x) => ({ ...x, icon: v }))}
+                      />
+                      <TextField value={s.title} onChange={(v) => setSection(s.id, (x) => ({ ...x, title: v }))} />
+                    </div>
+                  </div>
+                ) : (
+                  <TextField label="Titre de la section" value={s.title} onChange={(v) => setSection(s.id, (x) => ({ ...x, title: v }))} />
+                )}
+                {resume.theme.headerStyle === 'sidebar' && (
+                  <Toggle
+                    label="Dans la barre latérale"
+                    checked={isInSidebar(s)}
+                    onChange={(v) =>
+                      setResume((r) => ({ ...r, sections: orderForSidebar(r.sections.map((x) => (x.id === s.id ? { ...x, sidebar: v } : x))) }))
+                    }
+                  />
+                )}
                 {s.kind === 'timeline' && (
                   <TimelineEditor
                     section={s}
@@ -653,6 +681,52 @@ function ThemeEditor({ resume, setResume }: { resume: Resume; setResume: (fn: (r
         </div>
       </StyleGroup>
 
+      <StyleGroup icon={<LayoutTemplate size={15} />} title="Styles">
+        <Select<HeaderStyle>
+          label="En-tête"
+          value={t.headerStyle}
+          options={[
+            { value: 'classic', label: 'Photo à gauche' },
+            { value: 'centered', label: 'Centré' },
+            { value: 'band', label: 'Bandeau couleur' },
+            { value: 'sidebar', label: 'Barre latérale' },
+          ]}
+          onChange={(v) =>
+            // Entering the sidebar style: keep main sections first, sidebar ones last (document order)
+            setResume((r) => ({ ...r, theme: { ...r.theme, headerStyle: v }, sections: v === 'sidebar' ? orderForSidebar(r.sections) : r.sections }))
+          }
+          hint={
+            t.headerStyle === 'sidebar'
+              ? 'Les listes vont dans la barre latérale ; réglable par section (Contenu) ou en glissant une section sur la page.'
+              : undefined
+          }
+        />
+        <div className="grid-2">
+          <Select<TitleStyle>
+            label="Titres de section"
+            value={t.titleStyle}
+            options={[
+              { value: 'underline', label: 'Souligné' },
+              { value: 'caps', label: 'Petites capitales' },
+              { value: 'bar', label: 'Barre à gauche' },
+              { value: 'icon', label: 'Icône' },
+            ]}
+            onChange={(v) => setTheme({ titleStyle: v })}
+          />
+          <Select<EntryStyle>
+            label="Entrées"
+            value={t.entryStyle}
+            options={[
+              { value: 'left', label: 'Dates à gauche' },
+              { value: 'right', label: 'Dates à droite' },
+              { value: 'timeline', label: 'Frise' },
+              { value: 'cards', label: 'Cartes' },
+            ]}
+            onChange={(v) => setTheme({ entryStyle: v })}
+          />
+        </div>
+      </StyleGroup>
+
       <StyleGroup icon={<Type size={15} />} title="Typographie">
         <div className="grid-2">
           <Select
@@ -698,6 +772,8 @@ function ThemeEditor({ resume, setResume }: { resume: Resume; setResume: (fn: (r
 
       <StyleGroup icon={<ImageIcon size={15} />} title="Photo">
         <Toggle label="Afficher la photo" checked={t.showPhoto} onChange={(v) => setTheme({ showPhoto: v })} />
+        <Toggle label="Anneau couleur" checked={t.photoRing} onChange={(v) => setTheme({ photoRing: v })} />
+        <Toggle label="Initiales s'il n'y a pas de photo" checked={t.photoInitials} onChange={(v) => setTheme({ photoInitials: v })} />
         <div className="grid-2">
           <Select
             label="Forme"

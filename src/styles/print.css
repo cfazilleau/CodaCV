@@ -57,3 +57,15 @@
     text-decoration: none !important;
   }
 }
+
+@media print {
+  /* Band: the page has no side margins, the resume pads itself and the band bleeds */
+  .cv.cv--header-band {
+    padding: 0 var(--mx) !important;
+  }
+
+  /* Sidebar: fills the first page so the coloured column reaches the bottom edge */
+  .cv.cv--header-sidebar {
+    min-height: 296.5mm !important;
+  }
+}

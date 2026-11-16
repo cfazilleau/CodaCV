@@ -202,5 +202,10 @@ export const defaultResume: Resume = {
     marginX: 10,
     marginY: 10,
     showLinkIcons: true,
+    headerStyle: 'classic',
+    titleStyle: 'underline',
+    entryStyle: 'left',
+    photoRing: false,
+    photoInitials: false,
   },
 }

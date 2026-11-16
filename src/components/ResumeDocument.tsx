@@ -1,6 +1,8 @@
 import type { CSSProperties, HTMLAttributes, KeyboardEvent, MouseEvent, ReactNode } from 'react'
 import type {
+  EntryStyle,
   FontKey,
+  IconKey,
   ListSection,
   Resume,
   Section,
@@ -10,8 +12,8 @@ import type {
   TimelineSection,
 } from '../types'
 import { blockMd, contactHref, inlineMd } from '../utils'
-import { buildRows } from '../layout'
-import { ExternalIcon, IconBadge } from './icons'
+import { buildRows, isInSidebar } from '../layout'
+import { ExternalIcon, Icon, IconBadge } from './icons'
 
 export const FONT_FAMILIES: Record<FontKey, { label: string; css: string }> = {
   'source-sans': { label: 'Source Sans 3', css: "'Source Sans 3', 'Segoe UI', sans-serif" },
@@ -26,6 +28,9 @@ const DENSITY = {
   normal: { section: 4.6, entry: 3.2, line: 1.38 },
   airy: { section: 6, entry: 4.2, line: 1.48 },
 }
+
+/** Width of the coloured column in the "sidebar" header style */
+export const SIDEBAR_MM = 62
 
 interface Props {
   resume: Resume
@@ -48,12 +53,68 @@ export function resumeStyle(resume: Resume): CSSProperties {
     '--photo': `${t.photoSize}mm`,
     '--mx': `${t.marginX}mm`,
     '--my': `${t.marginY}mm`,
+    '--side-w': `${SIDEBAR_MM}mm`,
   } as CSSProperties
+}
+
+/** Icon shown before a section title (title style "icon"): the section's own, else guessed from its title. */
+export function sectionIcon(s: Section): IconKey {
+  if (s.icon) return s.icon
+  const t = s.title
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+  if (/exp|emploi|work|job|career|parcours/.test(t)) return 'briefcase'
+  if (/form|educ|etude|dipl|school|ecole/.test(t)) return 'graduation'
+  if (/proj/.test(t)) return 'code'
+  if (/lang/.test(t)) return 'languages'
+  if (/cert|award|prix|recomp|distinc/.test(t)) return 'award'
+  if (/inter|hobb|loisir|benevol|volunt/.test(t)) return 'heart'
+  if (/profil|propos|about|summary|resume/.test(t)) return 'user'
+  if (/contact/.test(t)) return 'mail'
+  if (/jeu|game/.test(t)) return 'gamepad'
+  return s.kind === 'timeline' ? 'briefcase' : 'star'
+}
+
+const initialsCache = new Map<string, string>()
+
+/**
+ * Initials rendered to a PNG (not SVG: Chrome keeps SVG <text> as real PDF text, and parsers
+ * would read "AM" before the name).
+ */
+function initialsImage(name: string, accent: string, font: string): string {
+  const words = name.trim().split(/\s+/).filter(Boolean)
+  const letters = ((words[0]?.[0] ?? '') + (words.length > 1 ? words[words.length - 1][0] : '')).toUpperCase()
+  const key = `${letters}|${accent}|${font}`
+  const cached = initialsCache.get(key)
+  if (cached) return cached
+  const size = 320
+  const canvas = document.createElement('canvas')
+  canvas.width = canvas.height = size
+  const g = canvas.getContext('2d')
+  if (!g) return ''
+  g.fillStyle = mix(accent, '#ffffff', 0.86)
+  g.fillRect(0, 0, size, size)
+  g.fillStyle = accent
+  g.font = `600 ${size * 0.4}px ${font}`
+  g.textAlign = 'center'
+  g.textBaseline = 'middle'
+  g.fillText(letters, size / 2, size / 2 + size * 0.02)
+  const url = canvas.toDataURL('image/png')
+  initialsCache.set(key, url)
+  return url
+}
+
+function mix(a: string, b: string, t: number): string {
+  const p = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16))
+  const [x, y] = [p(a), p(b)]
+  return '#' + x.map((v, i) => Math.round(v + (y[i] - v) * t).toString(16).padStart(2, '0')).join('')
 }
 
 /** The resume page. With `onSelect`, its parts are clickable to edit them (preview); without, it is static. */
 export function ResumeDocument({ resume, selection, onSelect }: Props) {
   const { profile, theme } = resume
+  const sidebarMode = theme.headerStyle === 'sidebar'
 
   const isSel = (sectionId: string, itemId?: string) =>
     selection?.kind === 'section' && selection.sectionId === sectionId && selection.itemId === itemId
@@ -81,20 +142,21 @@ export function ResumeDocument({ resume, selection, onSelect }: Props) {
     }
   }
 
-  const rows = buildRows(resume.sections)
+  const sideSections = sidebarMode ? resume.sections.filter((s) => s.visible && isInSidebar(s)) : []
+  const rows = buildRows(sidebarMode ? resume.sections.filter((s) => !isInSidebar(s)) : resume.sections)
 
   const renderSection = (s: Section) => {
     // The whole section is the click / highlight target (items inside handle their own clicks)
     const sectionSel = clickable({ kind: 'section', sectionId: s.id }, isSel(s.id))
     return (
-      <section
-        key={s.id}
-        className={`cv-section cv-section--${s.kind}`}
-        data-section-id={s.id}
-        {...sectionSel}
-      >
+      <section key={s.id} className={`cv-section cv-section--${s.kind}`} data-section-id={s.id} {...sectionSel}>
         <h2 className="cv-section-title">
-          {s.title}
+          {theme.titleStyle === 'icon' && (
+            <span className="cv-title-icon">
+              <Icon name={sectionIcon(s)} size={12} />
+            </span>
+          )}
+          <span>{s.title}</span>
         </h2>
         {s.kind === 'timeline' && renderTimeline(s)}
         {s.kind === 'list' && renderList(s)}
@@ -111,6 +173,7 @@ export function ResumeDocument({ resume, selection, onSelect }: Props) {
           <EntryView
             key={e.id}
             entry={e}
+            entryStyle={theme.entryStyle}
             showLinkIcon={theme.showLinkIcons}
             data-item-id={e.id}
             data-item-kind="entry"
@@ -126,22 +189,22 @@ export function ResumeDocument({ resume, selection, onSelect }: Props) {
     // The inline separator is generated content (CSS ::after) so it is real text in the PDF
     const style = display === 'inline' ? ({ '--sep': JSON.stringify(s.separator ?? ' · ') } as CSSProperties) : undefined
     return (
-    <ul className={`cv-list cv-list--${display}`} style={style}>
-      {s.items
-        .filter((it) => !it.hidden)
-        .map((it) => (
-          <li
-            key={it.id}
-            data-item-id={it.id}
-            data-item-kind="list"
-            data-item-flow={display === 'bullets' ? undefined : 'inline'}
-            data-owner={s.id}
-            {...clickable({ kind: 'section', sectionId: s.id, itemId: it.id }, isSel(s.id, it.id))}
-          >
-            <span dangerouslySetInnerHTML={{ __html: inlineMd(it.text) }} />
-          </li>
-        ))}
-    </ul>
+      <ul className={`cv-list cv-list--${display}`} style={style}>
+        {s.items
+          .filter((it) => !it.hidden)
+          .map((it) => (
+            <li
+              key={it.id}
+              data-item-id={it.id}
+              data-item-kind="list"
+              data-item-flow={display === 'bullets' ? undefined : 'inline'}
+              data-owner={s.id}
+              {...clickable({ kind: 'section', sectionId: s.id, itemId: it.id }, isSel(s.id, it.id))}
+            >
+              <span dangerouslySetInnerHTML={{ __html: inlineMd(it.text) }} />
+            </li>
+          ))}
+      </ul>
     )
   }
 
@@ -153,88 +216,145 @@ export function ResumeDocument({ resume, selection, onSelect }: Props) {
     />
   )
 
+  const renderRows = () =>
+    rows.map((row) => (
+      <div
+        key={row.key}
+        className="cv-row"
+        data-row-key={row.key}
+        style={{ gridTemplateColumns: row.columns.map((c) => `minmax(0, ${c.width}fr)`).join(' ') }}
+      >
+        {row.columns.map((col) => (
+          <div key={col.key} className={`cv-col${row.columns.length > 1 && col.width < 0.3 ? ' cv-col--narrow' : ''}`} data-col-key={col.key}>
+            {col.sections.map(renderSection)}
+          </div>
+        ))}
+      </div>
+    ))
+
   const headerSel = clickable({ kind: 'profile' }, selection?.kind === 'profile')
 
-  return (
-    <article className={`cv${onSelect ? ' cv--edit' : ''}`} style={resumeStyle(resume)}>
-      <header className={`cv-header${theme.showPhoto && profile.photo ? '' : ' cv-header--nophoto'}`} {...headerSel}>
-        {theme.showPhoto && profile.photo && (
-          <img className={`cv-photo cv-photo--${theme.photoShape}`} src={profile.photo} alt="" />
-        )}
-        <div className="cv-header-body">
-          <h1 className="cv-name">
-            <span>{profile.name}</span>
-            {profile.title && <em className="cv-title">{profile.title}</em>}
-          </h1>
-          {profile.contacts.length > 0 && (
-            <ul className="cv-contacts">
-              {profile.contacts.map((c) => {
-                const href = contactHref(c)
-                const inner: ReactNode = (
-                  <>
-                    <IconBadge name={c.icon} />
-                    <span>{c.label}</span>
-                  </>
-                )
-                return (
-                  <li key={c.id}>
-                    {href ? (
-                      <a href={href} target="_blank" rel="noopener noreferrer">
-                        {inner}
-                      </a>
-                    ) : (
-                      inner
-                    )}
-                  </li>
-                )
-              })}
-            </ul>
-          )}
-          {profile.summary && (
-            <div className="cv-summary">
-              <IconBadge name={profile.summaryIcon} />
-              <p dangerouslySetInnerHTML={{ __html: inlineMd(profile.summary) }} />
-            </div>
-          )}
-        </div>
-      </header>
+  const photoSrc = theme.showPhoto ? profile.photo || (theme.photoInitials ? initialsImage(profile.name, theme.accent, FONT_FAMILIES[theme.font].css) : '') : ''
+  const photo = photoSrc ? (
+    <img className={`cv-photo cv-photo--${theme.photoShape}${theme.photoRing ? ' cv-photo--ring' : ''}`} src={photoSrc} alt="" />
+  ) : null
 
-      {rows.map((row) => (
-        <div
-          key={row.key}
-          className="cv-row"
-          data-row-key={row.key}
-          style={{ gridTemplateColumns: row.columns.map((c) => `minmax(0, ${c.width}fr)`).join(' ') }}
-        >
-          {row.columns.map((col) => (
-            <div key={col.key} className={`cv-col${row.columns.length > 1 && col.width < 0.3 ? ' cv-col--narrow' : ''}`} data-col-key={col.key}>
-              {col.sections.map(renderSection)}
+  const name = (
+    <h1 className="cv-name">
+      <span>{profile.name}</span>
+      {profile.title && <em className="cv-title">{profile.title}</em>}
+    </h1>
+  )
+
+  const contacts = profile.contacts.length > 0 && (
+    <ul className="cv-contacts">
+      {profile.contacts.map((c) => {
+        const href = contactHref(c)
+        const inner: ReactNode = (
+          <>
+            <IconBadge name={c.icon} />
+            <span>{c.label}</span>
+          </>
+        )
+        return (
+          <li key={c.id}>
+            {href ? (
+              <a href={href} target="_blank" rel="noopener noreferrer">
+                {inner}
+              </a>
+            ) : (
+              inner
+            )}
+          </li>
+        )
+      })}
+    </ul>
+  )
+
+  const summary = profile.summary && (
+    <div className="cv-summary">
+      <IconBadge name={profile.summaryIcon} />
+      <p dangerouslySetInnerHTML={{ __html: inlineMd(profile.summary) }} />
+    </div>
+  )
+
+  const classes = [
+    'cv',
+    onSelect ? 'cv--edit' : '',
+    `cv--header-${theme.headerStyle}`,
+    `cv--title-${theme.titleStyle}`,
+    `cv--entry-${theme.entryStyle}`,
+  ]
+    .filter(Boolean)
+    .join(' ')
+
+  if (sidebarMode) {
+    // Main column first in the document (name first for parsers); the grid puts the sidebar on the left.
+    return (
+      <article className={classes} style={resumeStyle(resume)}>
+        <div className="cv-main">
+          <header className="cv-header" {...headerSel}>
+            <div className="cv-header-body">
+              {name}
+              {summary}
             </div>
-          ))}
+          </header>
+          {renderRows()}
         </div>
-      ))}
+        <aside className="cv-aside">
+          <div className="cv-aside-profile" {...headerSel}>
+            {photo}
+            {contacts}
+          </div>
+          {sideSections.map(renderSection)}
+        </aside>
+      </article>
+    )
+  }
+
+  const header = (
+    <header className={`cv-header${photo ? '' : ' cv-header--nophoto'}`} {...headerSel}>
+      {photo}
+      <div className="cv-header-body">
+        {name}
+        {contacts}
+        {summary}
+      </div>
+    </header>
+  )
+
+  return (
+    <article className={classes} style={resumeStyle(resume)}>
+      {/* The band is a plain wrapper, so the clickable header keeps its own highlight */}
+      {theme.headerStyle === 'band' ? <div className="cv-band">{header}</div> : header}
+      {renderRows()}
     </article>
   )
 }
 
 interface EntryProps extends HTMLAttributes<HTMLDivElement> {
   entry: TimelineEntry
+  entryStyle: EntryStyle
   showLinkIcon: boolean
 }
 
-function EntryView({ entry: e, showLinkIcon, ...rest }: EntryProps) {
+function EntryView({ entry: e, entryStyle, showLinkIcon, ...rest }: EntryProps) {
+  const location = (e.location || e.country) && (
+    <span className="cv-entry-loc">
+      {e.country && <span className={`fi fi-${e.country.toLowerCase()} cv-flag`} />}
+      {e.location}
+    </span>
+  )
+  const inline = entryStyle === 'right'
   return (
     <div className="cv-entry" {...rest}>
-      <div className="cv-entry-meta">
-        {e.date && <div>{e.date}</div>}
-        {(e.location || e.country) && (
-          <div className="cv-entry-loc">
-            {e.country && <span className={`fi fi-${e.country.toLowerCase()} cv-flag`} />}
-            {e.location}
-          </div>
-        )}
-        {e.subDate && <div>{e.subDate}</div>}
-      </div>
+      {!inline && (
+        <div className="cv-entry-meta">
+          {e.date && <div>{e.date}</div>}
+          {location && <div>{location}</div>}
+          {e.subDate && <div>{e.subDate}</div>}
+        </div>
+      )}
       <div className="cv-entry-body">
         <div className="cv-entry-head">
           <strong>
@@ -247,14 +367,24 @@ function EntryView({ entry: e, showLinkIcon, ...rest }: EntryProps) {
               <ExternalIcon size={9} />
             </a>
           )}
+          {/* "Dates on the right": date · duration · place on the title line, read right after the title */}
+          {inline && (e.date || e.subDate || location) && (
+            <span className="cv-entry-metaline">
+              {[e.date, e.subDate].filter(Boolean).join(' · ')}
+              {(e.date || e.subDate) && location ? ' · ' : ''}
+              {location}
+            </span>
+          )}
         </div>
         {e.bullets.some((b) => b.trim()) && (
           <ul className="cv-bullets">
-            {e.bullets.filter((b) => b.trim()).map((b, i) => (
-              <li key={i}>
-                <span dangerouslySetInnerHTML={{ __html: inlineMd(b) }} />
-              </li>
-            ))}
+            {e.bullets
+              .filter((b) => b.trim())
+              .map((b, i) => (
+                <li key={i}>
+                  <span dangerouslySetInnerHTML={{ __html: inlineMd(b) }} />
+                </li>
+              ))}
           </ul>
         )}
       </div>

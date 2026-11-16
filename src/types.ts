@@ -78,6 +78,10 @@ interface SectionBase {
   place: Placement
   /** Width of the column this section starts (fraction of the row), for the first section of a column */
   colWidth?: number
+  /** Icon before the title (title style "icon"); a default is picked from the title when unset */
+  icon?: IconKey
+  /** Header style "sidebar": show this section in the sidebar (default: list sections) */
+  sidebar?: boolean
 }
 
 export interface TimelineSection extends SectionBase {
@@ -120,7 +124,21 @@ export interface Theme {
   marginX: number // mm
   marginY: number // mm
   showLinkIcons: boolean
+  headerStyle: HeaderStyle
+  titleStyle: TitleStyle
+  entryStyle: EntryStyle
+  /** Accent-coloured ring around the photo */
+  photoRing: boolean
+  /** Show initials in place of the photo when there is none */
+  photoInitials: boolean
 }
+
+/** classic: photo left · centered · band: full-width accent band · sidebar: coloured left column */
+export type HeaderStyle = 'classic' | 'centered' | 'band' | 'sidebar'
+/** underline · caps: small spaced capitals + thin rule · bar: accent bar on the left · icon: tinted icon square */
+export type TitleStyle = 'underline' | 'caps' | 'bar' | 'icon'
+/** left: dates in a left column · right: dates on the title line · timeline: line with dots · cards: tinted blocks */
+export type EntryStyle = 'left' | 'right' | 'timeline' | 'cards'
 
 export interface Meta {
   locale: 'fr' | 'en'

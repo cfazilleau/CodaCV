@@ -20,7 +20,9 @@ npm run build    # static site in dist/
   - *Texte libre* (free markdown text)
   - Drag and drop (grip handle ⋮⋮) to reorder sections, entries, list items and contacts —
     also with the keyboard: focus the grip, Space, arrows, Space. Hide / duplicate / delete.
-  - Theme: accent & text colors, font, size, density, date-column width, margins, photo shape & size.
+  - Apparence: 12 curated palettes (or custom colours), header style (photo left / centered / colour band /
+    sidebar), section titles (underline / small caps / left bar / icon), entries (dates left / dates right /
+    timeline / cards), photo ring and initials, font, size, density, date column, margins.
 - **Layout on the page** (edit mode, hover the preview):
   - section grip → drop it on a new row, in a new column (left/right edge of a section) or under
     another section in a multi-column row; the blue line shows where it lands

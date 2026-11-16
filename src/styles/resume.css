@@ -310,3 +310,231 @@
     background: color-mix(in srgb, var(--accent) 4%, transparent);
   }
 }
+
+/* ==================================================================
+   Style variants (Apparence → Styles). No positioning anywhere: the PDF
+   text keeps the document order.
+================================================================== */
+
+/* ---------- Photo ---------- */
+
+.cv-photo--ring {
+  margin: 1.4mm;
+  box-shadow:
+    0 0 0 0.7mm #fff,
+    0 0 0 1.3mm var(--accent);
+}
+
+/* ---------- Header: centered ---------- */
+
+.cv--header-centered .cv-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3mm;
+  text-align: center;
+}
+
+.cv--header-centered .cv-photo {
+  justify-self: auto;
+}
+
+.cv--header-centered .cv-name,
+.cv--header-centered .cv-contacts {
+  justify-content: center;
+}
+
+.cv--header-centered .cv-summary {
+  justify-content: center;
+  max-width: 82%;
+  margin: 0 auto;
+}
+
+/* ---------- Header: full-width accent band ---------- */
+
+.cv--header-band {
+  padding-top: 0;
+}
+
+.cv-band {
+  margin: 0 calc(-1 * var(--mx)) calc(var(--gap-section) + 1mm);
+  padding: var(--my) var(--mx) 5.5mm;
+  background: var(--accent);
+  color: #fff;
+}
+
+.cv-band .cv-header {
+  margin-bottom: 0;
+}
+
+.cv-band .cv-name,
+.cv-band .cv-title {
+  color: #fff;
+}
+
+.cv-band .cv-title {
+  /* a colour, not opacity: opacity would paint (and write) the title after everything else */
+  color: color-mix(in srgb, #fff 86%, var(--accent));
+}
+
+.cv-band .cv-icon {
+  background: #fff;
+  color: var(--accent);
+}
+
+/* ---------- Header: coloured sidebar ---------- */
+
+.cv--header-sidebar {
+  display: grid;
+  grid-template-columns: var(--side-w) minmax(0, 1fr);
+  padding: 0;
+}
+
+.cv--header-sidebar .cv-main {
+  grid-column: 2;
+  grid-row: 1;
+  padding: var(--my) var(--mx) var(--my) 7mm;
+}
+
+.cv--header-sidebar .cv-aside {
+  grid-column: 1;
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-section);
+  padding: var(--my) 6mm var(--my) var(--mx);
+  background: color-mix(in srgb, var(--accent) 10%, #fff);
+}
+
+.cv--header-sidebar .cv-header {
+  display: block;
+}
+
+.cv-aside-profile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4mm;
+}
+
+.cv-aside .cv-contacts {
+  flex-direction: column;
+  align-self: stretch;
+  gap: 1.8mm;
+  margin: 0 !important;
+}
+
+.cv-aside .cv-contacts {
+  font-size: 0.9em;
+}
+
+/* Never wrap a contact: a split e-mail address is not detected by ATS */
+.cv-aside .cv-contacts li,
+.cv-aside .cv-contacts a {
+  white-space: nowrap;
+}
+
+/* ---------- Section titles ---------- */
+
+.cv--title-caps .cv-section-title {
+  padding-bottom: 1mm;
+  border-bottom: 0.25mm solid color-mix(in srgb, var(--text) 22%, transparent);
+  font-size: 1.02em;
+  /* Keep the spacing light: wider letter-spacing makes PDF readers split words ("COMPÉ T ENCES") */
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+
+.cv--title-bar .cv-section-title {
+  padding: 0.2mm 0 0.2mm 2.4mm;
+  border-bottom: 0;
+  border-left: 1mm solid var(--accent);
+  line-height: 1.15;
+}
+
+.cv--title-icon .cv-section-title {
+  display: flex;
+  align-items: center;
+  gap: 2mm;
+  border-bottom-color: color-mix(in srgb, var(--accent) 35%, transparent);
+  border-bottom-width: 0.3mm;
+}
+
+.cv-title-icon {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 1.4em;
+  height: 1.4em;
+  border-radius: 1.2mm;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.cv-title-icon svg {
+  width: 0.78em;
+  height: 0.78em;
+}
+
+/* ---------- Entries: dates on the title line ---------- */
+
+.cv--entry-right .cv-entry {
+  display: block;
+}
+
+.cv--entry-right .cv-entry-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 0.3em;
+}
+
+.cv-entry-metaline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25em;
+  margin-left: auto;
+  padding-left: 3mm;
+  color: color-mix(in srgb, var(--text) 68%, #fff);
+}
+
+.cv-entry-metaline .cv-entry-loc {
+  display: inline-flex;
+  gap: 1mm;
+}
+
+/* ---------- Entries: timeline (line + dots are backgrounds, not positioned elements) ---------- */
+
+.cv--entry-timeline .cv-entry {
+  margin-bottom: 0;
+}
+
+.cv--entry-timeline .cv-entry-body {
+  padding: 0 0 var(--gap-entry) 4.6mm;
+  background-image:
+    radial-gradient(circle at 1.1mm calc(var(--lh) * 0.5em), var(--accent) 0 0.95mm, transparent 1.05mm),
+    linear-gradient(color-mix(in srgb, var(--accent) 30%, transparent), color-mix(in srgb, var(--accent) 30%, transparent));
+  background-repeat: no-repeat;
+  background-size:
+    auto,
+    0.3mm 100%;
+  background-position:
+    0 0,
+    0.95mm 0;
+}
+
+.cv--entry-timeline .cv-entry:last-child .cv-entry-body {
+  padding-bottom: 0;
+}
+
+/* ---------- Entries: light cards ---------- */
+
+.cv--entry-cards .cv-entry {
+  padding: 2.2mm 3mm;
+  border-radius: 1.8mm;
+  background: color-mix(in srgb, var(--accent) 6%, #fff);
+}
+
+.cv--entry-cards .cv-entry:last-child {
+  margin-bottom: 0;
+}

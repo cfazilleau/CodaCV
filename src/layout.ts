@@ -193,6 +193,36 @@ export function moveItem(
   })
 }
 
+/* ------------------------------------------------------------- Sidebar header style */
+
+/** In the "sidebar" header style: does this section go in the coloured column? (default: lists) */
+export const isInSidebar = (s: Section) => s.sidebar ?? s.kind === 'list'
+
+/** Keep main sections first and sidebar sections last: that is the document (and PDF text) order. */
+export function orderForSidebar(sections: Section[]): Section[] {
+  return [...normalizeLayout(sections.filter((s) => !isInSidebar(s))), ...sections.filter(isInSidebar)]
+}
+
+export type SidebarAwareDrop = SectionDrop | { kind: 'sidebar'; anchorId: string | null; after: boolean }
+
+/** moveSection, plus moving sections into / out of the sidebar when that header style is on. */
+export function moveSectionAnywhere(sections: Section[], id: string, drop: SidebarAwareDrop, sidebarMode: boolean): Section[] {
+  if (!sidebarMode) return drop.kind === 'sidebar' ? sections : moveSection(sections, id, drop)
+  const dragged = sections.find((s) => s.id === id)
+  if (!dragged) return sections
+  const main = sections.filter((s) => s.id !== id && !isInSidebar(s))
+  const side = sections.filter((s) => s.id !== id && isInSidebar(s))
+  if (drop.kind === 'sidebar') {
+    const moved: Section = { ...dragged, sidebar: true, place: 'row', colWidth: undefined }
+    let at = drop.anchorId ? side.findIndex((s) => s.id === drop.anchorId) : side.length
+    if (at < 0) at = side.length
+    else if (drop.anchorId && drop.after) at++
+    return [...normalizeLayout(main), ...side.slice(0, at), moved, ...side.slice(at)]
+  }
+  const moved: Section = { ...dragged, sidebar: false }
+  return [...moveSection([...main, moved], id, drop), ...side]
+}
+
 /** Column fraction that lines a first column up with the timeline date column. */
 export function dateColumnFraction(dateColMm: number, marginXMm: number, columns = 2): number {
   const content = 210 - 2 * marginXMm - COL_GAP_MM * (columns - 1)
