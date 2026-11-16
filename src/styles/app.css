@@ -1049,6 +1049,52 @@ button {
   }
 }
 
+/* Edit / Preview switch: shown on phones only */
+.view-switch {
+  display: none;
+  border-top: 1px solid var(--ui-border);
+  background: var(--ui-panel);
+}
+
+.view-switch button {
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 52px;
+  border: 0;
+  background: none;
+  color: var(--ui-muted);
+  font-weight: 600;
+}
+
+.view-switch button.is-active {
+  box-shadow: inset 0 3px 0 var(--ui-primary);
+  color: var(--ui-primary);
+}
+
+@media (max-width: 700px) {
+  .workspace {
+    grid-template-rows: 1fr;
+  }
+  .workspace[data-view='edit'] .preview,
+  .workspace[data-view='preview'] .sidebar {
+    display: none;
+  }
+  .sidebar {
+    max-height: none;
+    padding: 12px;
+    border-bottom: 0;
+  }
+  .preview-stage {
+    padding: 12px 8px 32px;
+  }
+  .view-switch {
+    display: flex;
+  }
+}
+
 /* ---------------------------------------------------------------- On-page layout overlay */
 
 .layout-overlay {

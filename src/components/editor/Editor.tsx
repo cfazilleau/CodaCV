@@ -22,6 +22,8 @@ interface Props {
   selection: Selection
   onSelect: (sel: Selection) => void
   store: ResumeStore
+  /** False while hidden behind the preview (phones): the selected card scrolls into view on return */
+  visible: boolean
 }
 
 type SectionOf<K extends SectionKind> = Extract<Section, { kind: K }>
@@ -158,7 +160,7 @@ function loadTab(): Tab {
   }
 }
 
-export function Editor({ resume, setResume, selection, onSelect, store }: Props) {
+export function Editor({ resume, setResume, selection, onSelect, store, visible }: Props) {
   const t = useStrings(S)
   const [tab, setTab] = useState<Tab>(loadTab)
   const [openCard, setOpenCard] = useState<string | null>('profile')
@@ -187,9 +189,9 @@ export function Editor({ resume, setResume, selection, onSelect, store }: Props)
     else if (openCard) onSelect({ kind: 'section', sectionId: openCard, itemId: openItem ?? undefined })
   }
 
-  // Follow clicks made on the resume preview
+  // Follow clicks made on the resume preview (once shown again, on phones: a hidden panel can't scroll)
   useEffect(() => {
-    if (!selection) return
+    if (!selection || !visible) return
     const card = selection.kind === 'profile' ? 'profile' : selection.sectionId
     const item = selection.kind === 'section' ? (selection.itemId ?? null) : null
     setTab('content')
@@ -199,7 +201,7 @@ export function Editor({ resume, setResume, selection, onSelect, store }: Props)
       const el = (item && itemRefs.current.get(item)) || cardRefs.current.get(card)
       el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
     })
-  }, [selection])
+  }, [selection, visible])
 
   const toggleCard = (id: string) => {
     const next = openCard === id ? null : id

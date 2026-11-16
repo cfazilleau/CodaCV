@@ -18,7 +18,9 @@
   .page-break,
   .layout-overlay,
   .lo-ghost,
-  .welcome {
+  .welcome,
+  .tb-menu,
+  .view-switch {
     display: none !important;
   }
 

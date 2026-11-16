@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { Download, Ellipsis, FileUp, Info, Languages, Printer, Redo2, RotateCcw, Undo2, ZoomIn, ZoomOut } from 'lucide-react'
+import { Download, Ellipsis, Eye, FileUp, Info, Languages, PencilLine, Printer, Redo2, RotateCcw, Undo2, ZoomIn, ZoomOut } from 'lucide-react'
 import { useResumeStore, parseResume } from './store'
 import { MAX_IMPORT_BYTES } from './validate'
 import { templateResume } from './defaultResume'
@@ -12,6 +12,7 @@ import { StorageBanner } from './components/StorageBanner'
 import { WelcomeDialog, welcomeSeen } from './components/WelcomeDialog'
 import { downloadText, downscaleImage, PHOTO_MAX_CHARS } from './utils'
 import { A4_H_MM, A4_W_MM, MM } from './layout'
+import { PHONE, useMediaQuery } from './media'
 
 const S = defineStrings(
   {
@@ -31,6 +32,9 @@ const S = defineStrings(
     about: 'À propos de CodaCV : gratuit, open source, vos données restent chez vous',
     aboutShort: 'À propos de CodaCV',
     more: "Plus d'actions",
+    views: 'Affichage',
+    edit: 'Modifier',
+    preview: 'Aperçu',
     zoomOut: 'Dézoomer',
     fit: 'Ajuster à la largeur',
     zoomIn: 'Zoomer',
@@ -54,6 +58,9 @@ const S = defineStrings(
     about: 'About CodaCV: free, open source, your data stays with you',
     aboutShort: 'About CodaCV',
     more: 'More actions',
+    views: 'View',
+    edit: 'Edit',
+    preview: 'Preview',
     zoomOut: 'Zoom out',
     fit: 'Fit to width',
     zoomIn: 'Zoom in',
@@ -104,6 +111,9 @@ export default function App() {
   const uiLang = useUiLang()
   // Welcome screen: on the first visit, then from the info button
   const [welcome, setWelcome] = useState(() => !welcomeSeen())
+  // Phones show the editor or the preview, switched by the bottom bar
+  const phone = useMediaQuery(PHONE)
+  const [view, setView] = useState<'edit' | 'preview'>('edit')
 
   usePrintSetup(resume)
 
@@ -256,12 +266,29 @@ export default function App() {
 
       <StorageBanner issue={store.storageIssue} onOverwrite={store.overwriteStorage} onDismiss={store.dismissIssue} />
 
-      <main className="workspace">
+      <main className="workspace" data-view={view}>
         <aside className="sidebar">
-          <Editor resume={resume} setResume={setResume} selection={selection} onSelect={setSelection} store={store} />
+          <Editor
+            resume={resume}
+            setResume={setResume}
+            selection={selection}
+            onSelect={setSelection}
+            store={store}
+            visible={!phone || view === 'edit'}
+          />
         </aside>
         <PreviewPane resume={resume} setResume={setResume} selection={selection} onSelect={setSelection} />
       </main>
+
+      {/* Phones only (CSS): one pane at a time */}
+      <nav className="view-switch" aria-label={t.views}>
+        <button className={view === 'edit' ? 'is-active' : ''} aria-pressed={view === 'edit'} onClick={() => setView('edit')}>
+          <PencilLine size={18} /> {t.edit}
+        </button>
+        <button className={view === 'preview' ? 'is-active' : ''} aria-pressed={view === 'preview'} onClick={() => setView('preview')}>
+          <Eye size={18} /> {t.preview}
+        </button>
+      </nav>
     </div>
   )
 }
@@ -290,7 +317,9 @@ function PreviewPane({
     const el = scroller.current
     if (!el) return
     const ro = new ResizeObserver(() => {
-      const avail = el.clientWidth - 48
+      // Stage side padding comes from the CSS (smaller on phones)
+      const cs = getComputedStyle(el.querySelector('.preview-stage')!)
+      const avail = el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)
       setFit(Math.max(0.3, Math.min(1.25, avail / (A4_W_MM * MM))))
     })
     ro.observe(el)
