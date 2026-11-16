@@ -197,16 +197,43 @@
 /* Bullets are a real "•" character in normal flow (no position: relative/absolute):
    positioned elements are painted — and written into the PDF — after everything else,
    which detaches bullet text from its entry for parsers that read in stream order. */
-.cv-list--bullets li,
-.cv-bullets li {
+.cv-list--bullets li {
   display: grid;
   grid-template-columns: 1.05em minmax(0, 1fr);
 }
 
-.cv-list--bullets li::before,
-.cv-bullets li::before {
+.cv-list--bullets li::before {
   content: "•";
   padding-left: 0.2em;
+}
+
+/* Timeline description (markdown). Its list items hold bare text and inline tags, which a grid
+   would split into cells, so the "•" is an inline box in a hanging indent instead (same look). */
+.cv-desc > * + * {
+  margin-top: 0.8mm;
+}
+.cv-desc ul > li {
+  padding-left: 1.05em;
+  text-indent: -1.05em;
+}
+.cv-desc ul > li::before {
+  content: "•";
+  display: inline-block;
+  width: 1.05em;
+  padding-left: 0.2em;
+  text-indent: 0;
+}
+/* A loose list ("- a", blank line, "- b") wraps each item in a <p>: keep it on the bullet's line */
+.cv-desc li > p {
+  display: inline;
+}
+.cv-desc ol {
+  margin: 0;
+  padding-left: 1.4em;
+}
+.cv-desc :is(h3, h4, h5, h6) {
+  margin: 0;
+  font-size: 1em;
 }
 
 .cv-col--narrow .cv-list--bullets li {

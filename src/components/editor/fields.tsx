@@ -59,15 +59,6 @@ export function TextArea({
   )
 }
 
-/** One bullet per line. Keeps a trailing empty line while typing. */
-export function LinesField({
-  value,
-  onChange,
-  ...rest
-}: BaseProps & { value: string[]; onChange: (v: string[]) => void; placeholder?: string }) {
-  return <TextArea {...rest} minRows={3} value={value.join('\n')} onChange={(v) => onChange(v.split('\n'))} />
-}
-
 export function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
   return (
     <label className="toggle">

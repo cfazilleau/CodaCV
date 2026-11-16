@@ -1,6 +1,9 @@
 import type { Resume } from './types'
 import { getUiLang, type UiLang } from './i18n'
 
+/** "- " bullet lines of a timeline description */
+const bullets = (...lines: string[]) => lines.map((l) => `- ${l}`).join('\n')
+
 /**
  * Example resume shown on first launch, by "Partir du modèle" and "Réinitialiser", in French or
  * English. Deliberately generic (a digital project manager) and fictional: names, companies, links
@@ -74,12 +77,12 @@ export function templateResume(lang: UiLang = getUiLang()): Resume {
             title: 'Groupe Horizon',
             subtitle: L('Chef de projet digital', 'Digital Project Manager'),
             url: 'https://example.com/horizon',
-            bullets: [
+            description: bullets(
               L('Pilotage de la refonte du site e-commerce : équipe de 9 personnes, budget de 400 k€', 'Led the e-commerce website redesign: team of 9, €400k budget'),
               L('Mise en place des rituels agiles et d’un tableau de bord de suivi partagé avec la direction', 'Set up agile rituals and a progress dashboard shared with senior management'),
               L('Coordination des prestataires et des équipes marketing, IT et service client', 'Coordinated vendors and the marketing, IT and customer service teams'),
               L('Hausse de 18 % du taux de conversion dans les six mois suivant le lancement', '18% increase in conversion rate within six months of launch'),
-            ],
+            ),
             hidden: false,
           },
           {
@@ -93,11 +96,11 @@ export function templateResume(lang: UiLang = getUiLang()): Resume {
             title: 'Agence Nova',
             subtitle: L('Chef de projet', 'Project Manager'),
             url: 'https://example.com/nova',
-            bullets: [
+            description: bullets(
               L('Gestion simultanée de 5 à 8 projets clients (sites, applications, campagnes)', 'Managed 5 to 8 client projects at a time (websites, apps, campaigns)'),
               L('Rédaction des cahiers des charges, estimation des charges et suivi de la rentabilité', 'Wrote specifications, estimated workloads and tracked profitability'),
               L('Interlocuteur principal des clients, de l’avant-vente à la recette', 'Main client contact, from pre-sales to acceptance testing'),
-            ],
+            ),
             hidden: false,
           },
           {
@@ -111,10 +114,10 @@ export function templateResume(lang: UiLang = getUiLang()): Resume {
             title: 'Atelier Lumen',
             subtitle: L('Assistant chef de projet', 'Assistant Project Manager'),
             url: '',
-            bullets: [
+            description: bullets(
               L('Suivi de planning et de budget sur des projets de communication', 'Tracked schedules and budgets on communication projects'),
               L('Organisation des recettes et des retours utilisateurs', 'Organised acceptance testing and user feedback sessions'),
-            ],
+            ),
             hidden: false,
           },
         ],
@@ -137,10 +140,10 @@ export function templateResume(lang: UiLang = getUiLang()): Resume {
             title: L('Refonte e-commerce', 'E-commerce redesign'),
             subtitle: 'Groupe Horizon',
             url: 'https://example.com/refonte',
-            bullets: [
+            description: bullets(
               L('Migration de 12 000 produits et de l’historique client sans interruption de service', 'Migrated 12,000 products and the customer history with no downtime'),
               L('Nouveau parcours de commande testé auprès de 40 utilisateurs', 'New checkout flow tested with 40 users'),
-            ],
+            ),
             hidden: false,
           },
           {
@@ -154,10 +157,10 @@ export function templateResume(lang: UiLang = getUiLang()): Resume {
             title: L('Application de réservation', 'Booking app'),
             subtitle: L('Client du secteur culturel - Agence Nova', 'Cultural sector client - Agence Nova'),
             url: 'https://example.com/reservation',
-            bullets: [
+            description: bullets(
               L('Lancement d’une application mobile utilisée par 30 000 visiteurs la première année', 'Launched a mobile app used by 30,000 visitors in its first year'),
               L('Livraison dans les délais et le budget, avec trois itérations courtes', 'Delivered on time and on budget, in three short iterations'),
-            ],
+            ),
             hidden: false,
           },
         ],
@@ -180,10 +183,10 @@ export function templateResume(lang: UiLang = getUiLang()): Resume {
             title: L('Master Management de projet', 'Master’s degree in Project Management'),
             subtitle: 'École de Commerce et de Gestion',
             url: '',
-            bullets: [
+            description: bullets(
               L('Diplôme de niveau 7 (Bac +5)', 'Level 7 degree (EQF)'),
               L('Gestion de projet, marketing digital, finance d’entreprise', 'Project management, digital marketing, corporate finance'),
-            ],
+            ),
             hidden: false,
           },
           {
@@ -197,7 +200,7 @@ export function templateResume(lang: UiLang = getUiLang()): Resume {
             title: L('Licence Information et Communication', 'Bachelor’s degree in Information and Communication'),
             subtitle: 'Université Lumière',
             url: '',
-            bullets: [],
+            description: '',
             hidden: false,
           },
         ],

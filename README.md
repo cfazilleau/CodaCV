@@ -34,7 +34,7 @@ npm run build    # static site in dist/
 ## Features
 
 - **Editor** – profile, photo, contacts, and any number of sections:
-  - *Chronologie* (timeline: experience, projects, education…) with start / end dates (or ongoing), sub-date, flag, city, title, subtitle, link, bullets
+  - *Chronologie* (timeline: experience, projects, education…) with start / end dates (or ongoing), sub-date, flag, city, title, subtitle, link, and a Markdown description (lines starting with `- ` are bullet points)
   - *Liste* (languages, skills…) shown as bullets, inline tags (`C++ · Unity · Git`) or chips;
     pasting `A, B, C` into an item splits it into several items
   - *Texte libre* (free markdown text)

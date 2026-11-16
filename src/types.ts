@@ -58,7 +58,8 @@ export interface TimelineEntry {
   title: string // bold, e.g. company
   subtitle: string // italic, e.g. role
   url: string
-  bullets: string[]
+  /** Markdown: paragraphs, "- " lines for bullet points, **bold**, *italic*, [link](url) */
+  description: string
   hidden: boolean
 }
 

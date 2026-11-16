@@ -50,6 +50,8 @@ DOMPurify.addHook('afterSanitizeAttributes', (node) => {
 const INLINE_TAGS = ['a', 'b', 'strong', 'i', 'em', 'u', 's', 'del', 'code', 'sub', 'sup', 'span', 'br']
 const BLOCK_TAGS = [...INLINE_TAGS, 'p', 'ul', 'ol', 'li', 'blockquote', 'pre', 'hr', 'h3', 'h4', 'h5', 'h6', 'img', 'table', 'thead', 'tbody', 'tr', 'th', 'td']
 const ALLOWED_ATTR = ['href', 'title', 'alt', 'src']
+/** Timeline descriptions: block markdown without images (those stay in free-text sections). */
+const DESC_TAGS = BLOCK_TAGS.filter((t) => t !== 'img')
 
 /**
  * The whole resume re-renders on every keystroke: parsing + sanitizing every bullet each time is
@@ -76,6 +78,11 @@ export const inlineMd = cached((src) =>
 /** Block markdown (free-text sections). Images are allowed here (documented in the editor hint). */
 export const blockMd = cached((src) =>
   DOMPurify.sanitize(marked.parse(src, { async: false }) as string, { ALLOWED_TAGS: BLOCK_TAGS, ALLOWED_ATTR }),
+)
+
+/** Timeline entry description: block markdown ("- " bullets), a single line break stays a line break. */
+export const descriptionMd = cached((src) =>
+  DOMPurify.sanitize(marked.parse(src, { async: false, breaks: true }) as string, { ALLOWED_TAGS: DESC_TAGS, ALLOWED_ATTR }),
 )
 
 export function contactHref(c: Contact): string | undefined {
@@ -171,7 +178,7 @@ export function newEntry(lang: UiLang): TimelineEntry {
     title: content(lang).newEntry,
     subtitle: '',
     url: '',
-    bullets: [],
+    description: '',
     hidden: false,
   }
 }

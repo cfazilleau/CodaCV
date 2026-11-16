@@ -4,7 +4,7 @@ import type { DateFormat, ListDisplay, ListItem, ListSection, ResumeLocale, Time
 import { newEntry, newListItem, uid } from '../../utils'
 import { contentLang, formatDateRange, fromInputDate, RESUME_LOCALES, toInputDate } from '../../locale'
 import { defineStrings, useStrings, useUiLang } from '../../i18n'
-import { countryOptions, IconButton, LinesField, Select, TextField, Toggle } from './fields'
+import { countryOptions, IconButton, Select, TextArea, TextField, Toggle } from './fields'
 import { SortableList } from './Sortable'
 
 const S = defineStrings(
@@ -26,8 +26,8 @@ const S = defineStrings(
     flag: 'Drapeau',
     city: 'Ville',
     link: 'Lien',
-    bullets: 'Puces (une par ligne)',
-    bulletsHint: 'Markdown en ligne accepté : **gras**, *italique*, [lien](https://…)',
+    description: 'Description',
+    descriptionHint: 'Markdown : une ligne commençant par « - » est une puce ; **gras**, *italique*, [lien](https://…)',
     addEntry: 'Ajouter une entrée',
     display: 'Affichage',
     displayBullets: 'Liste à puces',
@@ -60,8 +60,8 @@ const S = defineStrings(
     flag: 'Flag',
     city: 'City',
     link: 'Link',
-    bullets: 'Bullet points (one per line)',
-    bulletsHint: 'Inline Markdown: **bold**, *italic*, [link](https://…)',
+    description: 'Description',
+    descriptionHint: 'Markdown: a line starting with "- " is a bullet point; **bold**, *italic*, [link](https://…)',
     addEntry: 'Add an entry',
     display: 'Display',
     displayBullets: 'Bulleted list',
@@ -253,11 +253,12 @@ export function TimelineEditor({
                     <TextField label={t.city} value={e.location} onChange={(v) => patch(e.id, { location: v })} />
                   </div>
                   <TextField label={t.link} placeholder="https://…" value={e.url} onChange={(v) => patch(e.id, { url: v })} />
-                  <LinesField
-                    label={t.bullets}
-                    hint={t.bulletsHint}
-                    value={e.bullets}
-                    onChange={(v) => patch(e.id, { bullets: v })}
+                  <TextArea
+                    label={t.description}
+                    hint={t.descriptionHint}
+                    minRows={3}
+                    value={e.description}
+                    onChange={(v) => patch(e.id, { description: v })}
                   />
                 </div>
               )}

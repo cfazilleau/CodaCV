@@ -17,7 +17,7 @@ import type {
   TimelineEntry,
   TimelineSection,
 } from '../types'
-import { autoHref, blockMd, contactHref, inlineMd, normalizeHref } from '../utils'
+import { autoHref, blockMd, contactHref, descriptionMd, inlineMd, normalizeHref } from '../utils'
 import { buildRows, isInSidebar, mainLayout } from '../layout'
 import { ExternalIcon, Icon, IconBadge } from './icons'
 import { FLAGS } from '../flags'
@@ -515,17 +515,7 @@ function EntryView({ entry: e, entryStyle, locale, dateFormat, showLinkIcon, ...
             </span>
           )}
         </div>
-        {e.bullets.some((b) => b.trim()) && (
-          <ul className="cv-bullets">
-            {e.bullets
-              .filter((b) => b.trim())
-              .map((b, i) => (
-                <li key={i}>
-                  <span dangerouslySetInnerHTML={{ __html: inlineMd(b) }} />
-                </li>
-              ))}
-          </ul>
-        )}
+        {e.description.trim() && <div className="cv-desc" dangerouslySetInnerHTML={{ __html: descriptionMd(e.description) }} />}
       </div>
     </div>
   )

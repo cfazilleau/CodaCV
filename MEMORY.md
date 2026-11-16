@@ -62,7 +62,9 @@ headless printing, and PDF text extraction (see "Testing" below).
   resume (they end up in CSS selectors). Unknown section kinds are skipped. Past migrations handled:
   contact `kind` → `icon`, boolean `summaryIcon`, `pairWithNext` → layout `place`, removed
   `details` fields (web page feature), removed `spaceBefore`, removed theme `layout`, timeline free-text
-  `date` (dropped on purpose at the owner's request, replaced by `start` / `end` / `current`).
+  `date` (dropped on purpose at the owner's request, replaced by `start` / `end` / `current`),
+  timeline `bullets: string[]` → markdown `description` (`bulletsToMarkdown`: one "- " line each, a
+  start that looks like block markdown — `#`, `>`, `1.`, `-`, a fence — is backslash-escaped).
 - `resume.version` is still `1`; migrations are shape-based, not version-based.
 - Import adds the JSON as a **new version** (5 MB max); export / reset act on the active version.
 - Undo history is per session and resets when switching versions. Rapid edits within 600 ms are
@@ -168,9 +170,13 @@ with **pypdf** (stream order, like most ATS / LLM loaders) and **pdfminer** (lay
   hyphen "-" (date ranges are "2019 - 2022"). Em dashes (—) are a separate character and are kept
   (e.g. "Anglais — C1", "— Aucun —"). Input parsing may still accept "–" (phone-number check).
 - 12 curated palettes, each accent ≥ 5.3:1 contrast on white (WCAG AA), text ≥ 13:1.
-- Markdown (`inlineMd` / `blockMd` in `utils.ts`): DOMPurify with a tag / attribute allow-list (no
-  `style`, `class`, `id`, forms or media; images only in free-text sections). Markdown headings start
-  at H3 so the tagged PDF keeps one H1 (name) and H2 section titles.
+- Markdown (`inlineMd` / `blockMd` / `descriptionMd` in `utils.ts`): DOMPurify with a tag / attribute
+  allow-list (no `style`, `class`, `id`, forms or media; images only in free-text sections). Markdown
+  headings start at H3 so the tagged PDF keeps one H1 (name) and H2 section titles.
+- Timeline entries have one markdown **`description`** field (owner's request; it replaced the
+  "one bullet per line" field): "- " lines are bullets, a single line break stays a line break
+  (`breaks: true`). Its `ul > li` uses a hanging indent with an inline-block "•" (`.cv-desc`): a grid
+  `li` like `.cv-list--bullets` would split bare text and `<strong>` into separate cells.
 
 ## Gotchas hit while developing
 

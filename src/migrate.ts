@@ -158,6 +158,21 @@ const country = (v: unknown) => {
   return /^[a-z]{2}(-[a-z]{2,3})?$/.test(c) ? c : ''
 }
 
+/**
+ * Old format: timeline entries had `bullets` (one string per bullet, inline markdown). They become
+ * "- " lines of the markdown `description`. A bullet that starts like block markdown ("# ", "> ",
+ * "1. ", "- ", a code fence) gets that start escaped, so it still reads as the same text.
+ */
+function bulletsToMarkdown(v: unknown): string {
+  return arr(v)
+    .filter((b): b is string => typeof b === 'string' && b.trim() !== '')
+    .map((b) => {
+      const text = b.trim().replace(/^(\d+)([.)])/, '$1\\$2').replace(/^([#>*+-]|`{3}|~{3})/, '\\$1')
+      return `- ${text}`
+    })
+    .join('\n')
+}
+
 /** One section, or null for an unknown kind (e.g. written by a newer version of the app). */
 function migrateSection(s: Obj, id: IdFn): Section | null {
   const base = {
@@ -189,7 +204,7 @@ function migrateSection(s: Obj, id: IdFn): Section | null {
           title: str(e.title),
           subtitle: str(e.subtitle),
           url: str(e.url),
-          bullets: arr(e.bullets).filter((b): b is string => typeof b === 'string'),
+          description: typeof e.description === 'string' ? e.description : bulletsToMarkdown(e.bullets),
         })),
       }
     case 'list':
