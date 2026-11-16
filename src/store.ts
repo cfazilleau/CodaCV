@@ -30,7 +30,7 @@ function migrate(data: unknown): Resume {
   } as Resume
 }
 
-type LegacySection = Section & { pairWithNext?: boolean }
+type LegacySection = Section & { pairWithNext?: boolean; spaceBefore?: number }
 
 /** Early format: `pairWithNext` put a section in a narrow column next to the following one. */
 /** Drop the `details` field of the removed web-page feature. */
@@ -40,8 +40,9 @@ function stripDetails<T extends object>(o: T): T {
 }
 
 function migrateSections(sections: LegacySection[], theme: Resume['theme']): Section[] {
-  const out = sections.map(({ pairWithNext: _legacy, ...s }) => {
-    const base = { ...s, place: s.place ?? 'row', spaceBefore: s.spaceBefore ?? 0 } as Section
+  // pairWithNext: early pairing flag; spaceBefore: removed per-section spacing feature
+  const out = sections.map(({ pairWithNext: _legacy, spaceBefore: _removed, ...s }) => {
+    const base = { ...s, place: s.place ?? 'row' } as Section
     if (base.kind === 'timeline') return { ...base, entries: base.entries.map(stripDetails) }
     if (base.kind === 'list') return { ...base, items: base.items.map(stripDetails) }
     return base

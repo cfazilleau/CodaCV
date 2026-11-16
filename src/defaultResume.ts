@@ -29,7 +29,6 @@ export const defaultResume: Resume = {
       visible: true,
       place: 'row',
       colWidth: 0.1452, // lines up with the date column
-      spaceBefore: 0,
       items: [
         { id: 'l1', text: 'Français', hidden: false },
         { id: 'l2', text: 'Anglais', hidden: false },
@@ -42,7 +41,6 @@ export const defaultResume: Resume = {
       visible: true,
       place: 'column',
       colWidth: 0.8548,
-      spaceBefore: 0,
       items: [
         { id: 's1', text: 'C / C# / C++ (moderne) et APIs graphiques (OpenGL, DirectX, Vulkan)', hidden: false },
         { id: 's2', text: 'Unreal Engine 5 (Blueprints, C++, IA, Shaders, Outils, Plugins)', hidden: false },
@@ -58,7 +56,6 @@ export const defaultResume: Resume = {
       title: 'Expérience',
       visible: true,
       place: 'row',
-      spaceBefore: 0,
       entries: [
         {
           id: 'e1',
@@ -116,7 +113,6 @@ export const defaultResume: Resume = {
       title: 'Projets notables',
       visible: true,
       place: 'row',
-      spaceBefore: 0,
       entries: [
         {
           id: 'p1',
@@ -174,7 +170,6 @@ export const defaultResume: Resume = {
       title: 'Formation',
       visible: true,
       place: 'row',
-      spaceBefore: 0,
       entries: [
         {
           id: 'f1',

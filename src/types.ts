@@ -78,8 +78,6 @@ interface SectionBase {
   place: Placement
   /** Width of the column this section starts (fraction of the row), for the first section of a column */
   colWidth?: number
-  /** Extra space above the section, in mm (can be negative) */
-  spaceBefore: number
 }
 
 export interface TimelineSection extends SectionBase {

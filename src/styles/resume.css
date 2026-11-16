@@ -149,12 +149,8 @@
   margin-top: var(--gap-section);
 }
 
-.cv-section {
-  margin-top: var(--space-before, 0mm);
-}
-
 .cv-col > .cv-section + .cv-section {
-  margin-top: calc(var(--gap-section) + var(--space-before, 0mm));
+  margin-top: var(--gap-section);
 }
 
 .cv-section-title {

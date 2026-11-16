@@ -9,7 +9,6 @@ import { COL_GAP_MM, dateColumnFraction, moveItem, moveSection, setColumnWidths,
  * - grip on each section → drag into a new row, a new column, or under another section
  * - grip on each entry / list item → reorder, also across sections of the same kind
  * - divider between columns → resize (snaps to the date column, ¼ ⅓ ½ ⅔ ¾)
- * - bar above a section → its spacing
  * - page-margin guides → page margins
  * It only reads the DOM of the resume (data-* attributes); the resume itself is untouched,
  * so the PDF text order is unaffected.
@@ -26,7 +25,6 @@ type MarginSide = 'left' | 'right' | 'top' | 'bottom'
 type Drag =
   | { kind: 'section'; id: string; label: string }
   | { kind: 'item'; sectionId: string; itemId: string; itemKind: ItemKind; label: string }
-  | { kind: 'space'; sectionId: string; startY: number; start: number }
   | { kind: 'col'; index: number; colIds: string[]; widths: number[] }
   | { kind: 'margin'; side: MarginSide }
 
@@ -35,7 +33,7 @@ type Drop =
   | { kind: 'item'; toSectionId: string; anchorId: string; after: boolean }
 
 interface Geometry {
-  section?: { id: string; rect: Rect; titleRect: Rect; label: string; space: number; selected: boolean }
+  section?: { id: string; rect: Rect; titleRect: Rect; label: string; selected: boolean }
   item?: { id: string; owner: string; kind: ItemKind; rect: Rect; label: string }
   row?: { rect: Rect; cols: { id: string; rect: Rect }[] }
 }
@@ -96,9 +94,9 @@ export function LayoutOverlay({ shellRef, resume, setResume, zoom, selection }: 
           itemId = h.itemId
         }
         let sectionId = sec?.dataset.sectionId
-        // Keep the section only just around it: grip on the left, spacing bar on top, column gap on the right
+        // Keep the section only just around it: grip on the left, column gap on the right
         const sb = sectionBand.current
-        if (!sectionId && h.sectionId && sb && x >= sb.left - 34 * scale && x <= sb.right + 18 * scale && y >= sb.top - 12 * scale && y <= sb.bottom) {
+        if (!sectionId && h.sectionId && sb && x >= sb.left - 34 * scale && x <= sb.right + 18 * scale && y >= sb.top && y <= sb.bottom) {
           sectionId = h.sectionId
         }
         const next = { sectionId, itemId }
@@ -132,7 +130,6 @@ export function LayoutOverlay({ shellRef, resume, setResume, zoom, selection }: 
         rect: f.rel(secEl.getBoundingClientRect()),
         titleRect: f.rel(title.getBoundingClientRect()),
         label: section.title,
-        space: section.spaceBefore ?? 0,
         selected: secEl.hasAttribute('data-selected'),
       }
       const rowEl = secEl.closest<HTMLElement>('.cv-row')
@@ -278,13 +275,6 @@ export function LayoutOverlay({ shellRef, resume, setResume, zoom, selection }: 
           setGhost({ x, y, text: drag.label })
           break
         }
-        case 'space': {
-          const delta = (y - drag.startY) / f.scale / MM
-          const v = clamp(halfMm(drag.start + delta), -10, 40)
-          setResume((r) => ({ ...r, sections: r.sections.map((s) => (s.id === drag.sectionId ? { ...s, spaceBefore: v } : s)) }))
-          setGhost({ x, y, text: `Espace : ${v > 0 ? '+' : ''}${v} mm` })
-          break
-        }
         case 'col': {
           const rowEl = f.shell.querySelector<HTMLElement>(`[data-col-key="${drag.colIds[0]}"]`)?.parentElement
           if (!rowEl) break
@@ -381,7 +371,7 @@ export function LayoutOverlay({ shellRef, resume, setResume, zoom, selection }: 
         <div className={`margin-guide margin-guide--h margin-guide--bottom${yActive ? ' is-active' : ''}`} style={{ top: pageH - my, left: 0, width: pageW }} onPointerDown={start({ kind: 'margin', side: 'bottom' })} title="Marge haut / bas" />
       </div>
 
-      {/* Hovered section: outline, grip, spacing bar */}
+      {/* Hovered section: outline and grip */}
       {showSectionTools && geo.section && (
         <>
           {!geo.section.selected && <div className="lo-outline" style={box(geo.section.rect, 1.2 * MM)} />}
@@ -393,14 +383,6 @@ export function LayoutOverlay({ shellRef, resume, setResume, zoom, selection }: 
           >
             <GripVertical size={14} />
           </button>
-          <div
-            className="lo-space"
-            style={{ left: geo.section.rect.x + geo.section.rect.w / 2 - 22, top: geo.section.rect.y - 7 }}
-            onPointerDown={(e) => start({ kind: 'space', sectionId: geo.section!.id, startY: e.clientY, start: geo.section!.space })(e)}
-            title="Glisser pour ajuster l'espace au-dessus"
-          >
-            {geo.section.space !== 0 && <span>{geo.section.space > 0 ? '+' : ''}{geo.section.space}</span>}
-          </div>
         </>
       )}
 

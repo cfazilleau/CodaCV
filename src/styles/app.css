@@ -969,32 +969,6 @@ button {
   border-radius: 5px;
 }
 
-.lo-space {
-  position: absolute;
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 10px;
-  border-radius: 99px;
-  background: color-mix(in srgb, var(--ui-primary) 25%, #fff);
-  cursor: ns-resize;
-  touch-action: none;
-}
-
-.lo-space:hover {
-  background: var(--ui-primary);
-}
-
-.lo-space span {
-  margin-top: 22px;
-  padding: 0 5px;
-  border-radius: 4px;
-  background: var(--ui-primary);
-  color: #fff;
-  font: 600 10px/15px 'Inter', sans-serif;
-  white-space: nowrap;
-}
-
 .lo-divider {
   position: absolute;
   width: 10px;

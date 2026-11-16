@@ -91,7 +91,6 @@ export function ResumeDocument({ resume, selection, onSelect }: Props) {
         key={s.id}
         className={`cv-section cv-section--${s.kind}`}
         data-section-id={s.id}
-        style={{ '--space-before': `${s.spaceBefore ?? 0}mm` } as CSSProperties}
         {...sectionSel}
       >
         <h2 className="cv-section-title">

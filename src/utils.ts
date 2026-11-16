@@ -51,7 +51,7 @@ export function newListItem(text = 'Nouvel élément'): ListItem {
 }
 
 export function newSection(kind: SectionKind): Section {
-  const base = { id: uid(), visible: true, place: 'row' as const, spaceBefore: 0 }
+  const base = { id: uid(), visible: true, place: 'row' as const }
   switch (kind) {
     case 'timeline':
       return { ...base, kind, title: 'Nouvelle section', entries: [newEntry()] }

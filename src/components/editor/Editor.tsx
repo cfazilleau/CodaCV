@@ -557,8 +557,7 @@ function ThemeEditor({ resume, setResume }: { resume: Resume; setResume: (fn: (r
       </div>
       <p className="note">
         <Columns2 size={13} /> Astuce : sur la page, survolez une section et glissez sa poignée pour la placer en ligne, en colonne ou
-        dessous une autre. Glissez le séparateur entre colonnes pour les redimensionner, la barre au-dessus d'une section pour son
-        espacement, et les bords de page pour les marges.
+        dessous une autre. Glissez le séparateur entre colonnes pour les redimensionner, et les bords de page pour les marges.
       </p>
     </>
   )
