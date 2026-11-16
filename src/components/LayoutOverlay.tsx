@@ -128,7 +128,7 @@ export function LayoutOverlay({ shellRef, resume, setResume, zoom, selection }: 
     const f = frame()
     if (!f) return
     const next: Geometry = {}
-    const secEl = hover.sectionId ? f.shell.querySelector<HTMLElement>(`[data-section-id="${hover.sectionId}"]`) : null
+    const secEl = hover.sectionId ? f.shell.querySelector<HTMLElement>(`[data-section-id="${CSS.escape(hover.sectionId)}"]`) : null
     const section = resume.sections.find((s) => s.id === hover.sectionId)
     if (secEl && section) {
       const title = secEl.querySelector('.cv-section-title') ?? secEl
@@ -148,7 +148,7 @@ export function LayoutOverlay({ shellRef, resume, setResume, zoom, selection }: 
         }
       }
     }
-    const itemEl = hover.itemId ? f.shell.querySelector<HTMLElement>(`[data-item-id="${hover.itemId}"]`) : null
+    const itemEl = hover.itemId ? f.shell.querySelector<HTMLElement>(`[data-item-id="${CSS.escape(hover.itemId)}"]`) : null
     if (itemEl) {
       const owner = resume.sections.find((s) => s.id === itemEl.dataset.owner)
       let label = ''
@@ -261,7 +261,7 @@ export function LayoutOverlay({ shellRef, resume, setResume, zoom, selection }: 
   const itemTarget = (x: number, y: number, kind: ItemKind, draggedId: string): { drop: Drop; line: Rect; vertical: boolean } | null => {
     const f = frame()
     if (!f) return null
-    const items = [...f.shell.querySelectorAll<HTMLElement>(`[data-item-kind="${kind}"]`)].filter((el) => el.dataset.itemId !== draggedId)
+    const items = [...f.shell.querySelectorAll<HTMLElement>(`[data-item-kind="${CSS.escape(kind)}"]`)].filter((el) => el.dataset.itemId !== draggedId)
     if (!items.length) return null
     let best: HTMLElement | null = null
     let bestD = Infinity
@@ -318,7 +318,7 @@ export function LayoutOverlay({ shellRef, resume, setResume, zoom, selection }: 
           break
         }
         case 'col': {
-          const rowEl = f.shell.querySelector<HTMLElement>(`[data-col-key="${drag.colIds[0]}"]`)?.parentElement
+          const rowEl = f.shell.querySelector<HTMLElement>(`[data-col-key="${CSS.escape(drag.colIds[0])}"]`)?.parentElement
           if (!rowEl) break
           const rr = rowEl.getBoundingClientRect()
           const n = drag.widths.length

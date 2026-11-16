@@ -1,81 +1,22 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { defaultResume } from './defaultResume'
-import { dateColumnFraction, normalizeLayout } from './layout'
-import type { Contact, IconKey, Resume, Section } from './types'
+import { migrate } from './migrate'
+import type { Resume } from './types'
+import { uid } from './utils'
 
-
-function migrate(data: unknown): Resume {
-  const r = data as Partial<Resume>
-  if (!r || typeof r !== 'object' || !r.profile || !Array.isArray(r.sections)) {
-    throw new Error('Not a CodaCV resume file')
-  }
-  const profile = stripDetails({ ...defaultResume.profile, ...r.profile })
-  // v1 early format: contacts had a `kind` instead of an `icon`, summaryIcon was a boolean
-  const legacy = profile as unknown as { summaryIcon: unknown; contacts: (Contact & { kind?: string })[] }
-  if (typeof legacy.summaryIcon === 'boolean') profile.summaryIcon = legacy.summaryIcon ? 'pin' : 'none'
-  profile.contacts = legacy.contacts.map(({ kind, ...c }) => ({
-    ...c,
-    icon: c.icon ?? LEGACY_KIND_ICON[kind ?? ''] ?? 'globe',
-  }))
-  // `layout` was the removed one-column option
-  const { layout: _removedLayout, ...savedTheme } = (r.theme ?? {}) as Resume['theme'] & { layout?: unknown }
-  const theme = { ...defaultResume.theme, ...savedTheme }
-  return {
-    ...defaultResume,
-    ...r,
-    version: 1,
-    meta: { ...defaultResume.meta, ...r.meta },
-    profile,
-    sections: migrateSections(r.sections as LegacySection[], theme),
-    theme,
-  } as Resume
-}
-
-type LegacySection = Section & { pairWithNext?: boolean; spaceBefore?: number }
-
-/** Early format: `pairWithNext` put a section in a narrow column next to the following one. */
-/** Drop the `details` field of the removed web-page feature. */
-function stripDetails<T extends object>(o: T): T {
-  const { details: _removed, ...rest } = o as T & { details?: unknown }
-  return rest as T
-}
-
-function migrateSections(sections: LegacySection[], theme: Resume['theme']): Section[] {
-  // pairWithNext: early pairing flag; spaceBefore: removed per-section spacing feature
-  const out = sections.map(({ pairWithNext: _legacy, spaceBefore: _removed, ...s }) => {
-    const base = { ...s, place: s.place ?? 'row' } as Section
-    if (base.kind === 'timeline') return { ...base, entries: base.entries.map(stripDetails) }
-    if (base.kind === 'list') return { ...base, items: base.items.map(stripDetails) }
-    return base
-  })
-  sections.forEach((s, i) => {
-    if (s.place || !s.pairWithNext || !out[i + 1]) return
-    const narrow = dateColumnFraction(theme.dateColumn, theme.marginX)
-    out[i] = { ...out[i], colWidth: narrow }
-    out[i + 1] = { ...out[i + 1], place: 'column', colWidth: 1 - narrow }
-  })
-  return normalizeLayout(out)
-}
-
-const LEGACY_KIND_ICON: Record<string, IconKey> = {
-  website: 'link',
-  linkedin: 'linkedin',
-  github: 'github',
-  phone: 'phone',
-  email: 'mail',
-  location: 'pin',
-  other: 'globe',
-}
-
-export function parseResume(text: string): Resume {
-  return migrate(JSON.parse(text))
-}
+export { parseResume } from './migrate'
 
 /* ------------------------------------------------------------------ Versions library */
 
 /** Before versions: a single resume. Kept untouched as a backup, read once to seed the library. */
 const LEGACY_KEY = 'codacv.resume.v1'
-const LIBRARY_KEY = 'codacv.library.v1'
+export const LIBRARY_KEY = 'codacv.library.v1'
+/** Bumped on every save, so a tab can tell that another tab saved in between. */
+const REV_KEY = 'codacv.library.rev'
+/** Side panel tab (per-browser convenience) */
+export const TAB_KEY = 'codacv.sidebarTab'
+/** Versions that could not be read are copied here (one key per occurrence) instead of being dropped. */
+const QUARANTINE_PREFIX = 'codacv.quarantine'
 
 export interface Version {
   id: string
@@ -89,19 +30,98 @@ interface Library {
   versions: Version[]
 }
 
-const newId = () => Math.random().toString(36).slice(2, 10)
+/**
+ * Something the user must know about the saved data:
+ * - other-tab: another tab saved the library; this tab stops saving until the user decides
+ * - unreadable: the saved library could not be read nor copied aside; saving would erase it
+ * - quarantined: some versions could not be read; they were copied to `key` and left out
+ */
+export type StorageIssue = { kind: 'other-tab' } | { kind: 'unreadable' } | { kind: 'quarantined'; count: number; key: string }
 
-function loadLibrary(): Library {
+interface Loaded {
+  library: Library
+  rev: number
+  issue: StorageIssue | null
+}
+
+const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v)
+
+function readRev(): number {
   try {
-    const raw = localStorage.getItem(LIBRARY_KEY)
-    if (raw) {
-      const lib = JSON.parse(raw) as Library
-      const versions = lib.versions.map((v) => ({ ...v, resume: migrate(v.resume) }))
-      if (versions.length) return { activeId: versions.some((v) => v.id === lib.activeId) ? lib.activeId : versions[0].id, versions }
-    }
-  } catch (e) {
-    console.warn('Could not load the versions library', e)
+    return Number(localStorage.getItem(REV_KEY)) || 0
+  } catch {
+    return 0
   }
+}
+
+/**
+ * Copy data aside under a new key (or the key that already holds the same data: the library is not
+ * rewritten until the next edit, so every load in between finds the same bad data).
+ * Returns the key, or null when the storage refused it (full).
+ */
+function quarantine(data: string): string | null {
+  const key = `${QUARANTINE_PREFIX}.${new Date().toISOString()}`
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i)
+      if (k?.startsWith(`${QUARANTINE_PREFIX}.`) && localStorage.getItem(k) === data) return k
+    }
+    localStorage.setItem(key, data)
+    return key
+  } catch {
+    return null
+  }
+}
+
+function loadLibrary(): Loaded {
+  const rev = readRev()
+  let raw: string | null = null
+  try {
+    raw = localStorage.getItem(LIBRARY_KEY)
+  } catch (e) {
+    console.warn('Could not read the browser storage', e)
+  }
+
+  let issue: StorageIssue | null = null
+  if (raw) {
+    let parsed: unknown
+    try {
+      parsed = JSON.parse(raw)
+    } catch (e) {
+      console.warn('The versions library is not valid JSON', e)
+    }
+    // Each version is read on its own: one bad version must not take the others with it
+    const versions: Version[] = []
+    const bad: unknown[] = []
+    const ids = new Set<string>()
+    for (const v of isObj(parsed) && Array.isArray(parsed.versions) ? parsed.versions : []) {
+      try {
+        if (!isObj(v)) throw new Error('Not a version')
+        let id = typeof v.id === 'string' && v.id ? v.id : uid()
+        while (ids.has(id)) id = uid()
+        ids.add(id)
+        versions.push({
+          id,
+          name: typeof v.name === 'string' ? v.name : 'Sans nom',
+          updatedAt: typeof v.updatedAt === 'number' ? v.updatedAt : Date.now(),
+          resume: migrate(v.resume),
+        })
+      } catch (e) {
+        console.warn('Could not read a version, it is kept aside', e)
+        bad.push(v)
+      }
+    }
+    if (bad.length || !versions.length) {
+      // Keep what could not be read before anything can overwrite it
+      const key = quarantine(versions.length ? JSON.stringify(bad) : raw)
+      issue = key ? { kind: 'quarantined', count: Math.max(1, bad.length), key } : { kind: 'unreadable' }
+    }
+    if (versions.length) {
+      const activeId = isObj(parsed) && versions.some((v) => v.id === parsed.activeId) ? (parsed.activeId as string) : versions[0].id
+      return { library: { activeId, versions }, rev, issue }
+    }
+  }
+
   let resume = structuredClone(defaultResume)
   try {
     const legacy = localStorage.getItem(LEGACY_KEY)
@@ -109,9 +129,13 @@ function loadLibrary(): Library {
   } catch (e) {
     console.warn('Could not load the saved resume, using the example', e)
   }
-  const id = newId()
-  return { activeId: id, versions: [{ id, name: 'Principal', updatedAt: Date.now(), resume }] }
+  const id = uid()
+  return { library: { activeId: id, versions: [{ id, name: 'Principal', updatedAt: Date.now(), resume }] }, rev, issue }
 }
+
+/** Loading copies unreadable data aside: do it once, even though StrictMode runs state initializers twice. */
+let loaded: Loaded | undefined
+const loadOnce = () => (loaded ??= loadLibrary())
 
 const HISTORY_LIMIT = 100
 /** Edits closer together than this are merged into one undo step (typing). */
@@ -120,17 +144,24 @@ const GROUP_MS = 600
 /**
  * Resume versions persisted in localStorage. `resume` is the active version; undo / redo work on it
  * (history resets when switching versions).
+ *
+ * Saving: nothing is written until something changes, and never over a library that another tab
+ * saved in the meantime (revision check + `storage` events): the user is asked instead.
  */
 export function useResumeStore() {
-  const [initial] = useState(loadLibrary)
-  const [versions, setVersions] = useState<Version[]>(initial.versions)
-  const [activeId, setActiveId] = useState(initial.activeId)
-  const [resume, setResumeState] = useState<Resume>(() => initial.versions.find((v) => v.id === initial.activeId)!.resume)
+  const [initial] = useState(loadOnce)
+  const [versions, setVersions] = useState<Version[]>(initial.library.versions)
+  const [activeId, setActiveId] = useState(initial.library.activeId)
+  const [resume, setResumeState] = useState<Resume>(() => initial.library.versions.find((v) => v.id === initial.library.activeId)!.resume)
+  const [issue, setIssue] = useState<StorageIssue | null>(initial.issue)
   const current = useRef(resume)
   const past = useRef<Resume[]>([])
   const future = useRef<Resume[]>([])
   const lastPush = useRef(0)
-  const [, forceRender] = useState(0)
+  /** Revision of the library this tab last loaded or saved */
+  const rev = useRef(initial.rev)
+  /** State last loaded or saved: no write while it is unchanged */
+  const saved = useRef({ versions, activeId, resume })
 
   const lastEdit = useRef(Date.now())
 
@@ -141,10 +172,22 @@ export function useResumeStore() {
     [versions, activeId, resume],
   )
 
+  const savingBlocked = issue?.kind === 'other-tab' || issue?.kind === 'unreadable'
+
   useEffect(() => {
+    const s = saved.current
+    if (savingBlocked || (s.versions === versions && s.activeId === activeId && s.resume === resume)) return
     const t = setTimeout(() => {
+      if (readRev() !== rev.current) {
+        setIssue({ kind: 'other-tab' })
+        return
+      }
       try {
+        const next = rev.current + 1
         localStorage.setItem(LIBRARY_KEY, JSON.stringify({ activeId, versions: liveVersions }))
+        localStorage.setItem(REV_KEY, String(next))
+        rev.current = next
+        saved.current = { versions, activeId, resume }
       } catch (e) {
         console.warn('Could not save', e)
         alert("Impossible d'enregistrer : l'espace de stockage du navigateur est plein (photos trop lourdes ?).")
@@ -153,7 +196,25 @@ export function useResumeStore() {
     return () => clearTimeout(t)
     // liveVersions is derived from these
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [versions, activeId, resume])
+  }, [versions, activeId, resume, savingBlocked])
+
+  // Another tab saved (storage events only reach the other tabs): stop saving here
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === null || e.key === LIBRARY_KEY || e.key === REV_KEY) setIssue({ kind: 'other-tab' })
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [])
+
+  /** Save this tab's library over whatever is stored (after an other-tab / unreadable warning). */
+  const overwriteStorage = useCallback(() => {
+    rev.current = readRev()
+    saved.current = { versions: [], activeId: '', resume: current.current }
+    setIssue(null)
+  }, [])
+
+  const dismissIssue = useCallback(() => setIssue((i) => (i?.kind === 'quarantined' ? null : i)), [])
 
   const commit = (next: Resume) => {
     lastEdit.current = Date.now()
@@ -207,7 +268,6 @@ export function useResumeStore() {
     setActiveId(id)
     commit(target.resume)
     resetHistory()
-    forceRender((n) => n + 1)
   }
 
   const switchVersion = (id: string) => {
@@ -219,7 +279,7 @@ export function useResumeStore() {
   const createVersion = (from: 'copy' | 'template', name?: string, resumeOverride?: Resume) => {
     const list = snapshot()
     const source = list.find((v) => v.id === activeId)!
-    const id = newId()
+    const id = uid()
     const resumeCopy = resumeOverride ?? (from === 'copy' ? structuredClone(source.resume) : structuredClone(defaultResume))
     const version: Version = { id, name: name ?? (from === 'copy' ? `${source.name} (copie)` : 'Nouveau CV'), updatedAt: Date.now(), resume: resumeCopy }
     const at = list.findIndex((v) => v.id === activeId) + 1
@@ -252,6 +312,9 @@ export function useResumeStore() {
     renameVersion,
     deleteVersion,
     moveVersions,
+    storageIssue: issue,
+    overwriteStorage,
+    dismissIssue,
   }
 }
 

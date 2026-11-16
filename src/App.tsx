@@ -1,11 +1,13 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Download, FileUp, Printer, Redo2, RotateCcw, Undo2, ZoomIn, ZoomOut } from 'lucide-react'
 import { useResumeStore, parseResume } from './store'
+import { MAX_IMPORT_BYTES } from './migrate'
 import { defaultResume } from './defaultResume'
 import type { Resume, Selection } from './types'
 import { ResumeDocument } from './components/ResumeDocument'
 import { LayoutOverlay } from './components/LayoutOverlay'
 import { Editor } from './components/editor/Editor'
+import { StorageBanner } from './components/StorageBanner'
 import { downloadText } from './utils'
 
 const MM = 96 / 25.4 // CSS px per mm
@@ -83,6 +85,7 @@ export default function App() {
   const fileInput = useRef<HTMLInputElement>(null)
   const importJson = async (file: File) => {
     try {
+      if (file.size > MAX_IMPORT_BYTES) throw new Error(`fichier trop volumineux (${MAX_IMPORT_BYTES / 1e6} Mo maximum)`)
       const r = parseResume(await file.text())
       // Imported files become a new version (named after the file), the current one is kept
       store.createVersion('copy', file.name.replace(/\.json$/i, ''), r)
@@ -146,6 +149,8 @@ export default function App() {
           />
         </div>
       </header>
+
+      <StorageBanner issue={store.storageIssue} onOverwrite={store.overwriteStorage} onDismiss={store.dismissIssue} />
 
       <main className="workspace">
         <aside className="sidebar">

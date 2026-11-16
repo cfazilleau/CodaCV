@@ -70,7 +70,9 @@ Tip: icons are not text, so write contact labels that make sense alone
 src/
   types.ts               resume data model
   defaultResume.ts       seed resume (fictional example)
-  store.ts               state, localStorage persistence, undo/redo
+  store.ts               state, localStorage persistence (safe across tabs), undo/redo
+  migrate.ts             reads saved / imported JSON field by field (old formats, bad values)
+  layout.ts              rows / columns / stacks; every change to the sections order goes through it
   components/
     ResumeDocument.tsx   the resume itself (shared by preview and print)
     LayoutOverlay.tsx    on-page layout handles (edit only, never printed)

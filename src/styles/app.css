@@ -1349,3 +1349,56 @@ body.is-layout-dragging * {
   min-width: 0;
   white-space: nowrap;
 }
+
+/* ---------------------------------------------------------------- Storage warnings & crash screen */
+
+.storage-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 8px 16px;
+  border-bottom: 1px solid #ecd28f;
+  background: #fff6dc;
+  color: #5c4500;
+  font-size: 13px;
+}
+
+.storage-banner > span {
+  flex: 1 1 320px;
+}
+
+.storage-banner > svg {
+  flex: none;
+}
+
+.crash {
+  max-width: 640px;
+  margin: 12vh auto 0;
+  padding: 0 16px;
+}
+
+.crash h1 {
+  font-size: 20px;
+}
+
+.crash-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0;
+}
+
+.crash-actions .btn--primary {
+  margin-left: 0;
+}
+
+.crash pre {
+  overflow: auto;
+  max-height: 40vh;
+  padding: 10px;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 12px;
+  white-space: pre-wrap;
+}

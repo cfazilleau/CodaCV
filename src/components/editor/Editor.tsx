@@ -52,12 +52,12 @@ import type {
 } from '../../types'
 import { newEntry, newFactItem, newHighlightItem, newLevelItem, newListItem, newReferenceItem, newSection, readImageFile, uid } from '../../utils'
 import { FONT_FAMILIES, sectionIcon } from '../ResumeDocument'
-import { isInSidebar, orderForSidebar } from '../../layout'
+import { isInSidebar, removeSection, reorderSections } from '../../layout'
 import { COUNTRIES, ColorField, IconButton, LinesField, Select, Slider, TextArea, TextField, Toggle } from './fields'
 import { IconPicker } from './IconPicker'
 import { SortableList } from './Sortable'
 import { VersionsPanel } from './VersionsPanel'
-import type { ResumeStore } from '../../store'
+import { TAB_KEY, type ResumeStore } from '../../store'
 
 interface Props {
   resume: Resume
@@ -70,7 +70,6 @@ interface Props {
 const MD_HINT = 'Markdown : **gras**, *italique*, [lien](https://…), listes, ![image](https://…)'
 
 type Tab = 'content' | 'style' | 'versions'
-const TAB_KEY = 'codacv.sidebarTab'
 
 function loadTab(): Tab {
   try {
@@ -82,20 +81,20 @@ function loadTab(): Tab {
 }
 
 export function Editor({ resume, setResume, selection, onSelect, store }: Props) {
-  const [tab, setTabState] = useState<Tab>(loadTab)
+  const [tab, setTab] = useState<Tab>(loadTab)
   const [openCard, setOpenCard] = useState<string | null>('profile')
   const [openItem, setOpenItem] = useState<string | null>(null)
   const cardRefs = useRef(new Map<string, HTMLElement>())
   const itemRefs = useRef(new Map<string, HTMLElement>())
 
-  const setTab = (t: Tab) => {
-    setTabState(t)
+  // Remembered once the tab has rendered: a tab that fails to render is not reopened on the next load
+  useEffect(() => {
     try {
-      localStorage.setItem(TAB_KEY, t)
+      localStorage.setItem(TAB_KEY, tab)
     } catch {
       /* per-browser convenience only */
     }
-  }
+  }, [tab])
 
   /**
    * Tab buttons: Apparence clears the highlight on the page (the Contenu panel keeps its open
@@ -227,7 +226,8 @@ export function Editor({ resume, setResume, selection, onSelect, store }: Props)
           <SortableList
             items={resume.sections}
             className="sortable-list--cards"
-            onReorder={(sections) => setResume((r) => ({ ...r, sections }))}
+            // Layout-aware: the moved section becomes a row, the others keep their rows and columns
+            onReorder={(_, moved) => setResume((r) => ({ ...r, sections: reorderSections(r.sections, moved.id, moved.to) }))}
           >
             {(s, handle) => (
               <Card
@@ -252,7 +252,7 @@ export function Editor({ resume, setResume, selection, onSelect, store }: Props)
                       danger
                       onClick={() => {
                         if (confirm(`Supprimer la section « ${s.title} » ?`))
-                          setResume((r) => ({ ...r, sections: r.sections.filter((x) => x.id !== s.id) }))
+                          setResume((r) => ({ ...r, sections: removeSection(r.sections, s.id) }))
                       }}
                     >
                       <Trash2 size={15} />
@@ -279,9 +279,7 @@ export function Editor({ resume, setResume, selection, onSelect, store }: Props)
                   <Toggle
                     label="Dans la barre latérale"
                     checked={isInSidebar(s)}
-                    onChange={(v) =>
-                      setResume((r) => ({ ...r, sections: orderForSidebar(r.sections.map((x) => (x.id === s.id ? { ...x, sidebar: v } : x))) }))
-                    }
+                    onChange={(v) => setSection(s.id, (x) => ({ ...x, sidebar: v }))}
                   />
                 )}
                 {s.kind === 'timeline' && (
@@ -946,10 +944,8 @@ function ThemeEditor({ resume, setResume }: { resume: Resume; setResume: (fn: (r
             { value: 'band', label: 'Bandeau couleur' },
             { value: 'sidebar', label: 'Barre latérale' },
           ]}
-          onChange={(v) =>
-            // Entering the sidebar style: keep main sections first, sidebar ones last (document order)
-            setResume((r) => ({ ...r, theme: { ...r.theme, headerStyle: v }, sections: v === 'sidebar' ? orderForSidebar(r.sections) : r.sections }))
-          }
+          // The sections are not reordered: the sidebar style only draws them differently (see mainLayout)
+          onChange={(v) => setTheme({ headerStyle: v })}
           hint={
             t.headerStyle === 'sidebar'
               ? 'Les listes vont dans la barre latérale ; réglable par section (Contenu) ou en glissant une section sur la page.'

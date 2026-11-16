@@ -90,12 +90,9 @@ export type SectionDrop =
   | { kind: 'stack'; sectionId: string; after: boolean } // in the same column, above/below that section
   | { kind: 'column'; sectionId: string; side: 'left' | 'right' } // new column beside the column holding that section
 
-export function moveSection(sections: Section[], id: string, drop: SectionDrop): Section[] {
-  const anchor = drop.kind === 'row' ? drop.beforeSectionId : drop.sectionId
-  if (anchor === id) return sections
-  const rows = toStructure(sections)
-
-  outer: for (let r = 0; r < rows.length; r++) {
+/** Take a section out of the structure; a column or row left empty disappears, nothing else moves. */
+function removeFromRows(rows: SRow[], id: string) {
+  for (let r = 0; r < rows.length; r++) {
     for (let c = 0; c < rows[r].length; c++) {
       const col = rows[r][c]
       const i = col.ids.indexOf(id)
@@ -105,9 +102,43 @@ export function moveSection(sections: Section[], id: string, drop: SectionDrop):
         rows[r].splice(c, 1)
         if (!rows[r].length) rows.splice(r, 1)
       }
-      break outer
+      return
     }
   }
+}
+
+/**
+ * Delete a section. Its neighbours keep their row and column (filtering the array would not:
+ * a `column` section after a deleted row start would join the previous row).
+ */
+export function removeSection(sections: Section[], id: string): Section[] {
+  const rows = toStructure(sections)
+  removeFromRows(rows, id)
+  return fromStructure(sections, rows)
+}
+
+/**
+ * Reorder from the side-panel list: the section becomes a full-width row at its new place in the
+ * list. Moving down puts it after the row of the section it now follows; moving up, before the row
+ * of the section it now precedes. Every other section keeps its row and column.
+ */
+export function reorderSections(sections: Section[], id: string, to: number): Section[] {
+  const from = sections.findIndex((s) => s.id === id)
+  if (from < 0 || to === from || to < 0 || to >= sections.length) return sections
+  const others = sections.filter((s) => s.id !== id) // the list order without it; it goes at index `to`
+  const rows = toStructure(sections)
+  removeFromRows(rows, id)
+  const rowOf = (sid: string) => rows.findIndex((row) => row.some((c) => c.ids.includes(sid)))
+  const at = to > from ? rowOf(others[to - 1].id) + 1 : rowOf(others[to].id)
+  rows.splice(at, 0, [{ ids: [id], width: 1 }])
+  return fromStructure(sections, rows)
+}
+
+export function moveSection(sections: Section[], id: string, drop: SectionDrop): Section[] {
+  const anchor = drop.kind === 'row' ? drop.beforeSectionId : drop.sectionId
+  if (anchor === id) return sections
+  const rows = toStructure(sections)
+  removeFromRows(rows, id)
 
   const find = (sid: string) => {
     for (let r = 0; r < rows.length; r++)
@@ -201,28 +232,43 @@ export function moveItem(
 /** In the "sidebar" header style: does this section go in the coloured column? (default: lists) */
 export const isInSidebar = (s: Section) => s.sidebar ?? (s.kind === 'list' || s.kind === 'levels' || s.kind === 'facts')
 
-/** Keep main sections first and sidebar sections last: that is the document (and PDF text) order. */
-export function orderForSidebar(sections: Section[]): Section[] {
-  return [...normalizeLayout(sections.filter((s) => !isInSidebar(s))), ...sections.filter(isInSidebar)]
+/**
+ * The page layout of the main column in the "sidebar" header style: the full layout with the
+ * sidebar sections taken out (their row neighbours stay put). The sections array is not reordered
+ * when that style is chosen, so switching header styles back and forth keeps the layout. The
+ * document order is main column first, sidebar second either way (ResumeDocument renders it so).
+ */
+export function mainLayout(sections: Section[]): Section[] {
+  const rows = toStructure(sections)
+  for (const s of sections) if (isInSidebar(s)) removeFromRows(rows, s.id)
+  return fromStructure(sections, rows)
 }
 
 export type SidebarAwareDrop = SectionDrop | { kind: 'sidebar'; anchorId: string | null; after: boolean }
 
-/** moveSection, plus moving sections into / out of the sidebar when that header style is on. */
+const asRow = (s: Section): Section => ({ ...s, place: 'row', colWidth: undefined })
+
+/**
+ * moveSection, plus moving sections into / out of the sidebar when that header style is on.
+ * In that style, drop targets come from the main column as drawn (mainLayout), so the result is
+ * rebuilt from it: main column first, then the sidebar sections as plain rows.
+ */
 export function moveSectionAnywhere(sections: Section[], id: string, drop: SidebarAwareDrop, sidebarMode: boolean): Section[] {
   if (!sidebarMode) return drop.kind === 'sidebar' ? sections : moveSection(sections, id, drop)
   const dragged = sections.find((s) => s.id === id)
-  if (!dragged) return sections
-  const main = sections.filter((s) => s.id !== id && !isInSidebar(s))
-  const side = sections.filter((s) => s.id !== id && isInSidebar(s))
+  const anchor = drop.kind === 'sidebar' ? drop.anchorId : drop.kind === 'row' ? drop.beforeSectionId : drop.sectionId
+  if (!dragged || anchor === id) return sections
+  const rest = removeSection(sections, id)
+  const main = mainLayout(rest)
+  const side = rest.filter(isInSidebar).map(asRow)
   if (drop.kind === 'sidebar') {
-    const moved: Section = { ...dragged, sidebar: true, place: 'row', colWidth: undefined }
+    const moved: Section = { ...asRow(dragged), sidebar: true }
     let at = drop.anchorId ? side.findIndex((s) => s.id === drop.anchorId) : side.length
     if (at < 0) at = side.length
     else if (drop.anchorId && drop.after) at++
-    return [...normalizeLayout(main), ...side.slice(0, at), moved, ...side.slice(at)]
+    return [...main, ...side.slice(0, at), moved, ...side.slice(at)]
   }
-  const moved: Section = { ...dragged, sidebar: false }
+  const moved: Section = { ...asRow(dragged), sidebar: false }
   return [...moveSection([...main, moved], id, drop), ...side]
 }
 

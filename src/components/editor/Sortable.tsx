@@ -7,7 +7,8 @@ import { GripVertical } from 'lucide-react'
 
 interface Props<T extends { id: string }> {
   items: T[]
-  onReorder: (next: T[]) => void
+  /** The reordered list, plus which item moved and to which index */
+  onReorder: (next: T[], moved: { id: string; to: number }) => void
   className?: string
   /** Render one row; place `handle` where the grip should appear. */
   children: (item: T, handle: ReactNode, index: number) => ReactNode
@@ -29,7 +30,7 @@ export function SortableList<T extends { id: string }>({ items, onReorder, class
     const from = items.findIndex((i) => i.id === active.id)
     const to = items.findIndex((i) => i.id === over.id)
     if (from < 0 || to < 0) return
-    onReorder(arrayMove(items, from, to))
+    onReorder(arrayMove(items, from, to), { id: items[from].id, to })
   }
 
   return (

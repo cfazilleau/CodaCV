@@ -29,9 +29,12 @@ import './styles/app.css'
 import './styles/resume.css'
 import './styles/print.css'
 import App from './App'
+import { ErrorBoundary } from './components/ErrorBoundary'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </StrictMode>,
 )

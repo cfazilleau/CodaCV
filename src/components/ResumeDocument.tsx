@@ -16,7 +16,7 @@ import type {
   TimelineSection,
 } from '../types'
 import { autoHref, blockMd, contactHref, inlineMd } from '../utils'
-import { buildRows, isInSidebar } from '../layout'
+import { buildRows, isInSidebar, mainLayout } from '../layout'
 import { ExternalIcon, Icon, IconBadge } from './icons'
 
 export const FONT_FAMILIES: Record<FontKey, { label: string; css: string }> = {
@@ -147,7 +147,7 @@ export function ResumeDocument({ resume, selection, onSelect }: Props) {
   }
 
   const sideSections = sidebarMode ? resume.sections.filter((s) => s.visible && isInSidebar(s)) : []
-  const rows = buildRows(sidebarMode ? resume.sections.filter((s) => !isInSidebar(s)) : resume.sections)
+  const rows = buildRows(sidebarMode ? mainLayout(resume.sections) : resume.sections)
 
   const renderSection = (s: Section) => {
     // The whole section is the click / highlight target (items inside handle their own clicks)
