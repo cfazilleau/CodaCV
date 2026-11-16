@@ -127,7 +127,9 @@ export function LayoutOverlay({ shellRef, resume, setResume, zoom, selection }: 
       origin = null
     }
     const onDown = (e: PointerEvent) => {
-      if (!e.isPrimary || touchDragging.current) return
+      // A second finger is a pinch (zooms the preview), not a long press
+      if (!e.isPrimary) return clear()
+      if (touchDragging.current) return
       const t = e.target as HTMLElement
       if (t.closest('.layout-overlay')) return // column dividers handle themselves
       const secEl = t.closest<HTMLElement>('[data-section-id]')

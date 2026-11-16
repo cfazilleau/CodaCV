@@ -122,6 +122,15 @@ export default function App() {
     document.documentElement.lang = resume.meta.locale
   }, [resume.meta.locale])
 
+  // iOS Safari ignores user-scalable=no: its own gesture events are the way to stop UI pinch-zoom
+  // (touch events still arrive, so the preview's own pinch keeps working)
+  useEffect(() => {
+    const block = (e: Event) => e.preventDefault()
+    const events = ['gesturestart', 'gesturechange', 'gestureend']
+    events.forEach((n) => document.addEventListener(n, block, { passive: false }))
+    return () => events.forEach((n) => document.removeEventListener(n, block))
+  }, [])
+
   // Keyboard shortcuts
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -293,6 +302,10 @@ export default function App() {
   )
 }
 
+/** Preview zoom limits (buttons, fit, pinch) */
+const ZOOM_MIN = 0.3
+const ZOOM_MAX = 2
+
 function PreviewPane({
   resume,
   selection,
@@ -311,6 +324,81 @@ function PreviewPane({
   const [pages, setPages] = useState(1)
   const t = useStrings(S)
   const zoom = zoomOverride ?? fit
+  const zoomRef = useRef(zoom)
+  zoomRef.current = zoom
+
+  /**
+   * Pinch to zoom the page (two fingers; ctrl + wheel / trackpad pinch with a mouse). The page
+   * point under the fingers / pointer stays there: `anchor` is applied once the new zoom rendered.
+   * The rest of the UI cannot be zoomed (index.html viewport, touch-action in app.css).
+   */
+  const anchor = useRef<{ fx: number; fy: number; x: number; y: number } | null>(null)
+  useEffect(() => {
+    const el = scroller.current
+    if (!el) return
+    const zoomAt = (z: number, x: number, y: number) => {
+      const r = page.current!.getBoundingClientRect()
+      anchor.current = { fx: (x - r.left) / r.width, fy: (y - r.top) / r.height, x, y }
+      setZoomOverride(Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, z)))
+    }
+
+    let pinch: { dist: number; zoom: number } | null = null
+    let pending: { z: number; x: number; y: number } | null = null
+    let raf = 0
+    const two = (t: TouchList) => ({
+      dist: Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY),
+      x: (t[0].clientX + t[1].clientX) / 2,
+      y: (t[0].clientY + t[1].clientY) / 2,
+    })
+    const onStart = (e: TouchEvent) => {
+      // Not while a section is being dragged on the page
+      if (e.touches.length !== 2 || document.body.classList.contains('is-layout-dragging')) return
+      pinch = { dist: two(e.touches).dist || 1, zoom: zoomRef.current }
+    }
+    const onMove = (e: TouchEvent) => {
+      if (!pinch || e.touches.length !== 2) return
+      e.preventDefault() // no browser zoom / scroll: we zoom the page ourselves
+      const g = two(e.touches)
+      pending = { z: (pinch.zoom * g.dist) / pinch.dist, x: g.x, y: g.y }
+      // One re-layout of the page per frame
+      raf ||= requestAnimationFrame(() => {
+        raf = 0
+        if (pending) zoomAt(pending.z, pending.x, pending.y)
+      })
+    }
+    const onEnd = (e: TouchEvent) => {
+      if (e.touches.length < 2) pinch = null
+    }
+    const onWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey) return // plain wheel scrolls
+      e.preventDefault()
+      zoomAt(zoomRef.current * Math.exp(-Math.max(-50, Math.min(50, e.deltaY)) * 0.004), e.clientX, e.clientY)
+    }
+    el.addEventListener('touchstart', onStart, { passive: true })
+    el.addEventListener('touchmove', onMove, { passive: false })
+    el.addEventListener('touchend', onEnd)
+    el.addEventListener('touchcancel', onEnd)
+    el.addEventListener('wheel', onWheel, { passive: false })
+    return () => {
+      cancelAnimationFrame(raf)
+      el.removeEventListener('touchstart', onStart)
+      el.removeEventListener('touchmove', onMove)
+      el.removeEventListener('touchend', onEnd)
+      el.removeEventListener('touchcancel', onEnd)
+      el.removeEventListener('wheel', onWheel)
+    }
+  }, [])
+
+  // After a pinch step rendered: scroll so the anchored page point is back under the fingers
+  useLayoutEffect(() => {
+    const a = anchor.current
+    const el = scroller.current
+    if (!a || !el || !page.current) return
+    anchor.current = null
+    const r = page.current.getBoundingClientRect()
+    el.scrollLeft += r.left + a.fx * r.width - a.x
+    el.scrollTop += r.top + a.fy * r.height - a.y
+  }, [zoom])
 
   // Fit the A4 page to the available width
   useLayoutEffect(() => {
@@ -320,7 +408,7 @@ function PreviewPane({
       // Stage side padding comes from the CSS (smaller on phones)
       const cs = getComputedStyle(el.querySelector('.preview-stage')!)
       const avail = el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)
-      setFit(Math.max(0.3, Math.min(1.25, avail / (A4_W_MM * MM))))
+      setFit(Math.max(ZOOM_MIN, Math.min(1.25, avail / (A4_W_MM * MM))))
     })
     ro.observe(el)
     return () => ro.disconnect()
@@ -343,20 +431,24 @@ function PreviewPane({
 
   return (
     <div className="preview" ref={scroller}>
-      <div className="preview-toolbar">
-        <button className="tb-btn" title={t.zoomOut} onClick={() => setZoomOverride(Math.max(0.3, +(zoom - 0.1).toFixed(2)))}>
-          <ZoomOut size={15} />
-        </button>
-        <button className="tb-btn zoom-label" title={t.fit} onClick={() => setZoomOverride(null)}>
-          {Math.round(zoom * 100)}%
-        </button>
-        <button className="tb-btn" title={t.zoomIn} onClick={() => setZoomOverride(Math.min(2, +(zoom + 0.1).toFixed(2)))}>
-          <ZoomIn size={15} />
-        </button>
-        <span className="tb-sep" />
-        <span className="page-count">
-          {t.pages(pages)}
-        </span>
+      {/* Full-width sticky bar: keeps the toolbar centered on screen, also when the page is
+          zoomed wider than the pane and scrolled sideways */}
+      <div className="preview-bar">
+        <div className="preview-toolbar">
+          <button className="tb-btn" title={t.zoomOut} onClick={() => setZoomOverride(Math.max(ZOOM_MIN, +(zoom - 0.1).toFixed(2)))}>
+            <ZoomOut size={15} />
+          </button>
+          <button className="tb-btn zoom-label" title={t.fit} onClick={() => setZoomOverride(null)}>
+            {Math.round(zoom * 100)}%
+          </button>
+          <button className="tb-btn" title={t.zoomIn} onClick={() => setZoomOverride(Math.min(ZOOM_MAX, +(zoom + 0.1).toFixed(2)))}>
+            <ZoomIn size={15} />
+          </button>
+          <span className="tb-sep" />
+          <span className="page-count">
+            {t.pages(pages)}
+          </span>
+        </div>
       </div>
       <div className="preview-stage" style={{ zoom }}>
         <div className="page-shell" ref={page} style={{ minHeight: `${pages * A4_H_MM}mm` }}>

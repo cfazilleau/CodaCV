@@ -66,7 +66,8 @@ npm run build    # static site in dist/
     aujourd'hui", "Sep 2022 - Present", "Sept. 2022 - heute"…
 - **Interface language** – French or English, switched in the top bar (remembered per browser).
 - **Phones and tablets** – on a phone, *Modifier* / *Aperçu* at the bottom switch between the editor
-  and the page; the less used top-bar actions are in the ⋯ menu.
+  and the page; the less used top-bar actions are in the ⋯ menu. Pinch the page to zoom it (the
+  rest of the interface stays at its size); with a mouse, Ctrl + wheel over the page does the same.
 - **Layout on the page** (edit mode, hover the preview):
   - section grip → drop it on a new row, in a new column (left/right edge of a section) or under
     another section in a multi-column row; the blue line shows where it lands

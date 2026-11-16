@@ -26,6 +26,15 @@ body {
   background: var(--ui-bg);
 }
 
+/* No browser pinch / double-tap zoom on the UI: scrolling only. Pinching the preview zooms the
+   page (handled in App.tsx). Set on the scroll containers too, where touch-action restarts. */
+html,
+body,
+.sidebar,
+.preview {
+  touch-action: pan-x pan-y;
+}
+
 button,
 input,
 select,
@@ -278,16 +287,25 @@ button {
   background: var(--ui-bg);
 }
 
-.preview-toolbar {
+/* Sticky on both axes, as wide as the visible pane: the toolbar stays centered on screen */
+.preview-bar {
   position: sticky;
   top: 12px;
+  left: 0;
   z-index: 3;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-top: 12px;
+  pointer-events: none;
+}
+
+.preview-toolbar {
   display: flex;
   align-items: center;
   gap: 2px;
-  width: max-content;
-  margin: 12px auto 0;
   padding: 3px 8px;
+  pointer-events: auto;
   border: 1px solid var(--ui-border);
   border-radius: 10px;
   background: rgb(255 255 255 / 0.92);

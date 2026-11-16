@@ -174,8 +174,17 @@ with **pypdf** (stream order, like most ATS / LLM loaders) and **pdfminer** (lay
   (`--lo-inv`) so it stays finger-sized at 45%. Item grips and margin guides are mouse-only (items
   are reordered in the editor, margins with the sliders). Section / item drags autoscroll the
   preview near its top / bottom edge (mouse too).
+- **Zoom** (owner's choice): the UI cannot be zoomed by the browser (viewport `user-scalable=no`,
+  `touch-action: pan-x pan-y` on html / body / `.sidebar` / `.preview`, iOS `gesture*` events
+  prevented). Pinching the preview zooms the page instead (`PreviewPane` in App.tsx: two-finger
+  touch events, one update per frame, the page point under the fingers kept in place by a scroll
+  fix-up after render); ctrl + wheel / trackpad pinch does the same with a mouse. A second finger
+  cancels a pending long-press. The page is centered with auto margins (not `justify-content`) so
+  a page wider than the pane overflows to the right only; the zoom toolbar sits in a full-width
+  sticky `.preview-bar` (top and left) so it stays centered when scrolled sideways.
 - Testing the touch path: the in-app browser's "mobile" preset matches `(hover: none)`; drive it
-  with dispatched `PointerEvent`s (`pointerType: 'touch'`). When the browser pane is hidden, no
+  with dispatched `PointerEvent`s (`pointerType: 'touch'`) and `TouchEvent`s with `new Touch()`
+  (pinch). Switching presets does not fire the media query's change event: reload after it. When the browser pane is hidden, no
   frames run: ResizeObserver (preview fit) and rAF (autoscroll) never fire until a screenshot.
 - Keyboard on the preview: Tab stops on the header and sections; arrow keys move through every
   clickable entry / item (`clickable()` in ResumeDocument). Side-panel tabs follow the WAI tabs
