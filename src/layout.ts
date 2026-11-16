@@ -6,6 +6,10 @@
 import type { Placement, Section } from './types'
 
 export const COL_GAP_MM = 4
+/** A4 page, in mm, and CSS px per mm */
+export const A4_W_MM = 210
+export const A4_H_MM = 297
+export const MM = 96 / 25.4
 
 interface SCol {
   ids: string[]
@@ -360,6 +364,6 @@ export function moveSectionAnywhere(sections: Section[], id: string, requested: 
 
 /** Column fraction that lines a first column up with the timeline date column. */
 export function dateColumnFraction(dateColMm: number, marginXMm: number, columns = 2): number {
-  const content = 210 - 2 * marginXMm - COL_GAP_MM * (columns - 1)
+  const content = A4_W_MM - 2 * marginXMm - COL_GAP_MM * (columns - 1)
   return Math.min(0.9, Math.max(0.05, dateColMm / content))
 }

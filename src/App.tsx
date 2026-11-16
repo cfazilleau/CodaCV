@@ -9,10 +9,8 @@ import { LayoutOverlay } from './components/LayoutOverlay'
 import { Editor } from './components/editor/Editor'
 import { StorageBanner } from './components/StorageBanner'
 import { downloadText, downscaleImage, PHOTO_MAX_CHARS } from './utils'
+import { A4_H_MM, A4_W_MM, MM } from './layout'
 
-const MM = 96 / 25.4 // CSS px per mm
-const A4_W = 210
-const A4_H = 297
 
 /** Injects @page rules matching the theme margins and sets the PDF file name while printing. */
 function usePrintSetup(resume: Resume) {
@@ -191,7 +189,7 @@ function PreviewPane({
     if (!el) return
     const ro = new ResizeObserver(() => {
       const avail = el.clientWidth - 48
-      setFit(Math.max(0.3, Math.min(1.25, avail / (A4_W * MM))))
+      setFit(Math.max(0.3, Math.min(1.25, avail / (A4_W_MM * MM))))
     })
     ro.observe(el)
     return () => ro.disconnect()
@@ -203,14 +201,14 @@ function PreviewPane({
     if (!el) return
     const ro = new ResizeObserver(() => {
       const contentH = el.scrollHeight / MM - 2 * resume.theme.marginY
-      const perPage = A4_H - 2 * resume.theme.marginY
+      const perPage = A4_H_MM - 2 * resume.theme.marginY
       setPages(Math.max(1, Math.ceil((contentH - 0.5) / perPage)))
     })
     ro.observe(el)
     return () => ro.disconnect()
   }, [resume.theme.marginY])
 
-  const perPage = A4_H - 2 * resume.theme.marginY
+  const perPage = A4_H_MM - 2 * resume.theme.marginY
 
   return (
     <div className="preview" ref={scroller}>
@@ -230,7 +228,7 @@ function PreviewPane({
         </span>
       </div>
       <div className="preview-stage" style={{ zoom }}>
-        <div className="page-shell" ref={page} style={{ minHeight: `${pages * A4_H}mm` }}>
+        <div className="page-shell" ref={page} style={{ minHeight: `${pages * A4_H_MM}mm` }}>
           <ResumeDocument resume={resume} selection={selection} onSelect={onSelect} />
           <LayoutOverlay shellRef={page} resume={resume} setResume={setResume} zoom={zoom} selection={selection} />
           {Array.from({ length: pages - 1 }, (_, i) => (

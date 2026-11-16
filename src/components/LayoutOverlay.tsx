@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type Pointer
 import { createPortal } from 'react-dom'
 import { GripVertical } from 'lucide-react'
 import type { Resume, Selection } from '../types'
-import { COL_GAP_MM, dateColumnFraction, moveItem, moveSectionAnywhere, setColumnWidths, type SidebarAwareDrop } from '../layout'
+import { A4_H_MM, A4_W_MM, COL_GAP_MM, MM, dateColumnFraction, moveItem, moveSectionAnywhere, setColumnWidths, type SidebarAwareDrop } from '../layout'
 
 /**
  * Direct-manipulation layer drawn over the A4 preview (edit mode only, never printed):
@@ -14,9 +14,6 @@ import { COL_GAP_MM, dateColumnFraction, moveItem, moveSectionAnywhere, setColum
  * so the PDF text order is unaffected.
  */
 
-const MM = 96 / 25.4
-const A4_W_MM = 210
-const A4_H_MM = 297
 
 type Rect = { x: number; y: number; w: number; h: number }
 /** data-item-kind: 'entry' (timeline), 'list', or the section kind for levels / facts / references / highlights */
@@ -255,7 +252,6 @@ export function LayoutOverlay({ shellRef, resume, setResume, zoom, selection }: 
       return rowDrop(rows[i].dataset.rowKey!, sr.top - g / 2)
     }
     const last = rows[rows.length - 1].getBoundingClientRect()
-    void draggedId
     return rowDrop(null, last.bottom + g / 2)
   }
 
@@ -394,7 +390,7 @@ export function LayoutOverlay({ shellRef, resume, setResume, zoom, selection }: 
       window.removeEventListener('blur', cancel)
       window.removeEventListener('keydown', onKey)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Runs once per drag: the handlers read the state of the render that started it
   }, [drag])
 
   const start = (d: Drag) => (e: ReactPointerEvent) => {

@@ -28,12 +28,9 @@ import {
 import type {
   Contact,
   FactItem,
-  FactSection,
   HighlightItem,
-  HighlightSection,
   LevelItem,
   LevelMeter,
-  LevelSection,
   EntryStyle,
   HeaderStyle,
   ListItem,
@@ -42,7 +39,6 @@ import type {
   Placement,
   Profile,
   ReferenceItem,
-  ReferenceSection,
   Resume,
   Section,
   SectionKind,
@@ -69,6 +65,8 @@ interface Props {
 }
 
 const MD_HINT = 'Markdown : **gras**, *italique*, [lien](https://…), listes, ![image](https://…)'
+
+type SectionOf<K extends SectionKind> = Extract<Section, { kind: K }>
 
 type Tab = 'content' | 'style' | 'versions'
 
@@ -148,6 +146,10 @@ export function Editor({ resume, setResume, selection, onSelect, store }: Props)
 
   const setSection = (id: string, fn: (s: Section) => Section) =>
     setResume((r) => ({ ...r, sections: r.sections.map((s) => (s.id === id ? fn(s) : s)) }))
+
+  /** Update a section of a known kind (each card only shows the fields of its own kind) */
+  const setSectionOf = <K extends SectionKind>(id: string, kind: K, fn: (s: SectionOf<K>) => SectionOf<K>) =>
+    setSection(id, (x) => (x.kind === kind ? fn(x as SectionOf<K>) : x))
 
   const addSection = (kind: SectionKind | 'tags') => {
     const s = newSection(kind)
@@ -306,7 +308,7 @@ export function Editor({ resume, setResume, selection, onSelect, store }: Props)
                 {s.kind === 'timeline' && (
                   <TimelineEditor
                     section={s}
-                    update={(fn) => setSection(s.id, (x) => fn(x as TimelineSection))}
+                    update={(fn) => setSectionOf(s.id, 'timeline', fn)}
                     openItem={openItem}
                     toggleItem={(id) => toggleItem(s.id, id)}
                     registerItem={registerItem}
@@ -315,7 +317,7 @@ export function Editor({ resume, setResume, selection, onSelect, store }: Props)
                 {s.kind === 'list' && (
                   <ListEditor
                     section={s}
-                    update={(fn) => setSection(s.id, (x) => fn(x as ListSection))}
+                    update={(fn) => setSectionOf(s.id, 'list', fn)}
                     openItem={openItem}
                     toggleItem={(id) => toggleItem(s.id, id)}
                     registerItem={registerItem}
@@ -340,12 +342,12 @@ export function Editor({ resume, setResume, selection, onSelect, store }: Props)
                         { value: 'bar', label: 'Barre' },
                         { value: 'none', label: 'Texte seul' },
                       ]}
-                      onChange={(v) => setSection(s.id, (x) => ({ ...(x as LevelSection), meter: v }))}
+                      onChange={(v) => setSectionOf(s.id, 'levels', (x) => ({ ...x, meter: v }))}
                       hint="Le niveau est toujours écrit en texte : les logiciels de recrutement ne lisent pas les points ni les barres."
                     />
                     <RecordListEditor<LevelItem>
                       items={s.items}
-                      setItems={(fn) => setSection(s.id, (x) => ({ ...(x as LevelSection), items: fn((x as LevelSection).items) }))}
+                      setItems={(fn) => setSectionOf(s.id, 'levels', (x) => ({ ...x, items: fn(x.items) }))}
                       columns="minmax(0, 1fr) 96px 64px"
                       fields={[
                         { key: 'name', label: 'Nom', placeholder: 'Anglais, C++…' },
@@ -361,7 +363,7 @@ export function Editor({ resume, setResume, selection, onSelect, store }: Props)
                 {s.kind === 'facts' && (
                   <RecordListEditor<FactItem>
                     items={s.items}
-                    setItems={(fn) => setSection(s.id, (x) => ({ ...(x as FactSection), items: fn((x as FactSection).items) }))}
+                    setItems={(fn) => setSectionOf(s.id, 'facts', (x) => ({ ...x, items: fn(x.items) }))}
                     columns="minmax(0, 0.8fr) minmax(0, 1.2fr)"
                     fields={[
                       { key: 'key', label: 'Intitulé', placeholder: 'Permis, Disponibilité…' },
@@ -377,20 +379,18 @@ export function Editor({ resume, setResume, selection, onSelect, store }: Props)
                     <Toggle
                       label="Une seule ligne « sur demande »"
                       checked={s.onRequest}
-                      onChange={(v) => setSection(s.id, (x) => ({ ...(x as ReferenceSection), onRequest: v }))}
+                      onChange={(v) => setSectionOf(s.id, 'references', (x) => ({ ...x, onRequest: v }))}
                     />
                     {s.onRequest ? (
                       <TextField
                         label="Texte"
                         value={s.onRequestText}
-                        onChange={(v) => setSection(s.id, (x) => ({ ...(x as ReferenceSection), onRequestText: v }))}
+                        onChange={(v) => setSectionOf(s.id, 'references', (x) => ({ ...x, onRequestText: v }))}
                       />
                     ) : (
                       <RecordListEditor<ReferenceItem>
                         items={s.items}
-                        setItems={(fn) =>
-                          setSection(s.id, (x) => ({ ...(x as ReferenceSection), items: fn((x as ReferenceSection).items) }))
-                        }
+                        setItems={(fn) => setSectionOf(s.id, 'references', (x) => ({ ...x, items: fn(x.items) }))}
                         columns="minmax(0, 1fr) minmax(0, 1fr)"
                         fields={[
                           { key: 'name', label: 'Nom', placeholder: 'Nom' },
@@ -408,7 +408,7 @@ export function Editor({ resume, setResume, selection, onSelect, store }: Props)
                 {s.kind === 'highlights' && (
                   <RecordListEditor<HighlightItem>
                     items={s.items}
-                    setItems={(fn) => setSection(s.id, (x) => ({ ...(x as HighlightSection), items: fn((x as HighlightSection).items) }))}
+                    setItems={(fn) => setSectionOf(s.id, 'highlights', (x) => ({ ...x, items: fn(x.items) }))}
                     columns="88px minmax(0, 1fr)"
                     fields={[
                       { key: 'value', label: 'Chiffre', placeholder: '1 M+' },

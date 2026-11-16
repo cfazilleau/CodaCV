@@ -273,8 +273,7 @@ export function useResumeStore() {
       clearTimeout(t)
       if (pendingSave.current === save) pendingSave.current = null
     }
-    // liveVersions is derived from these
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // liveVersions is derived from these, no need to list it
   }, [versions, activeId, resume, savingBlocked])
 
   // Closing or hiding the tab within the debounce would lose the last edit: save it now
