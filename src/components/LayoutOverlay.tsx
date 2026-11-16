@@ -59,7 +59,6 @@ export function LayoutOverlay({ shellRef, resume, setResume, zoom, selection }: 
   const [indicator, setIndicator] = useState<{ line: Rect; vertical: boolean } | null>(null)
   const [ghost, setGhost] = useState<{ x: number; y: number; text: string } | null>(null)
   const dropRef = useRef<Drop | null>(null)
-  const single = resume.theme.layout === 'single-column'
 
   /** Shell-relative, un-zoomed coordinates helpers */
   const frame = useCallback(() => {
@@ -201,7 +200,7 @@ export function LayoutOverlay({ shellRef, resume, setResume, zoom, selection }: 
       const sid = sec.dataset.sectionId!
       const relX = (x - cr.left) / cr.width
 
-      if (!single && (relX < 0.2 || relX > 0.8)) {
+      if (relX < 0.2 || relX > 0.8) {
         const side = relX < 0.2 ? 'left' : 'right'
         const lineX = side === 'left' ? cr.left - g / 4 : cr.right + g / 4
         return {

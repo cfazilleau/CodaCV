@@ -509,16 +509,6 @@ function ThemeEditor({ resume, setResume }: { resume: Resume; setResume: (fn: (r
       />
 
       <div className="subhead">Mise en page</div>
-      <Select
-        label="Disposition"
-        value={t.layout}
-        options={[
-          { value: 'two-column', label: 'Deux colonnes (dates à gauche)' },
-          { value: 'single-column', label: 'Une colonne (lecture ATS maximale)' },
-        ]}
-        onChange={(v) => setTheme({ layout: v })}
-        hint="Les logiciels de recrutement lisent bien les deux. « Une colonne » garde aussi les dates collées à leur poste pour les analyseurs les plus basiques."
-      />
       <Slider label="Colonne des dates" min={18} max={45} unit=" mm" value={t.dateColumn} onChange={(v) => setTheme({ dateColumn: v })} />
       <div className="grid-2">
         <Slider label="Marges horizontales" min={5} max={25} unit=" mm" value={t.marginX} onChange={(v) => setTheme({ marginX: v })} />

@@ -81,7 +81,7 @@ export function ResumeDocument({ resume, selection, onSelect }: Props) {
     }
   }
 
-  const rows = buildRows(resume.sections, theme.layout === 'single-column')
+  const rows = buildRows(resume.sections)
 
   const renderSection = (s: Section) => {
     // The whole section is the click / highlight target (items inside handle their own clicks)
@@ -112,7 +112,6 @@ export function ResumeDocument({ resume, selection, onSelect }: Props) {
             key={e.id}
             entry={e}
             showLinkIcon={theme.showLinkIcons}
-            single={theme.layout === 'single-column'}
             data-item-id={e.id}
             data-item-kind="entry"
             data-owner={s.id}
@@ -151,7 +150,7 @@ export function ResumeDocument({ resume, selection, onSelect }: Props) {
   const headerSel = clickable({ kind: 'profile' }, selection?.kind === 'profile')
 
   return (
-    <article className={`cv${onSelect ? ' cv--edit' : ''} cv--${theme.layout}`} style={resumeStyle(resume)}>
+    <article className={`cv${onSelect ? ' cv--edit' : ''}`} style={resumeStyle(resume)}>
       <header className={`cv-header${theme.showPhoto && profile.photo ? '' : ' cv-header--nophoto'}`} {...headerSel}>
         {theme.showPhoto && profile.photo && (
           <img className={`cv-photo cv-photo--${theme.photoShape}`} src={profile.photo} alt="" />
@@ -215,33 +214,21 @@ export function ResumeDocument({ resume, selection, onSelect }: Props) {
 interface EntryProps extends HTMLAttributes<HTMLDivElement> {
   entry: TimelineEntry
   showLinkIcon: boolean
-  single: boolean
 }
 
-function EntryView({ entry: e, showLinkIcon, single, ...rest }: EntryProps) {
-  const location = (e.location || e.country) && (
-    <span className="cv-entry-loc">
-      {e.country && <span className={`fi fi-${e.country.toLowerCase()} cv-flag`} />}
-      {e.location}
-    </span>
-  )
-  // Single column: "date · duration · place" on the right of the title line, read in order by every parser
-  const singleMeta = single && (e.date || e.subDate || location) && (
-    <span className="cv-entry-metaline">
-      {[e.date, e.subDate].filter(Boolean).join(' · ')}
-      {(e.date || e.subDate) && location ? ' · ' : ''}
-      {location}
-    </span>
-  )
+function EntryView({ entry: e, showLinkIcon, ...rest }: EntryProps) {
   return (
     <div className="cv-entry" {...rest}>
-      {!single && (
-        <div className="cv-entry-meta">
-          {e.date && <div>{e.date}</div>}
-          {location && <div>{location}</div>}
-          {e.subDate && <div>{e.subDate}</div>}
-        </div>
-      )}
+      <div className="cv-entry-meta">
+        {e.date && <div>{e.date}</div>}
+        {(e.location || e.country) && (
+          <div className="cv-entry-loc">
+            {e.country && <span className={`fi fi-${e.country.toLowerCase()} cv-flag`} />}
+            {e.location}
+          </div>
+        )}
+        {e.subDate && <div>{e.subDate}</div>}
+      </div>
       <div className="cv-entry-body">
         <div className="cv-entry-head">
           <strong>
@@ -254,7 +241,6 @@ function EntryView({ entry: e, showLinkIcon, single, ...rest }: EntryProps) {
               <ExternalIcon size={9} />
             </a>
           )}
-          {singleMeta}
         </div>
         {e.bullets.some((b) => b.trim()) && (
           <ul className="cv-bullets">

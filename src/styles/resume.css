@@ -200,35 +200,9 @@
 }
 
 .cv-entry-loc {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 1.2mm;
-}
-
-/* ---------- Single-column (ATS) layout ---------- */
-
-.cv--single-column .cv-entry {
-  display: block;
-}
-
-.cv--single-column .cv-entry-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  column-gap: 0.3em;
-}
-
-.cv-entry-metaline {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25em;
-  margin-left: auto;
-  padding-left: 3mm;
-  color: color-mix(in srgb, var(--text) 68%, #fff);
-}
-
-.cv-entry-metaline .cv-entry-loc {
-  gap: 1mm;
 }
 
 .cv-flag {

@@ -190,7 +190,6 @@ export const defaultResume: Resume = {
     },
   ],
   theme: {
-    layout: 'two-column',
     accent: '#b35f22',
     text: '#1f1f1f',
     font: 'source-sans',

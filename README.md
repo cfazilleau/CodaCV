@@ -46,12 +46,11 @@ The exported PDF is built to be machine-readable:
 - Text is written in reading order: no positioned elements inside the resume (Chrome writes
   positioned elements to the PDF last, which detaches bullets from their job). Keep it that way
   when editing `resume.css`.
-- Tagged PDF: `H1` name, `H2` section titles, `L`/`LI` lists, `/Lang` from the page language,
+- Tagged PDF: `H1` name, `H2` section titles, `L`/`LI` lists, `/Lang` from the CV language,
   clickable links (site, LinkedIn, mailto:, tel:, project links).
-- Layout *Une colonne* (Mise en page & style → Disposition) is the safest option: it also keeps
-  dates next to their entry for layout-analysis parsers (e.g. pdfminer), which split the
-  two-column date gutter into separate blocks. With the current content, use density
-  *Compacte* to keep it on one page.
+- Known limit: parsers that rebuild the reading order from the page layout (e.g. pdfminer)
+  treat the left date gutter and side-by-side columns as separate blocks, so dates can end up
+  away from their entry. Stream-order readers (pypdf, most ATS and AI loaders) are unaffected.
 
 Tip: icons are not text, so write contact labels that make sense alone
 (e.g. `linkedin.com/in/your-name` rather than just `your-name`).

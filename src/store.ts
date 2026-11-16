@@ -18,7 +18,9 @@ function migrate(data: unknown): Resume {
     ...c,
     icon: c.icon ?? LEGACY_KIND_ICON[kind ?? ''] ?? 'globe',
   }))
-  const theme = { ...defaultResume.theme, ...r.theme }
+  // `layout` was the removed one-column option
+  const { layout: _removedLayout, ...savedTheme } = (r.theme ?? {}) as Resume['theme'] & { layout?: unknown }
+  const theme = { ...defaultResume.theme, ...savedTheme }
   return {
     ...defaultResume,
     ...r,

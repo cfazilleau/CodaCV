@@ -102,11 +102,7 @@ export type FontKey = 'source-sans' | 'inter' | 'roboto' | 'open-sans' | 'lora'
 export type PhotoShape = 'circle' | 'rounded' | 'square'
 export type Density = 'compact' | 'normal' | 'airy'
 
-/** two-column: dates in a left column (template look). single-column: safest for ATS parsers. */
-export type Layout = 'two-column' | 'single-column'
-
 export interface Theme {
-  layout: Layout
   accent: string
   text: string
   font: FontKey

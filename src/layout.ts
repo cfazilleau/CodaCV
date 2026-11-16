@@ -68,10 +68,7 @@ export interface LayoutRow {
 }
 
 /** Visible rows/columns for rendering. */
-export function buildRows(sections: Section[], singleColumn: boolean): LayoutRow[] {
-  if (singleColumn) {
-    return sections.filter((s) => s.visible).map((s) => ({ key: s.id, columns: [{ key: s.id, width: 1, sections: [s] }] }))
-  }
+export function buildRows(sections: Section[]): LayoutRow[] {
   const byId = new Map(sections.map((s) => [s.id, s]))
   const rows: LayoutRow[] = []
   for (const row of toStructure(sections)) {
