@@ -3,7 +3,27 @@
 A resume builder: edit everything in a side panel, arrange the layout directly on a live A4
 preview, and print a pixel-accurate, ATS-friendly PDF.
 
-## Getting started
+**Try it online: [cv.cfaz.dev](https://cv.cfaz.dev)**
+
+## Use it online
+
+CodaCV runs at **[cv.cfaz.dev](https://cv.cfaz.dev)**. Nothing to install and no account needed:
+open the page and start editing the example resume, or import a JSON file you exported earlier.
+
+- **Your data stays on your device.** The app is a static site with no backend: resumes and
+  photos are saved in your browser's local storage and are never uploaded anywhere.
+- **Storage is per browser.** A resume made in one browser (or a private window) does not show up
+  in another. Use **Export** to keep a JSON backup or move your resumes to another computer, and
+  **Import** to bring them back. Clearing the site data in your browser deletes them.
+- **Best in Chrome or Edge** on a computer. The PDF is made by the browser's own print dialog
+  (*Save as PDF*, *Headers and footers* unticked), and the ATS-friendly output was tuned on
+  Chromium.
+- The interface is in French or English (switch in the top bar); each resume has its own language
+  for dates and the PDF.
+
+## Run it locally
+
+To work on the code or host your own copy:
 
 ```bash
 npm install
