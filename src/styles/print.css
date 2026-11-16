@@ -17,7 +17,8 @@
   .preview-toolbar,
   .page-break,
   .layout-overlay,
-  .lo-ghost {
+  .lo-ghost,
+  .welcome {
     display: none !important;
   }
 

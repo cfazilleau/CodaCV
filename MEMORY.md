@@ -54,7 +54,8 @@ headless printing, and PDF text extraction (see "Testing" below).
   then left untouched as a backup — never delete it automatically.
 - Other keys: `codacv.uiLang` (editor UI language), `codacv.sidebarTab` (last sidebar tab, written only after the tab rendered),
   `codacv.library.rev` (revision, bumped on every save), `codacv.quarantine.<ISO date>` (versions
-  that could not be read, kept aside; an identical copy is reused).
+  that could not be read, kept aside; an identical copy is reused), `codacv.welcomeSeen` (`'1'` once
+  the welcome screen was closed).
 - Everything loaded (library entries, imported JSON) goes through `migrate()` in `migrate.ts`, which
   rebuilds every field with a type check and a default (`Theme` / `Meta` are object literals, so a
   new field is a compile error until it is handled). Ids are made `[\w-]{1,64}` and unique per
@@ -177,6 +178,10 @@ with **pypdf** (stream order, like most ATS / LLM loaders) and **pdfminer** (lay
   a web address from an imported file stays in the data but is never loaded. Theme colours go
   through `cssColor()` before reaching CSS variables (`url(…)` would be fetched by `background:
   var(--accent)`).
+- **Welcome screen** (`WelcomeDialog.tsx`, native `<dialog>`): opens on the first visit, closing it
+  (button, Esc, backdrop) sets `codacv.welcomeSeen`; the top bar's ⓘ button reopens it. It states
+  free / open source (link to `REPO_URL`) / data only in this browser / no cookies, plus the
+  markdown-image exception — keep it true if any of that changes. Hidden in print.
 
 ## Gotchas hit while developing
 

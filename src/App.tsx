@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { Download, FileUp, Printer, Redo2, RotateCcw, Undo2, ZoomIn, ZoomOut } from 'lucide-react'
+import { Download, FileUp, Info, Printer, Redo2, RotateCcw, Undo2, ZoomIn, ZoomOut } from 'lucide-react'
 import { useResumeStore, parseResume } from './store'
 import { MAX_IMPORT_BYTES } from './migrate'
 import { templateResume } from './defaultResume'
@@ -9,6 +9,7 @@ import { ResumeDocument } from './components/ResumeDocument'
 import { LayoutOverlay } from './components/LayoutOverlay'
 import { Editor } from './components/editor/Editor'
 import { StorageBanner } from './components/StorageBanner'
+import { WelcomeDialog, welcomeSeen } from './components/WelcomeDialog'
 import { downloadText, downscaleImage, PHOTO_MAX_CHARS } from './utils'
 import { A4_H_MM, A4_W_MM, MM } from './layout'
 
@@ -27,6 +28,7 @@ const S = defineStrings(
     resetConfirm: 'Remplacer toutes les données par le CV modèle ? (Annulable avec Ctrl+Z)',
     print: 'Imprimer ou enregistrer en PDF (Ctrl+P)',
     uiLang: "Langue de l'interface",
+    about: 'À propos de CodaCV : gratuit, open source, vos données restent chez vous',
     zoomOut: 'Dézoomer',
     fit: 'Ajuster à la largeur',
     zoomIn: 'Zoomer',
@@ -47,6 +49,7 @@ const S = defineStrings(
     resetConfirm: 'Replace all the data with the template resume? (Ctrl+Z to undo)',
     print: 'Print or save as PDF (Ctrl+P)',
     uiLang: 'Interface language',
+    about: 'About CodaCV: free, open source, your data stays with you',
     zoomOut: 'Zoom out',
     fit: 'Fit to width',
     zoomIn: 'Zoom in',
@@ -95,6 +98,8 @@ export default function App() {
   const [selection, setSelection] = useState<Selection>(null)
   const t = useStrings(S)
   const uiLang = useUiLang()
+  // Welcome screen: on the first visit, then from the info button
+  const [welcome, setWelcome] = useState(() => !welcomeSeen())
 
   usePrintSetup(resume)
 
@@ -195,6 +200,9 @@ export default function App() {
               </option>
             ))}
           </select>
+          <button className="tb-btn" title={t.about} aria-label={t.about} onClick={() => setWelcome(true)}>
+            <Info size={16} />
+          </button>
           <button className="btn btn--primary" onClick={() => window.print()} title={t.print}>
             <Printer size={16} /> PDF
           </button>
@@ -211,6 +219,8 @@ export default function App() {
           />
         </div>
       </header>
+
+      <WelcomeDialog open={welcome} onClose={() => setWelcome(false)} />
 
       <StorageBanner issue={store.storageIssue} onOverwrite={store.overwriteStorage} onDismiss={store.dismissIssue} />
 
