@@ -1,10 +1,10 @@
 /**
- * Turns any JSON (saved library, imported file, old formats) into a valid Resume.
+ * Turns any JSON (saved library, imported file) into a valid Resume.
  * Every field is checked against its type and falls back to a default, so a bad or partial file
  * can never put a value in the state that crashes rendering later.
  */
 import { defaultResume } from './defaultResume'
-import { dateColumnFraction, normalizeLayout } from './layout'
+import { normalizeLayout } from './layout'
 import type {
   Contact,
   DateFormat,
@@ -88,16 +88,6 @@ const DISPLAYS = keysOf<ListDisplay>({ bullets: true, inline: true, chips: true 
 const METERS = keysOf<LevelMeter>({ none: true, dots: true, bar: true })
 const DATE_FORMATS = keysOf<DateFormat>({ year: true, 'month-numeric': true, 'month-short': true, 'month-long': true, full: true })
 
-const LEGACY_KIND_ICON: Record<string, IconKey> = {
-  website: 'link',
-  linkedin: 'linkedin',
-  github: 'github',
-  phone: 'phone',
-  email: 'mail',
-  location: 'pin',
-  other: 'globe',
-}
-
 type IdFn = (v: unknown) => string
 
 /** Ids end up in CSS selectors and data-* attributes: keep them simple, and unique within a resume. */
@@ -111,24 +101,28 @@ function idMaker(): IdFn {
   }
 }
 
-function migrateMeta(m: Obj): Meta {
+function validateMeta(m: Obj): Meta {
   return { locale: oneOf(m.locale, RESUME_LOCALE_CODES, defaultResume.meta.locale), fileName: str(m.fileName) }
 }
 
-function migrateProfile(p: Obj, id: IdFn): Profile {
-  // v1 early format: summaryIcon was a boolean, contacts had a `kind` instead of an `icon`
-  const summaryIcon =
-    typeof p.summaryIcon === 'boolean' ? (p.summaryIcon ? 'pin' : 'none') : oneOf(p.summaryIcon, ICON_KEYS, defaultResume.profile.summaryIcon)
+function validateProfile(p: Obj, id: IdFn): Profile {
   const contacts: Contact[] = objs(p.contacts).map((c) => ({
     id: id(c.id),
-    icon: c.icon === undefined ? (LEGACY_KIND_ICON[str(c.kind)] ?? 'globe') : oneOf(c.icon, ICON_KEYS, 'globe'),
+    icon: oneOf(c.icon, ICON_KEYS, 'globe'),
     label: str(c.label),
     url: str(c.url),
   }))
-  return { name: str(p.name), title: str(p.title), photo: str(p.photo), summary: str(p.summary), summaryIcon, contacts }
+  return {
+    name: str(p.name),
+    title: str(p.title),
+    photo: str(p.photo),
+    summary: str(p.summary),
+    summaryIcon: oneOf(p.summaryIcon, ICON_KEYS, defaultResume.profile.summaryIcon),
+    contacts,
+  }
 }
 
-function migrateTheme(t: Obj): Theme {
+function validateTheme(t: Obj): Theme {
   const d = defaultResume.theme
   return {
     accent: color(t.accent, d.accent),
@@ -158,23 +152,8 @@ const country = (v: unknown) => {
   return /^[a-z]{2}(-[a-z]{2,3})?$/.test(c) ? c : ''
 }
 
-/**
- * Old format: timeline entries had `bullets` (one string per bullet, inline markdown). They become
- * "- " lines of the markdown `description`. A bullet that starts like block markdown ("# ", "> ",
- * "1. ", "- ", a code fence) gets that start escaped, so it still reads as the same text.
- */
-function bulletsToMarkdown(v: unknown): string {
-  return arr(v)
-    .filter((b): b is string => typeof b === 'string' && b.trim() !== '')
-    .map((b) => {
-      const text = b.trim().replace(/^(\d+)([.)])/, '$1\\$2').replace(/^([#>*+-]|`{3}|~{3})/, '\\$1')
-      return `- ${text}`
-    })
-    .join('\n')
-}
-
 /** One section, or null for an unknown kind (e.g. written by a newer version of the app). */
-function migrateSection(s: Obj, id: IdFn): Section | null {
+function validateSection(s: Obj, id: IdFn): Section | null {
   const base = {
     id: id(s.id),
     title: str(s.title),
@@ -193,8 +172,7 @@ function migrateSection(s: Obj, id: IdFn): Section | null {
         kind: 'timeline',
         entries: objs(s.entries).map((e) => ({
           ...item(e),
-          // Dates are "YYYY/MM/DD" (also accepted with dashes). The old free-text `date` ("2019 - 2022")
-          // is dropped on purpose: dates are now entered as start / end and written in the resume's language.
+          // Dates are "YYYY/MM/DD" (also accepted with dashes)
           start: normalizeDate(e.start),
           end: normalizeDate(e.end),
           current: bool(e.current, false),
@@ -204,7 +182,7 @@ function migrateSection(s: Obj, id: IdFn): Section | null {
           title: str(e.title),
           subtitle: str(e.subtitle),
           url: str(e.url),
-          description: typeof e.description === 'string' ? e.description : bulletsToMarkdown(e.bullets),
+          description: str(e.description),
         })),
       }
     case 'list':
@@ -253,35 +231,20 @@ function migrateSection(s: Obj, id: IdFn): Section | null {
   }
 }
 
-function migrateSections(raw: Obj[], theme: Theme, id: IdFn): Section[] {
-  const kept: { section: Section; raw: Obj }[] = []
-  for (const r of raw) {
-    const section = migrateSection(r, id)
-    if (section) kept.push({ section, raw: r })
-  }
-  const out = kept.map((k) => k.section)
-  // Early format: `pairWithNext` put a section in a narrow column next to the following one
-  kept.forEach(({ raw: r }, i) => {
-    if (r.place || !r.pairWithNext || !out[i + 1]) return
-    const narrow = dateColumnFraction(theme.dateColumn, theme.marginX)
-    out[i] = { ...out[i], colWidth: narrow }
-    out[i + 1] = { ...out[i + 1], place: 'column', colWidth: 1 - narrow }
-  })
-  return normalizeLayout(out)
-}
-
-export function migrate(data: unknown): Resume {
+export function validateResume(data: unknown): Resume {
   if (!isObj(data) || !isObj(data.profile) || !Array.isArray(data.sections)) {
     throw new Error(strings(S).notResume)
   }
   const id = idMaker()
-  const theme = migrateTheme(isObj(data.theme) ? data.theme : {})
+  const sections = objs(data.sections)
+    .map((s) => validateSection(s, id))
+    .filter((s): s is Section => s !== null)
   return {
     version: 1,
-    meta: migrateMeta(isObj(data.meta) ? data.meta : {}),
-    profile: migrateProfile(data.profile, id),
-    sections: migrateSections(objs(data.sections), theme, id),
-    theme,
+    meta: validateMeta(isObj(data.meta) ? data.meta : {}),
+    profile: validateProfile(data.profile, id),
+    sections: normalizeLayout(sections),
+    theme: validateTheme(isObj(data.theme) ? data.theme : {}),
   }
 }
 
@@ -289,5 +252,5 @@ export function migrate(data: unknown): Resume {
 export const MAX_IMPORT_BYTES = 5_000_000
 
 export function parseResume(text: string): Resume {
-  return migrate(JSON.parse(text))
+  return validateResume(JSON.parse(text))
 }

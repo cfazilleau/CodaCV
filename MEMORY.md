@@ -28,7 +28,7 @@ headless printing, and PDF text extraction (see "Testing" below).
 | `src/types.ts` | Data model: `Resume`, `Theme`, `Section` union (`timeline`, `list`, `text`, `levels`, `facts`, `references`, `highlights`), style enums |
 | `src/defaultResume.ts` | Fictional generic example (digital project manager). Used on first launch, "Réinitialiser", "Partir du modèle" |
 | `src/store.ts` | Versions library in localStorage (per-version loading, quarantine, cross-tab revision check), undo/redo |
-| `src/migrate.ts` | `migrate()`: turns any saved / imported JSON into a valid `Resume`, field by field (old formats, bad values) |
+| `src/validate.ts` | `validateResume()`: turns any saved / imported JSON into a valid `Resume`, field by field (bad or missing values) |
 | `src/layout.ts` | Page layout model: rows → columns → stacked sections; every change to the sections order goes through it |
 | `src/components/StorageBanner.tsx`, `ErrorBoundary.tsx` | Storage warnings (other tab, unreadable data) and the crash screen |
 | `src/components/ResumeDocument.tsx` | Renders the resume (preview **and** print). All style variants live here |
@@ -42,36 +42,31 @@ headless printing, and PDF text extraction (see "Testing" below).
 | `src/flags.ts` | Flag SVGs bundled for the countries offered in the editor (`COUNTRY_CODES` in `fields.tsx`); flag-icons' CSS is not used |
 | `src/i18n.ts` | Editor UI language (`fr` / `en`, key `codacv.uiLang`, default from the browser); `defineStrings` / `useStrings` / `strings` |
 | `src/locale.ts` | Resume languages (`RESUME_LOCALES`: label + word for "present"), date storage format and locale formatting, `contentLang()` |
-| `ai-import/` | `resume-template.json` + `prompt.md`: lets an AI assistant convert an existing CV for Import. **Update both when the data model changes**; check the template still passes `migrate()` unchanged (only its `<..>` country placeholders are cleared) |
+| `ai-import/` | `resume-template.json` + `prompt.md`: lets an AI assistant convert an existing CV for Import. **Update both when the data model changes**; check the template still passes `validateResume()` unchanged (only its `<..>` country placeholders are cleared) |
 | `src/styles/resume.css` | Resume styles (mm/pt units), `print.css` print overrides, `app.css` editor UI |
 
 ## Data model and storage
 
 - **Versions library**: localStorage key `codacv.library.v1` = `{ activeId, versions: [{ id, name, updatedAt, resume }], photos }`.
   Photo data URLs are stored once in `photos` (key = hash + length) and versions hold
-  `"photo:<key>"`; `loadLibrary` puts them back before `migrate()`. Libraries without `photos`
-  (older saves) load as they are. Photos are 480 px JPEGs; imported ones over 150 k characters
-  are downscaled the same way. **Gravatar** (`gravatarPhoto` in `utils.ts`, button in
+  `"photo:<key>"`; `loadLibrary` puts them back before `validateResume()`. Photos are 480 px
+  JPEGs; imported ones over 150 k characters are downscaled the same way. **Gravatar** (`gravatarPhoto` in `utils.ts`, button in
   ProfileEditor): SHA-256 of the trimmed lower-case address, fetched once from
   `gravatar.com/avatar/<hash>?s=480&d=404` (404 = no picture; CORS is `*`), downscaled and stored
   as a data URL like an upload. Never store a live Gravatar URL: every view and print would call
   gravatar.com, and the PDF would depend on the network. A failed save (storage full) shows a banner until a save succeeds.
-  The old single-resume key `codacv.resume.v1` is read once to seed the library ("Principal") and
-  then left untouched as a backup — never delete it automatically.
+  With no library, the app starts with one version ("Principal") holding the template.
 - Other keys: `codacv.uiLang` (editor UI language), `codacv.sidebarTab` (last sidebar tab, written only after the tab rendered),
   `codacv.library.rev` (revision, bumped on every save), `codacv.quarantine.<ISO date>` (versions
   that could not be read, kept aside; an identical copy is reused), `codacv.welcomeSeen` (`'1'` once
   the welcome screen was closed).
-- Everything loaded (library entries, imported JSON) goes through `migrate()` in `migrate.ts`, which
-  rebuilds every field with a type check and a default (`Theme` / `Meta` are object literals, so a
-  new field is a compile error until it is handled). Ids are made `[\w-]{1,64}` and unique per
-  resume (they end up in CSS selectors). Unknown section kinds are skipped. Past migrations handled:
-  contact `kind` → `icon`, boolean `summaryIcon`, `pairWithNext` → layout `place`, removed
-  `details` fields (web page feature), removed `spaceBefore`, removed theme `layout`, timeline free-text
-  `date` (dropped on purpose at the owner's request, replaced by `start` / `end` / `current`),
-  timeline `bullets: string[]` → markdown `description` (`bulletsToMarkdown`: one "- " line each, a
-  start that looks like block markdown — `#`, `>`, `1.`, `-`, a fence — is backslash-escaped).
-- `resume.version` is still `1`; migrations are shape-based, not version-based.
+- Everything loaded (library entries, imported JSON) goes through `validateResume()` in `validate.ts`,
+  which rebuilds every field with a type check and a default (`Theme` / `Meta` are object literals, so
+  a new field is a compile error until it is handled). Ids are made `[\w-]{1,64}` and unique per
+  resume (they end up in CSS selectors). Unknown section kinds and unknown fields are dropped.
+- **No migrations before v1** (owner's choice): the app is not released, so there is no code for old
+  data formats. Change the format freely: a field renamed or removed is simply dropped on load,
+  from storage and from imported files alike. `resume.version` is `1`.
 - Import adds the JSON as a **new version** (5 MB max); export / reset act on the active version.
 - Undo history is per session and resets when switching versions. Rapid edits within 600 ms are
   grouped into one undo step only when they touch the same thing (`changeKey` in `store.ts`: a
@@ -226,7 +221,8 @@ with **pypdf** (stream order, like most ATS / LLM loaders) and **pdfminer** (lay
   links, phone in the French fiction range). The owner's real CV lives only in their browser
   storage and must never be committed or written into the repo (or into this file).
 - Commit after each completed change (attribution trailer as configured); **ask before every push**.
-- Keep the owner's data safe: no destructive storage changes without migration, and keep backups.
+- Keep the owner's data safe: before a format change that would drop their content, say so first;
+  keep backups.
 - Communicate in English. The app UI is French + English: every new UI string goes in both tables.
 
 ## Open ideas / not done

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { templateResume } from './defaultResume'
 import { defineStrings, strings } from './i18n'
-import { migrate } from './migrate'
+import { validateResume } from './validate'
 import type { Resume } from './types'
 import { uid } from './utils'
 
@@ -11,12 +11,10 @@ const S = defineStrings(
   { untitled: 'Untitled', main: 'Main', copyOf: (name) => `${name} (copy)`, newResume: 'New resume' },
 )
 
-export { parseResume } from './migrate'
+export { parseResume } from './validate'
 
 /* ------------------------------------------------------------------ Versions library */
 
-/** Before versions: a single resume. Kept untouched as a backup, read once to seed the library. */
-const LEGACY_KEY = 'codacv.resume.v1'
 export const LIBRARY_KEY = 'codacv.library.v1'
 /** Bumped on every save, so a tab can tell that another tab saved in between. */
 const REV_KEY = 'codacv.library.rev'
@@ -74,7 +72,7 @@ function packLibrary(activeId: string, versions: Version[]) {
   return { activeId, versions: packed, photos }
 }
 
-/** Put the shared photos back into the stored versions (before they are migrated or quarantined). */
+/** Put the shared photos back into the stored versions (before they are validated or quarantined). */
 function unpackPhotos(versions: unknown[], photos: unknown) {
   if (!isObj(photos)) return
   for (const v of versions) {
@@ -154,7 +152,7 @@ function loadLibrary(): Loaded {
           id,
           name: typeof v.name === 'string' ? v.name : strings(S).untitled,
           updatedAt: typeof v.updatedAt === 'number' ? v.updatedAt : Date.now(),
-          resume: migrate(v.resume),
+          resume: validateResume(v.resume),
         })
       } catch (e) {
         console.warn('Could not read a version, it is kept aside', e)
@@ -172,14 +170,8 @@ function loadLibrary(): Loaded {
     }
   }
 
-  let resume = templateResume()
-  try {
-    const legacy = localStorage.getItem(LEGACY_KEY)
-    if (legacy) resume = migrate(JSON.parse(legacy))
-  } catch (e) {
-    console.warn('Could not load the saved resume, using the example', e)
-  }
   const id = uid()
+  const resume = templateResume()
   return { library: { activeId: id, versions: [{ id, name: strings(S).main, updatedAt: Date.now(), resume }] }, rev, issue }
 }
 

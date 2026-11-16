@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Download, FileUp, Info, Printer, Redo2, RotateCcw, Undo2, ZoomIn, ZoomOut } from 'lucide-react'
 import { useResumeStore, parseResume } from './store'
-import { MAX_IMPORT_BYTES } from './migrate'
+import { MAX_IMPORT_BYTES } from './validate'
 import { templateResume } from './defaultResume'
 import { defineStrings, setUiLang, strings, UI_LANGS, useStrings, useUiLang } from './i18n'
 import type { Resume, Selection } from './types'

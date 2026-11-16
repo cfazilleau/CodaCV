@@ -122,7 +122,7 @@ src/
   types.ts               resume data model
   defaultResume.ts       seed resume (fictional example)
   store.ts               state, localStorage persistence (safe across tabs), undo/redo
-  migrate.ts             reads saved / imported JSON field by field (old formats, bad values)
+  validate.ts            reads saved / imported JSON field by field (bad or missing values)
   layout.ts              rows / columns / stacks; every change to the sections order goes through it
   components/
     ResumeDocument.tsx   the resume itself (shared by preview and print)

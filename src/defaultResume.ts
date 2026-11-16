@@ -229,5 +229,5 @@ export function templateResume(lang: UiLang = getUiLang()): Resume {
   }
 }
 
-/** Reference values for `migrate()` defaults (language-independent fields only are read from it). */
+/** Reference values for `validateResume()` defaults (language-independent fields only are read from it). */
 export const defaultResume: Resume = templateResume('fr')
