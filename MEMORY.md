@@ -71,6 +71,9 @@ headless printing, and PDF text extraction (see "Testing" below).
   `date` (dropped on purpose at the owner's request, replaced by `start` / `end` / `current`),
   timeline `bullets: string[]` → markdown `description` (`bulletsToMarkdown`: one "- " line each, a
   start that looks like block markdown — `#`, `>`, `1.`, `-`, a fence — is backslash-escaped).
+  Common AI-conversion slips are also accepted: timeline entries under `items` (used only when
+  `entries` is not an array) and list items as plain strings (→ `{ text }`). Before this, they were
+  silently dropped and the import looked like a CV with empty sections.
 - `resume.version` is still `1`; migrations are shape-based, not version-based.
 - Import adds the JSON as a **new version** (5 MB max); export / reset act on the active version.
 - Undo history is per session and resets when switching versions. Rapid edits within 600 ms are

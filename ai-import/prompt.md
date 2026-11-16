@@ -47,6 +47,9 @@ FIELDS
 - Section "title": the heading used in the CV, in its language.
 
 SECTION KINDS ("kind")
+- Keep each kind's exact shape from the template: a "timeline" holds its entries in "entries"
+  (not "items"), and every item of the other kinds is an object, e.g. { "text": "French" } in a
+  "list", never a plain string.
 - "timeline": dated entries (jobs, internships, projects, education, volunteering).
   For a job: "title" = company or organisation, "subtitle" = job title.
   For education: "title" = degree, "subtitle" = school.

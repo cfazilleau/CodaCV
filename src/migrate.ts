@@ -191,7 +191,8 @@ function migrateSection(s: Obj, id: IdFn): Section | null {
       return {
         ...base,
         kind: 'timeline',
-        entries: objs(s.entries).map((e) => ({
+        // AI conversions sometimes name the entries `items`, like the other section kinds
+        entries: objs(Array.isArray(s.entries) ? s.entries : s.items).map((e) => ({
           ...item(e),
           // Dates are "YYYY/MM/DD" (also accepted with dashes). The old free-text `date` ("2019 - 2022")
           // is dropped on purpose: dates are now entered as start / end and written in the resume's language.
@@ -211,7 +212,11 @@ function migrateSection(s: Obj, id: IdFn): Section | null {
       return {
         ...base,
         kind: 'list',
-        items: objs(s.items).map((it) => ({ ...item(it), text: str(it.text) })),
+        // A plain string item ("French") is accepted as { text: "French" }
+        items: arr(s.items)
+          .map((it) => (typeof it === 'string' ? { text: it } : it))
+          .filter(isObj)
+          .map((it) => ({ ...item(it), text: str(it.text) })),
         display: optOneOf(s.display, DISPLAYS),
         separator: optStr(s.separator),
       }
