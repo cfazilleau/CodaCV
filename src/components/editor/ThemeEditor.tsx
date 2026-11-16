@@ -4,6 +4,7 @@ import type { DateFormat, Density, EntryStyle, HeaderStyle, PhotoShape, Resume, 
 import { FONT_FAMILIES } from '../ResumeDocument'
 import { ColorField, Select, Slider, TextField, Toggle } from './fields'
 import { defineStrings, useStrings } from '../../i18n'
+import { TOUCH, useMediaQuery } from '../../media'
 import { DATE_FORMATS, formatDate, formatDateRange, RESUME_LOCALE_CODES, RESUME_LOCALES } from '../../locale'
 
 /**
@@ -62,6 +63,8 @@ const S = defineStrings(
     layout: 'Mise en page',
     layoutNote:
       'Sur la page, survolez une section et glissez sa poignée pour la placer en ligne, en colonne ou sous une autre. Glissez le séparateur entre colonnes pour les redimensionner, et les bords de page pour les marges.',
+    layoutNoteTouch:
+      'Sur la page, touchez une section puis glissez la poignée au bout de son titre pour la placer en ligne, en colonne ou sous une autre. Dans une ligne à plusieurs colonnes, glissez les poignées entre colonnes pour les redimensionner. Les marges se règlent ci-dessous.',
     dateColumn: 'Colonne des dates',
     marginX: 'Marges horizontales',
     marginY: 'Marges verticales',
@@ -124,6 +127,8 @@ const S = defineStrings(
     layout: 'Layout',
     layoutNote:
       'On the page, hover a section and drag its handle to place it in a row, a column or under another one. Drag the divider between columns to resize them, and the page edges for the margins.',
+    layoutNoteTouch:
+      'On the page, tap a section, then drag the handle at the end of its title to place it in a row, a column or under another one. In a row with several columns, drag the handles between columns to resize them. Margins are set below.',
     dateColumn: 'Date column',
     marginX: 'Horizontal margins',
     marginY: 'Vertical margins',
@@ -157,6 +162,7 @@ const SAMPLE_DATE = '2022/09/15'
 
 export function ThemeEditor({ resume, setResume }: { resume: Resume; setResume: (fn: (r: Resume) => Resume) => void }) {
   const s = useStrings(S)
+  const touch = useMediaQuery(TOUCH)
   const t = resume.theme
   const locale = resume.meta.locale
   const setTheme = (p: Partial<typeof t>) => setResume((r) => ({ ...r, theme: { ...r.theme, ...p } }))
@@ -229,7 +235,7 @@ export function ThemeEditor({ resume, setResume }: { resume: Resume; setResume: 
       </StyleGroup>
 
       <StyleGroup icon={<Columns2 size={15} />} title={s.layout}>
-        <p className="note">{s.layoutNote}</p>
+        <p className="note">{touch ? s.layoutNoteTouch : s.layoutNote}</p>
         <Slider label={s.dateColumn} min={18} max={45} unit=" mm" value={t.dateColumn} onChange={(v) => setTheme({ dateColumn: v })} />
         <div className="grid-2">
           <Slider label={s.marginX} min={5} max={25} unit=" mm" value={t.marginX} onChange={(v) => setTheme({ marginX: v })} />

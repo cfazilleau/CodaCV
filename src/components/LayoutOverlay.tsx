@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type RefObject } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import { GripVertical } from 'lucide-react'
 import type { Resume, Selection } from '../types'
 import { defineStrings, useStrings } from '../i18n'
 import { A4_H_MM, A4_W_MM, COL_GAP_MM, MM, dateColumnFraction, moveItem, moveSectionAnywhere, setColumnWidths, type SidebarAwareDrop } from '../layout'
+import { TOUCH, useMediaQuery } from '../media'
 
 const S = defineStrings(
   {
@@ -32,6 +33,8 @@ const S = defineStrings(
  * - grip on each entry / list item → reorder, also across sections of the same kind
  * - divider between columns → resize (snaps to the date column, ¼ ⅓ ½ ⅔ ¾)
  * - page-margin guides → page margins
+ * With a mouse the tools follow the pointer. On touch screens (no hover) they follow the
+ * selected section: its grip and its row's dividers only (items and margins: editor / sliders).
  * It only reads the DOM of the resume (data-* attributes); the resume itself is untouched,
  * so the PDF text order is unaffected.
  */
@@ -94,9 +97,18 @@ export function LayoutOverlay({ shellRef, resume, setResume, zoom, selection }: 
 
   /* ------------------------------------------------------------- hover tracking */
 
+  // Touch screens have no hover: the tools follow the selected section (tap it on the page),
+  // and only sections and columns are handled there (items and margins: editor / sliders)
+  const touch = useMediaQuery(TOUCH)
+  useEffect(() => {
+    if (!touch || drag) return
+    const sectionId = selection?.kind === 'section' ? selection.sectionId : undefined
+    setHover((h) => (h.sectionId === sectionId && !h.itemId ? h : { sectionId }))
+  }, [touch, selection, drag])
+
   useEffect(() => {
     const shell = shellRef.current
-    if (!shell) return
+    if (!shell || touch) return
     const onMove = (e: PointerEvent) => {
       if (drag) return
       const t = e.target as HTMLElement
@@ -140,7 +152,7 @@ export function LayoutOverlay({ shellRef, resume, setResume, zoom, selection }: 
       shell.removeEventListener('pointermove', onMove)
       shell.removeEventListener('pointerleave', onLeave)
     }
-  }, [shellRef, drag, frame])
+  }, [shellRef, drag, frame, touch])
 
   /* ------------------------------------------------------------- measure */
 
@@ -325,9 +337,33 @@ export function LayoutOverlay({ shellRef, resume, setResume, zoom, selection }: 
     if (!f0) return
     document.body.classList.add('is-layout-dragging')
 
+    // Edge autoscroll: while a section / item is held near the top or bottom of the preview,
+    // keep scrolling it (the page is taller than the screen, more so on phones)
+    const scroller = f0.shell.closest<HTMLElement>('.preview')
+    let last: { x: number; y: number } | null = null
+    let raf = 0
+    const autoscroll = () => {
+      raf = 0
+      if (!scroller || !last || (drag.kind !== 'section' && drag.kind !== 'item')) return
+      const r = scroller.getBoundingClientRect()
+      const edge = 56
+      const dy = last.y < r.top + edge ? last.y - (r.top + edge) : last.y > r.bottom - edge ? last.y - (r.bottom - edge) : 0
+      if (!dy) return
+      const before = scroller.scrollTop
+      scroller.scrollTop += Math.round(clamp(dy / 3, -18, 18))
+      if (scroller.scrollTop === before) return
+      move(last.x, last.y) // the page moved under the pointer: aim again
+      raf = requestAnimationFrame(autoscroll)
+    }
+
     const onMove = (e: PointerEvent) => {
+      last = { x: e.clientX, y: e.clientY }
+      move(e.clientX, e.clientY)
+      if (!raf) raf = requestAnimationFrame(autoscroll)
+    }
+
+    const move = (x: number, y: number) => {
       const f = frame()!
-      const { clientX: x, clientY: y } = e
       switch (drag.kind) {
         case 'section':
         case 'item': {
@@ -406,6 +442,7 @@ export function LayoutOverlay({ shellRef, resume, setResume, zoom, selection }: 
     window.addEventListener('blur', cancel)
     window.addEventListener('keydown', onKey)
     return () => {
+      cancelAnimationFrame(raf)
       document.body.classList.remove('is-layout-dragging')
       window.removeEventListener('pointermove', onMove)
       window.removeEventListener('pointerup', onUp)
@@ -437,11 +474,24 @@ export function LayoutOverlay({ shellRef, resume, setResume, zoom, selection }: 
   const marginDrag = drag?.kind === 'margin' ? drag.side : null
   const xActive = marginDrag === 'left' || marginDrag === 'right'
   const yActive = marginDrag === 'top' || marginDrag === 'bottom'
+  // Touch: finger-sized handles whatever the zoom (the overlay is inside the zoomed stage)
+  const inv = 1 / zoom
+  const grip = touch ? 40 * inv : 22
+  const gripPos = (s: NonNullable<Geometry['section']>) =>
+    touch
+      ? // Inside the selected section, at the end of its title row (no room left of the page margin)
+        { left: s.rect.x + s.rect.w - grip, top: s.titleRect.y + s.titleRect.h / 2 - grip / 2 }
+      : { left: s.rect.x - 26, top: s.titleRect.y + s.titleRect.h / 2 - 11 }
+  const dividerW = touch ? 28 * inv : 10
 
   return (
-    <div className={`layout-overlay${drag ? ' is-dragging' : ''}`} aria-hidden="true">
-      {/* Page margins */}
-      <div className="margin-guides">
+    <div
+      className={`layout-overlay${drag ? ' is-dragging' : ''}${touch ? ' is-touch' : ''}`}
+      style={{ '--lo-inv': inv } as CSSProperties}
+      aria-hidden="true"
+    >
+      {/* Page margins (mouse only: touch screens use the sliders in Apparence) */}
+      <div className="margin-guides" hidden={touch}>
         <div className={`margin-guide margin-guide--v margin-guide--left${xActive ? ' is-active' : ''}`} style={{ left: mx, top: 0, height: '100%' }} onPointerDown={start({ kind: 'margin', side: 'left' })} title={str.marginX} />
         <div className={`margin-guide margin-guide--v margin-guide--right${xActive ? ' is-active' : ''}`} style={{ left: pageW - mx, top: 0, height: '100%' }} onPointerDown={start({ kind: 'margin', side: 'right' })} title={str.marginX} />
         <div className={`margin-guide margin-guide--h margin-guide--top${yActive ? ' is-active' : ''}`} style={{ top: my, left: 0, width: pageW }} onPointerDown={start({ kind: 'margin', side: 'top' })} title={str.marginY} />
@@ -452,21 +502,21 @@ export function LayoutOverlay({ shellRef, resume, setResume, zoom, selection }: 
       {showSectionTools && geo.section && (
         <>
           {!geo.section.selected && <div className="lo-outline" style={box(geo.section.rect, 1.2 * MM)} />}
-          {/* Mouse only (the overlay is aria-hidden): the keyboard uses the section card's placement fields */}
+          {/* Pointer only (the overlay is aria-hidden): the keyboard reorders in the side-panel list */}
           <button
             tabIndex={-1}
             className="lo-grip lo-grip--section"
-            style={{ left: geo.section.rect.x - 26, top: geo.section.titleRect.y + geo.section.titleRect.h / 2 - 11 }}
+            style={gripPos(geo.section)}
             onPointerDown={start({ kind: 'section', id: geo.section.id, label: geo.section.label })}
             title={str.moveSection}
           >
-            <GripVertical size={14} />
+            <GripVertical size={touch ? 22 * inv : 14} />
           </button>
         </>
       )}
 
       {/* Hovered entry / list item grip */}
-      {!drag && geo.item && (
+      {!drag && !touch && geo.item && (
         <button
           tabIndex={-1}
           className="lo-grip lo-grip--item"
@@ -492,7 +542,7 @@ export function LayoutOverlay({ shellRef, resume, setResume, zoom, selection }: 
             <div
               key={c.id}
               className={`lo-divider${drag?.kind === 'col' && drag.index === i ? ' is-active' : ''}`}
-              style={{ left: x - 5, top: geo.row!.rect.y, height: geo.row!.rect.h }}
+              style={{ left: x - dividerW / 2, width: dividerW, top: geo.row!.rect.y, height: geo.row!.rect.h }}
               onPointerDown={start({ kind: 'col', index: i, colIds: geo.row!.cols.map((cc) => cc.id), widths: colWidths(geo.row!.cols.map((cc) => cc.rect.w)) })}
               title={str.resizeColumns}
             />

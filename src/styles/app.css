@@ -1160,10 +1160,42 @@ button {
   position: absolute;
   top: 0;
   bottom: 0;
-  left: 4px;
+  left: calc(50% - 1px);
   width: 2px;
   border-radius: 2px;
   background: color-mix(in srgb, var(--ui-primary) 35%, transparent);
+}
+
+/* Touch screens: the selected section's grip and its row's dividers, finger-sized at any zoom
+   (--lo-inv = 1 / zoom, set on the overlay) */
+.is-touch .lo-grip--section {
+  width: calc(40px * var(--lo-inv));
+  height: calc(40px * var(--lo-inv));
+  border-width: calc(1px * var(--lo-inv));
+  border-radius: calc(10px * var(--lo-inv));
+  border-color: var(--ui-primary);
+  color: var(--ui-primary);
+}
+
+.is-touch .lo-divider::after {
+  left: calc(50% - 1px * var(--lo-inv));
+  width: calc(2px * var(--lo-inv));
+  background: var(--ui-primary);
+}
+
+/* Knob in the middle of the divider: shows it can be dragged */
+.is-touch .lo-divider::before {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  top: calc(50% - 20px * var(--lo-inv));
+  left: calc(50% - 5px * var(--lo-inv));
+  width: calc(10px * var(--lo-inv));
+  height: calc(40px * var(--lo-inv));
+  border: calc(2px * var(--lo-inv)) solid #fff;
+  border-radius: calc(6px * var(--lo-inv));
+  background: var(--ui-primary);
+  box-shadow: 0 0 calc(4px * var(--lo-inv)) rgb(0 0 0 / 0.25);
 }
 
 .lo-divider:hover::after,
