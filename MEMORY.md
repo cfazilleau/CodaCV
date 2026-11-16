@@ -25,8 +25,10 @@ headless printing, and PDF text extraction (see "Testing" below).
 |---|---|
 | `src/types.ts` | Data model: `Resume`, `Theme`, `Section` union (`timeline`, `list`, `text`, `levels`, `facts`, `references`, `highlights`), style enums |
 | `src/defaultResume.ts` | Fictional generic example (digital project manager). Used on first launch, "Réinitialiser", "Partir du modèle" |
-| `src/store.ts` | `migrate()` for old saved data, versions library in localStorage, undo/redo |
-| `src/layout.ts` | Page layout model: rows → columns → stacked sections; `moveSection`, `moveItem`, sidebar helpers |
+| `src/store.ts` | Versions library in localStorage (per-version loading, quarantine, cross-tab revision check), undo/redo |
+| `src/migrate.ts` | `migrate()`: turns any saved / imported JSON into a valid `Resume`, field by field (old formats, bad values) |
+| `src/layout.ts` | Page layout model: rows → columns → stacked sections; every change to the sections order goes through it |
+| `src/components/StorageBanner.tsx`, `ErrorBoundary.tsx` | Storage warnings (other tab, unreadable data) and the crash screen |
 | `src/components/ResumeDocument.tsx` | Renders the resume (preview **and** print). All style variants live here |
 | `src/components/LayoutOverlay.tsx` | On-page handles drawn over the preview (edit only, never printed) |
 | `src/components/editor/Editor.tsx` | Sidebar: tabs Contenu / Apparence / Versions, section cards, item editors, theme editor |
@@ -41,16 +43,24 @@ headless printing, and PDF text extraction (see "Testing" below).
 - **Versions library**: localStorage key `codacv.library.v1` = `{ activeId, versions: [{ id, name, updatedAt, resume }] }`.
   The old single-resume key `codacv.resume.v1` is read once to seed the library ("Principal") and
   then left untouched as a backup — never delete it automatically.
-- Other keys: `codacv.sidebarTab` (last sidebar tab).
-- Everything loaded (library entries, imported JSON) goes through `migrate()` in `store.ts`. When a
-  field is added, removed or renamed, extend `migrate()`; past migrations handled: contact `kind` →
-  `icon`, boolean `summaryIcon`, `pairWithNext` → layout `place`, removed `details` fields
-  (web page feature), removed `spaceBefore`, removed theme `layout` (one-column option).
+- Other keys: `codacv.sidebarTab` (last sidebar tab, written only after the tab rendered),
+  `codacv.library.rev` (revision, bumped on every save), `codacv.quarantine.<ISO date>` (versions
+  that could not be read, kept aside; an identical copy is reused).
+- Everything loaded (library entries, imported JSON) goes through `migrate()` in `migrate.ts`, which
+  rebuilds every field with a type check and a default (`Theme` / `Meta` are object literals, so a
+  new field is a compile error until it is handled). Ids are made `[\w-]{1,64}` and unique per
+  resume (they end up in CSS selectors). Unknown section kinds are skipped. Past migrations handled:
+  contact `kind` → `icon`, boolean `summaryIcon`, `pairWithNext` → layout `place`, removed
+  `details` fields (web page feature), removed `spaceBefore`, removed theme `layout`.
 - `resume.version` is still `1`; migrations are shape-based, not version-based.
-- Import adds the JSON as a **new version**; export / reset act on the active version.
+- Import adds the JSON as a **new version** (5 MB max); export / reset act on the active version.
 - Undo history is per session and resets when switching versions. Rapid edits within 600 ms are
   grouped into one undo step.
-- Two open tabs both save the whole library: last save wins. Known limitation, not handled.
+- Loading reads each version on its own; a bad one goes to quarantine with a banner, the others load.
+  Nothing is written until something changes, so a fallback never overwrites stored data.
+- Several tabs: a save first checks `codacv.library.rev`; `storage` events warn the other tabs. A
+  stale tab stops saving and offers "Recharger" or "Garder cet onglet" (StorageBanner).
+- A render error shows the ErrorBoundary screen; the crashed tree never commits, so nothing is saved.
 
 ## Layout model (`src/layout.ts`)
 
@@ -59,9 +69,14 @@ headless printing, and PDF text extraction (see "Testing" below).
   `stack` (under the previous section, same column); `colWidth` (fraction) on a column's first section.
 - `buildRows()` derives rows/columns for rendering; `normalizeLayout()` cleans flags
   (a single-column row is always plain `row`s).
+- `place` is relative to the previous section, so **never filter or reorder `sections` by hand**:
+  a `column` section after a removed row start would join the previous row. Use `removeSection`,
+  `reorderSections` (side-panel list: the moved section becomes a full-width row), `moveSection`.
 - Header style `sidebar`: sections with `sidebar ?? (kind is list | levels | facts)` render in the
-  coloured column; keep them **last** in the array (`orderForSidebar`). `moveSectionAnywhere()`
-  handles drops into / out of the sidebar.
+  coloured column, in array order. Choosing the style does **not** reorder the array: the main
+  column is `mainLayout()` (full layout minus sidebar sections), so switching styles back and forth
+  keeps the layout. Only an on-page section drag in sidebar mode (`moveSectionAnywhere()`) rebuilds
+  the array as main column first, then sidebar sections as plain rows.
 - In a multi-column row the last section of each column grows to fill the column height.
 
 ## PDF / ATS rules (learned by testing — do not regress)
