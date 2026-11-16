@@ -300,7 +300,7 @@
   }
 
   /* Section hover is drawn by the layout overlay (it stays while reaching the grip) */
-  .cv--edit .cv-section[data-clickable]:hover {
+  .cv--edit .cv-section[data-clickable]:not([data-selected]):hover {
     outline-color: transparent;
   }
 
