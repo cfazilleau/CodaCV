@@ -1,0 +1,319 @@
+/* ------------------------------------------------------------------
+   The resume document. Sizes are in mm/pt so screen == print.
+------------------------------------------------------------------- */
+
+.cv {
+  --accent-soft: color-mix(in srgb, var(--accent) 10%, transparent);
+  box-sizing: border-box;
+  width: 210mm;
+  min-height: 297mm;
+  padding: var(--my) var(--mx);
+  background: #fff;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: var(--fs);
+  line-height: var(--lh);
+  text-align: left;
+  /* Ligatures (fi, fl…) can be extracted as odd glyphs by resume parsers */
+  font-variant-ligatures: none;
+  font-feature-settings: 'liga' 0, 'clig' 0;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.cv *,
+.cv *::before,
+.cv *::after {
+  box-sizing: border-box;
+}
+
+.cv a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.cv ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cv p {
+  margin: 0;
+}
+
+/* Shared two-column grid: date / narrow column + body */
+.cv-header,
+.cv-entry {
+  display: grid;
+  grid-template-columns: var(--date-col) minmax(0, 1fr);
+  column-gap: 4mm;
+}
+
+/* ---------- Header ---------- */
+
+.cv-header {
+  /* Photo column follows the date column, but grows with the photo so it pushes the name */
+  grid-template-columns: max(var(--date-col), var(--photo)) minmax(0, 1fr);
+  align-items: center;
+  margin-bottom: calc(var(--gap-section) + 1mm);
+}
+
+.cv-header--nophoto {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.cv-photo {
+  width: var(--photo);
+  height: var(--photo);
+  object-fit: cover;
+  justify-self: start;
+}
+.cv-photo--circle {
+  border-radius: 50%;
+}
+.cv-photo--rounded {
+  border-radius: 14%;
+}
+
+.cv-name {
+  margin: 0 0 1.6mm;
+  color: var(--accent);
+  font-size: 2.05em;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.005em;
+}
+
+.cv-title {
+  margin-left: 0.4em;
+  font-size: 0.62em;
+  font-weight: 400;
+}
+
+.cv-contacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.2mm 5.5mm;
+  margin-bottom: 2mm !important;
+}
+
+.cv-contacts li,
+.cv-contacts a,
+.cv-summary {
+  display: flex;
+  align-items: center;
+  gap: 2mm;
+}
+
+.cv-summary {
+  align-items: flex-start;
+}
+
+.cv-summary .cv-icon {
+  margin-top: 0.6mm;
+}
+
+.cv-icon {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 1.55em;
+  height: 1.55em;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+}
+
+.cv-icon--empty {
+  background: none;
+}
+
+.cv-icon svg {
+  width: 0.92em;
+  height: 0.92em;
+}
+
+/* ---------- Sections ---------- */
+
+/* Layout grid: rows of columns of stacked sections. Spacing uses margins only
+   (never positioning) so the PDF text stays in reading order. */
+.cv-row {
+  display: grid;
+  column-gap: 4mm;
+}
+
+.cv-row + .cv-row {
+  margin-top: var(--gap-section);
+}
+
+.cv-section {
+  margin-top: var(--space-before, 0mm);
+}
+
+.cv-col > .cv-section + .cv-section {
+  margin-top: calc(var(--gap-section) + var(--space-before, 0mm));
+}
+
+.cv-section-title {
+  margin: 0 0 2.2mm;
+  padding-bottom: 0.7mm;
+  border-bottom: 0.45mm solid var(--accent);
+  color: var(--accent);
+  font-size: 1.38em;
+  font-weight: 700;
+  line-height: 1.2;
+  break-after: avoid;
+}
+
+/* Bullets are a real "•" character in normal flow (no position: relative/absolute):
+   positioned elements are painted — and written into the PDF — after everything else,
+   which detaches bullet text from its entry for parsers that read in stream order. */
+.cv-list li,
+.cv-bullets li {
+  display: grid;
+  grid-template-columns: 1.05em minmax(0, 1fr);
+}
+
+.cv-list li::before,
+.cv-bullets li::before {
+  content: '•';
+  padding-left: 0.2em;
+}
+
+.cv-col--narrow .cv-list li {
+  margin-bottom: 1.2mm;
+}
+
+.cv-text p + p {
+  margin-top: 1.5mm;
+}
+
+/* ---------- Timeline entries ---------- */
+
+.cv-entry {
+  margin-bottom: var(--gap-entry);
+  break-inside: avoid;
+}
+.cv-entry:last-child {
+  margin-bottom: 0;
+}
+
+.cv-entry-loc {
+  display: inline-flex;
+  align-items: center;
+  gap: 1.2mm;
+}
+
+/* ---------- Single-column (ATS) layout ---------- */
+
+.cv--single-column .cv-entry {
+  display: block;
+}
+
+.cv--single-column .cv-entry-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 0.3em;
+}
+
+.cv-entry-metaline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25em;
+  margin-left: auto;
+  padding-left: 3mm;
+  color: color-mix(in srgb, var(--text) 68%, #fff);
+}
+
+.cv-entry-metaline .cv-entry-loc {
+  gap: 1mm;
+}
+
+.cv-flag {
+  width: 1.3em !important;
+  line-height: 0.95em !important;
+  border-radius: 1px;
+}
+
+.cv-entry-head strong {
+  font-weight: 700;
+}
+
+.cv-entry-link {
+  display: inline-flex;
+  margin-left: 1.5mm;
+  color: #666 !important;
+  vertical-align: 0.05em;
+}
+
+.cv-more-badge {
+  display: inline-grid;
+  place-items: center;
+  width: 1.3em;
+  height: 1.3em;
+  margin-left: 1.5mm;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.85em;
+  font-weight: 700;
+  line-height: 1;
+  vertical-align: 0.1em;
+}
+
+.md :is(p, ul, ol) {
+  margin: 0 0 0.6em;
+}
+.md ul {
+  list-style: disc;
+  padding-left: 1.2em;
+}
+.md ol {
+  padding-left: 1.4em;
+}
+.md img {
+  max-width: 100%;
+  border-radius: 6px;
+}
+.md a {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+/* ---------- Interaction (screen only) ---------- */
+
+@media screen {
+  .cv [data-clickable] {
+    cursor: pointer;
+    border-radius: 1.2mm;
+    outline: 0.35mm solid transparent;
+    outline-offset: 0.8mm;
+    transition: outline-color 0.12s, background-color 0.12s;
+  }
+
+  .cv--edit [data-clickable]:hover {
+    outline-color: color-mix(in srgb, var(--accent) 35%, transparent);
+  }
+
+  .cv--edit [data-clickable][data-selected] {
+    outline: 0.45mm dashed var(--accent);
+    background: var(--accent-soft);
+  }
+
+  .cv--view [data-clickable]:hover,
+  .cv--view [data-clickable]:focus-visible {
+    background: var(--accent-soft);
+    outline-color: color-mix(in srgb, var(--accent) 25%, transparent);
+  }
+
+  .cv--view .cv-list li.has-more {
+    text-decoration: underline dotted color-mix(in srgb, var(--accent) 60%, transparent);
+    text-underline-offset: 0.2em;
+  }
+
+  .cv--view a:hover {
+    color: var(--accent);
+  }
+}

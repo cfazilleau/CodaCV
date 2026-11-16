@@ -1,0 +1,65 @@
+/* Printing (Ctrl+P → "Save as PDF").
+   Page size and margins come from the @page rule injected by App (theme margins). */
+
+@media print {
+  html,
+  body,
+  #root {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .topbar,
+  .sidebar,
+  .preview-toolbar,
+  .preview-hint,
+  .page-break,
+  .layout-overlay,
+  .lo-ghost,
+  .viewer-toolbar,
+  .drawer-root,
+  .cv-more-badge {
+    display: none !important;
+  }
+
+  .app,
+  .workspace,
+  .preview,
+  .viewer,
+  .viewer-page {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: none !important;
+    box-shadow: none !important;
+  }
+
+  .preview-stage {
+    zoom: 1 !important;
+    padding: 0 !important;
+  }
+
+  .page-shell {
+    min-height: 0 !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+  }
+
+  .cv {
+    width: auto !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .cv [data-clickable] {
+    outline: none !important;
+    background: none !important;
+    text-decoration: none !important;
+  }
+}
