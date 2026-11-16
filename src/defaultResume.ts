@@ -190,8 +190,8 @@ export const defaultResume: Resume = {
     },
   ],
   theme: {
-    accent: '#b35f22',
-    text: '#1f1f1f',
+    accent: '#a8541c',
+    text: '#1f1d1b',
     font: 'source-sans',
     fontSize: 10,
     density: 'normal',

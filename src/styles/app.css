@@ -537,24 +537,6 @@ button {
   cursor: pointer;
 }
 
-.swatches {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.swatch {
-  width: 26px;
-  height: 26px;
-  border: 2px solid #fff;
-  border-radius: 50%;
-  box-shadow: 0 0 0 1px var(--ui-border-strong);
-}
-
-.swatch.is-active {
-  box-shadow: 0 0 0 2px var(--ui-text);
-}
-
 /* ---------------------------------------------------------------- Profile */
 
 .photo-row {
@@ -1163,4 +1145,77 @@ body.is-layout-dragging * {
   flex-direction: column;
   gap: 12px;
   padding: 8px 14px 16px;
+}
+
+/* ---------------------------------------------------------------- Palette picker */
+
+.palettes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  gap: 6px;
+}
+
+.palette {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 7px 8px 6px;
+  border: 1px solid var(--ui-border);
+  border-radius: 8px;
+  background: #fff;
+  text-align: left;
+}
+
+.palette:hover {
+  border-color: var(--ui-border-strong);
+}
+
+.palette.is-active {
+  border-color: var(--ui-text);
+  box-shadow: 0 0 0 1px var(--ui-text);
+}
+
+.palette-preview {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.palette-dot {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+}
+
+.palette-lines {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.palette-lines span {
+  height: 3px;
+  border-radius: 2px;
+}
+
+.palette-lines span:first-child {
+  width: 80%;
+  height: 4px;
+}
+
+.palette-lines span:nth-child(2) {
+  width: 100%;
+  opacity: 0.85;
+}
+
+.palette-lines span:nth-child(3) {
+  width: 65%;
+  opacity: 0.85;
+}
+
+.palette-name {
+  font-size: 12px;
+  font-weight: 500;
 }

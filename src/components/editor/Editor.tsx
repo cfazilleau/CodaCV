@@ -581,7 +581,24 @@ function ListEditor({ section, update, openItem, toggleItem, registerItem }: Ite
 
 /* ---------------------------------------------------------------- Theme */
 
-const ACCENTS = ['#b35f22', '#c2410c', '#b91c1c', '#be185d', '#7c3aed', '#1d4ed8', '#0e7490', '#047857', '#374151']
+/**
+ * Curated palettes: accent (name, section titles, icon circles) + a near-black text tinted to match.
+ * Every accent has ≥ 5.3:1 contrast on white and white icons on it (WCAG AA), text ≥ 13:1.
+ */
+const PALETTES: { name: string; accent: string; text: string }[] = [
+  { name: 'Cuivre', accent: '#a8541c', text: '#1f1d1b' },
+  { name: 'Terracotta', accent: '#b1442c', text: '#221c1a' },
+  { name: 'Bordeaux', accent: '#8c2638', text: '#211b1d' },
+  { name: 'Framboise', accent: '#a8285d', text: '#221a1e' },
+  { name: 'Prune', accent: '#6d3b9a', text: '#1e1a24' },
+  { name: 'Indigo', accent: '#3446a8', text: '#1b1e2b' },
+  { name: 'Bleu nuit', accent: '#1d4f7c', text: '#19222c' },
+  { name: 'Pétrole', accent: '#0d6670', text: '#162325' },
+  { name: 'Forêt', accent: '#2b6a3d', text: '#1a231d' },
+  { name: 'Olive', accent: '#5d6420', text: '#21231a' },
+  { name: 'Ardoise', accent: '#3e4c5e', text: '#1d2228' },
+  { name: 'Graphite', accent: '#2e2e2e', text: '#2e2e2e' },
+]
 
 function ThemeEditor({ resume, setResume }: { resume: Resume; setResume: (fn: (r: Resume) => Resume) => void }) {
   const t = resume.theme
@@ -591,18 +608,33 @@ function ThemeEditor({ resume, setResume }: { resume: Resume; setResume: (fn: (r
   return (
     <div className="style-panel">
       <StyleGroup icon={<Palette size={15} />} title="Couleurs">
-        <div className="swatches">
-          {ACCENTS.map((c) => (
-            <button
-              key={c}
-              type="button"
-              className={`swatch${t.accent.toLowerCase() === c ? ' is-active' : ''}`}
-              style={{ background: c }}
-              title={c}
-              onClick={() => setTheme({ accent: c })}
-            />
-          ))}
+        <div className="palettes" role="radiogroup" aria-label="Palette">
+          {PALETTES.map((p) => {
+            const active = t.accent.toLowerCase() === p.accent && t.text.toLowerCase() === p.text
+            return (
+              <button
+                key={p.name}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                className={`palette${active ? ' is-active' : ''}`}
+                onClick={() => setTheme({ accent: p.accent, text: p.text })}
+                title={`${p.name} — ${p.accent}`}
+              >
+                <span className="palette-preview">
+                  <span className="palette-dot" style={{ background: p.accent }} />
+                  <span className="palette-lines">
+                    <span style={{ background: p.accent }} />
+                    <span style={{ background: p.text }} />
+                    <span style={{ background: p.text }} />
+                  </span>
+                </span>
+                <span className="palette-name">{p.name}</span>
+              </button>
+            )
+          })}
         </div>
+        <div className="field-label">Personnaliser</div>
         <div className="grid-2">
           <ColorField label="Couleur d'accent" value={t.accent} onChange={(v) => setTheme({ accent: v })} />
           <ColorField label="Couleur du texte" value={t.text} onChange={(v) => setTheme({ text: v })} />
