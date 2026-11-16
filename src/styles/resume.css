@@ -78,18 +78,24 @@
   border-radius: 14%;
 }
 
-.cv-name {
+/* Name (H1) and job title share one line: both inline, separated by a real space */
+.cv-name-line {
   margin: 0 0 1.6mm;
   color: var(--accent);
+  line-height: 1.1;
+}
+
+.cv-name {
+  display: inline;
+  margin: 0;
   font-size: 2.05em;
   font-weight: 700;
-  line-height: 1.1;
   letter-spacing: -0.005em;
 }
 
 .cv-title {
-  margin-left: 0.4em;
-  font-size: 0.62em;
+  margin-left: 0.15em;
+  font-size: 1.27em; /* 0.62 of the name size */
   font-weight: 400;
 }
 
@@ -350,7 +356,6 @@
   justify-self: auto;
 }
 
-.cv--header-centered .cv-name,
 .cv--header-centered .cv-contacts {
   justify-content: center;
 }

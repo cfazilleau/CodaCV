@@ -105,7 +105,8 @@ with **pypdf** (stream order, like most ATS / LLM loaders) and **pdfminer** (lay
    `<text>` stays real PDF text.
 8. **Never wrap e-mails / contacts** (a wrapped address is not detected) — sidebar contacts use `nowrap`.
 9. **No `role="button"` on content elements**: it flattens headings/lists in the tagged PDF.
-10. `<html lang>` follows `meta.locale` → PDF `/Lang`.
+10. `<html lang>` follows `meta.locale` → PDF `/Lang`. The `<h1>` holds the **name only**; the job
+    title is an inline `<em>` after it with a real space (inline elements, so no "NameTitle").
 11. Band / sidebar bleed to the paper edge via per-style `@page` rules in `App.tsx`
     (`margin: my 0`, `:first { margin-top: 0 }`); negative margins at the top of a page are
     truncated by Chrome, and `@page` backgrounds are not painted.

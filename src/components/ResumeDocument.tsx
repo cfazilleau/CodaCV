@@ -332,11 +332,18 @@ export function ResumeDocument({ resume, selection, onSelect }: Props) {
     <img className={`cv-photo cv-photo--${theme.photoShape}${theme.photoRing ? ' cv-photo--ring' : ''}`} src={photoSrc} alt="" />
   ) : null
 
+  // The H1 holds the name only (parsers take it as the candidate's name); the job title follows on
+  // the same line after a real space, so text extraction reads "Name Title", not "NameTitle"
   const name = (
-    <h1 className="cv-name">
-      <span>{profile.name}</span>
-      {profile.title && <em className="cv-title">{profile.title}</em>}
-    </h1>
+    <div className="cv-name-line">
+      <h1 className="cv-name">{profile.name}</h1>
+      {profile.title && (
+        <>
+          {' '}
+          <em className="cv-title">{profile.title}</em>
+        </>
+      )}
+    </div>
   )
 
   const contacts = profile.contacts.length > 0 && (
