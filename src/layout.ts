@@ -134,7 +134,21 @@ export function reorderSections(sections: Section[], id: string, to: number): Se
   return fromStructure(sections, rows)
 }
 
-export function moveSection(sections: Section[], id: string, drop: SectionDrop): Section[] {
+/**
+ * "New row before the row holding X", where X is the dragged section itself (it starts a row
+ * with other sections): anchor on another section of that row, so the dragged one gets its own
+ * row above the rest. Null when it is alone in its row (nothing to do).
+ */
+function resolveRowDrop<D extends SidebarAwareDrop>(sections: Section[], id: string, drop: D): D | null {
+  if (drop.kind !== 'row' || drop.beforeSectionId !== id) return drop
+  const row = toStructure(sections).find((r) => r.some((c) => c.ids.includes(id)))
+  const other = row?.flatMap((c) => c.ids).find((x) => x !== id)
+  return other ? { ...drop, beforeSectionId: other } : null
+}
+
+export function moveSection(sections: Section[], id: string, requested: SectionDrop): Section[] {
+  const drop = resolveRowDrop(sections, id, requested)
+  if (!drop) return sections
   const anchor = drop.kind === 'row' ? drop.beforeSectionId : drop.sectionId
   if (anchor === id) return sections
   const rows = toStructure(sections)
@@ -322,8 +336,10 @@ const asRow = (s: Section): Section => ({ ...s, place: 'row', colWidth: undefine
  * In that style, drop targets come from the main column as drawn (mainLayout), so the result is
  * rebuilt from it: main column first, then the sidebar sections as plain rows.
  */
-export function moveSectionAnywhere(sections: Section[], id: string, drop: SidebarAwareDrop, sidebarMode: boolean): Section[] {
-  if (!sidebarMode) return drop.kind === 'sidebar' ? sections : moveSection(sections, id, drop)
+export function moveSectionAnywhere(sections: Section[], id: string, requested: SidebarAwareDrop, sidebarMode: boolean): Section[] {
+  if (!sidebarMode) return requested.kind === 'sidebar' ? sections : moveSection(sections, id, requested)
+  const drop = resolveRowDrop(mainLayout(sections), id, requested)
+  if (!drop) return sections
   const dragged = sections.find((s) => s.id === id)
   const anchor = drop.kind === 'sidebar' ? drop.anchorId : drop.kind === 'row' ? drop.beforeSectionId : drop.sectionId
   if (!dragged || anchor === id) return sections
