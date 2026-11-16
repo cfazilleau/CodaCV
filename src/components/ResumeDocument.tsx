@@ -18,6 +18,7 @@ import type {
 import { autoHref, blockMd, contactHref, inlineMd, normalizeHref } from '../utils'
 import { buildRows, isInSidebar, mainLayout } from '../layout'
 import { ExternalIcon, Icon, IconBadge } from './icons'
+import { FLAGS } from '../flags'
 
 export const FONT_FAMILIES: Record<FontKey, { label: string; css: string }> = {
   'source-sans': { label: 'Source Sans 3', css: "'Source Sans 3', 'Segoe UI', sans-serif" },
@@ -448,9 +449,10 @@ interface EntryProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 function EntryView({ entry: e, entryStyle, showLinkIcon, ...rest }: EntryProps) {
-  const location = (e.location || e.country) && (
+  const flag = FLAGS[e.country]
+  const location = (e.location || flag) && (
     <span className="cv-entry-loc">
-      {e.country && <span className={`fi fi-${e.country.toLowerCase()} cv-flag`} />}
+      {flag && <span className="cv-flag" style={{ backgroundImage: `url("${flag}")` }} />}
       {e.location}
     </span>
   )

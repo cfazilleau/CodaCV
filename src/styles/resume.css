@@ -269,12 +269,20 @@
   gap: 1.2mm;
 }
 
+/* Flag image (src/flags.ts) as a background, sized like flag-icons; never positioned */
 .cv-flag {
-  /* flag-icons sets position: relative on .fi: no positioned elements in the resume */
-  position: static !important;
-  width: 1.3em !important;
-  line-height: 0.95em !important;
+  display: inline-block;
+  width: 1.3em;
+  line-height: 0.95em;
   border-radius: 1px;
+  background-position: 50%;
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+
+/* The no-break space gives the flag its height (as in flag-icons) */
+.cv-flag::before {
+  content: "\00a0";
 }
 
 .cv-entry-head strong {

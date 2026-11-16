@@ -160,6 +160,7 @@ export function IconButton({
   )
 }
 
+/** Flag choices. Adding a country: also import its flag in src/flags.ts. */
 export const COUNTRIES: { value: string; label: string }[] = [
   { value: '', label: '— Aucun —' },
   { value: 'fr', label: 'France' },

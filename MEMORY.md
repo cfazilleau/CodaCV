@@ -36,6 +36,7 @@ headless printing, and PDF text extraction (see "Testing" below).
 | `src/components/editor/Sortable.tsx` | dnd-kit vertical sortable list (grip handle, keyboard support) |
 | `src/components/editor/fields.tsx`, `IconPicker.tsx`, `icons.tsx` | Form fields, icon picker, icon set (lucide + a few hand-drawn brand SVGs) |
 | `src/App.tsx` | Top bar, preview pane (zoom, page-break guides), print setup (`@page` rules, PDF file name) |
+| `src/flags.ts` | Flag SVGs bundled for the countries offered in the editor (`COUNTRIES` in `fields.tsx`); flag-icons' CSS is not used |
 | `src/styles/resume.css` | Resume styles (mm/pt units), `print.css` print overrides, `app.css` editor UI |
 
 ## Data model and storage
