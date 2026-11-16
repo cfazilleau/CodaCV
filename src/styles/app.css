@@ -1246,8 +1246,9 @@ button {
 
 .lo-outline {
   position: absolute;
-  border: 1px dashed color-mix(in srgb, var(--ui-primary) 55%, transparent);
-  border-radius: 4px;
+  /* Same frame as a selected section, lighter: hover preview of the whole section */
+  border: 1.5px dashed color-mix(in srgb, var(--lo-accent, var(--ui-primary)) 45%, transparent);
+  border-radius: 1.2mm;
   pointer-events: none !important;
 }
 

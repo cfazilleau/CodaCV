@@ -291,7 +291,7 @@ function PreviewPane({
       <div className="preview-stage" style={{ zoom }}>
         <div className="page-shell" ref={page} style={{ minHeight: `${pages * A4_H}mm` }}>
           <ResumeDocument resume={resume} mode={mode} selection={selection} onSelect={onSelect} />
-          {mode === 'edit' && <LayoutOverlay shellRef={page} resume={resume} setResume={setResume} zoom={zoom} />}
+          {mode === 'edit' && <LayoutOverlay shellRef={page} resume={resume} setResume={setResume} zoom={zoom} selection={selection} />}
           {Array.from({ length: pages - 1 }, (_, i) => (
             <div key={i} className="page-break" style={{ top: `${resume.theme.marginY + (i + 1) * perPage}mm` }}>
               <span>Page {i + 2}</span>

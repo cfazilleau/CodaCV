@@ -164,6 +164,8 @@
   font-weight: 700;
   line-height: 1.2;
   break-after: avoid;
+  /* Keep the underline square even if the title gets interactive styling */
+  border-radius: 0 !important;
 }
 
 /* Bullets are a real "•" character in normal flow (no position: relative/absolute):
@@ -297,9 +299,20 @@
     outline-color: color-mix(in srgb, var(--accent) 35%, transparent);
   }
 
+  /* Section hover is drawn by the layout overlay (it stays while reaching the grip) */
+  .cv--edit .cv-section[data-clickable]:hover {
+    outline-color: transparent;
+  }
+
   .cv--edit [data-clickable][data-selected] {
     outline: 0.45mm dashed var(--accent);
     background: var(--accent-soft);
+  }
+
+  /* A selected section: dashed frame around all of it, lighter tint than a selected item */
+  .cv--edit .cv-section[data-clickable][data-selected] {
+    outline-offset: 1.2mm;
+    background: color-mix(in srgb, var(--accent) 4%, transparent);
   }
 
   .cv--view [data-clickable]:hover,

@@ -88,15 +88,17 @@ export function ResumeDocument({ resume, mode, selection, onSelect }: Props) {
   const rows = buildRows(resume.sections, theme.layout === 'single-column')
 
   const renderSection = (s: Section) => {
-    const titleSel = clickable({ kind: 'section', sectionId: s.id }, isSel(s.id), mode === 'edit')
+    // The whole section is the click / highlight target (items inside handle their own clicks)
+    const sectionSel = clickable({ kind: 'section', sectionId: s.id }, isSel(s.id), mode === 'edit')
     return (
       <section
         key={s.id}
         className={`cv-section cv-section--${s.kind}`}
         data-section-id={s.id}
         style={{ '--space-before': `${s.spaceBefore ?? 0}mm` } as CSSProperties}
+        {...sectionSel}
       >
-        <h2 className="cv-section-title" {...titleSel}>
+        <h2 className="cv-section-title">
           {s.title}
         </h2>
         {s.kind === 'timeline' && renderTimeline(s)}

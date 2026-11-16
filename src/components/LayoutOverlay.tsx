@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import { GripVertical } from 'lucide-react'
-import type { Resume } from '../types'
+import type { Resume, Selection } from '../types'
 import { COL_GAP_MM, dateColumnFraction, moveItem, moveSection, setColumnWidths, type SectionDrop } from '../layout'
 
 /**
@@ -35,7 +35,7 @@ type Drop =
   | { kind: 'item'; toSectionId: string; anchorId: string; after: boolean }
 
 interface Geometry {
-  section?: { id: string; rect: Rect; titleRect: Rect; label: string; space: number }
+  section?: { id: string; rect: Rect; titleRect: Rect; label: string; space: number; selected: boolean }
   item?: { id: string; owner: string; kind: ItemKind; rect: Rect; label: string }
   row?: { rect: Rect; cols: { id: string; rect: Rect }[] }
 }
@@ -45,12 +45,14 @@ interface Props {
   resume: Resume
   setResume: (fn: (r: Resume) => Resume) => void
   zoom: number
+  /** Current selection, so the hover outline can step aside for a selected section */
+  selection: Selection
 }
 
 const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v))
 const halfMm = (v: number) => Math.round(v * 2) / 2
 
-export function LayoutOverlay({ shellRef, resume, setResume, zoom }: Props) {
+export function LayoutOverlay({ shellRef, resume, setResume, zoom, selection }: Props) {
   const [hover, setHover] = useState<{ sectionId?: string; itemId?: string }>({})
   const itemBand = useRef<DOMRect | null>(null)
   const sectionBand = useRef<DOMRect | null>(null)
@@ -131,6 +133,7 @@ export function LayoutOverlay({ shellRef, resume, setResume, zoom }: Props) {
         titleRect: f.rel(title.getBoundingClientRect()),
         label: section.title,
         space: section.spaceBefore ?? 0,
+        selected: secEl.hasAttribute('data-selected'),
       }
       const rowEl = secEl.closest<HTMLElement>('.cv-row')
       const cols = rowEl ? [...rowEl.querySelectorAll<HTMLElement>(':scope > .cv-col')] : []
@@ -156,7 +159,7 @@ export function LayoutOverlay({ shellRef, resume, setResume, zoom }: Props) {
       }
     }
     setGeo(next)
-  }, [hover, resume, zoom, frame])
+  }, [hover, resume, zoom, frame, selection])
 
   /* ------------------------------------------------------------- hit testing */
 
@@ -369,7 +372,7 @@ export function LayoutOverlay({ shellRef, resume, setResume, zoom }: Props) {
   const yActive = marginDrag === 'top' || marginDrag === 'bottom'
 
   return (
-    <div className={`layout-overlay${drag ? ' is-dragging' : ''}`} aria-hidden="true">
+    <div className={`layout-overlay${drag ? ' is-dragging' : ''}`} aria-hidden="true" style={{ ['--lo-accent' as string]: theme.accent }}>
       {/* Page margins */}
       <div className="margin-guides">
         <div className={`margin-guide margin-guide--v margin-guide--left${xActive ? ' is-active' : ''}`} style={{ left: mx, top: 0, height: '100%' }} onPointerDown={start({ kind: 'margin', side: 'left' })} title="Marge gauche / droite" />
@@ -381,7 +384,7 @@ export function LayoutOverlay({ shellRef, resume, setResume, zoom }: Props) {
       {/* Hovered section: outline, grip, spacing bar */}
       {showSectionTools && geo.section && (
         <>
-          <div className="lo-outline" style={box(geo.section.rect, 3)} />
+          {!geo.section.selected && <div className="lo-outline" style={box(geo.section.rect, 1.2 * MM)} />}
           <button
             className="lo-grip lo-grip--section"
             style={{ left: geo.section.rect.x - 26, top: geo.section.titleRect.y + geo.section.titleRect.h / 2 - 11 }}
