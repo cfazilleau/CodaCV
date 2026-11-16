@@ -324,6 +324,11 @@
     outline-color: color-mix(in srgb, var(--accent) 35%, transparent);
   }
 
+  /* Keyboard focus on the page (Tab between sections, arrows through items) */
+  .cv--edit [data-clickable]:focus-visible {
+    outline: 0.45mm solid var(--accent);
+  }
+
   /* Section hover is drawn by the layout overlay (it stays while reaching the grip) */
   .cv--edit .cv-section[data-clickable]:not([data-selected]):hover {
     outline-color: transparent;

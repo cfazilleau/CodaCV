@@ -55,6 +55,7 @@ export function VersionsPanel({ versions, activeId, onSwitch, onCreate, onRename
                 {editing === v.id ? (
                   <input
                     className="item-input version-name-input"
+                    aria-label="Nom de la version"
                     autoFocus
                     defaultValue={v.name}
                     onBlur={(e) => {

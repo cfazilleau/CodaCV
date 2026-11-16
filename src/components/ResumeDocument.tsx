@@ -126,11 +126,13 @@ export function ResumeDocument({ resume, selection, onSelect }: Props) {
   // Clickable wrapper props (click to edit)
   const clickable = (sel: Selection, active: boolean) => {
     if (!onSelect) return {}
+    const isItem = sel?.kind === 'section' && !!sel.itemId
     return {
       'data-clickable': true,
       'data-selected': active || undefined,
       // No role="button": it would flatten headings/lists in the tagged PDF that ATS read.
-      tabIndex: 0,
+      // Tab stops on the header and sections only; arrow keys go through every entry / item.
+      tabIndex: isItem ? -1 : 0,
       onClick: (e: MouseEvent) => {
         e.preventDefault()
         e.stopPropagation()
@@ -141,6 +143,13 @@ export function ResumeDocument({ resume, selection, onSelect }: Props) {
           e.preventDefault()
           e.stopPropagation()
           onSelect(sel)
+        } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+          const all = [...(e.currentTarget.closest('.cv')?.querySelectorAll<HTMLElement>('[data-clickable]') ?? [])]
+          const next = all[all.indexOf(e.currentTarget as HTMLElement) + (e.key === 'ArrowDown' ? 1 : -1)]
+          if (!next) return
+          e.preventDefault()
+          e.stopPropagation()
+          next.focus()
         }
       },
     }

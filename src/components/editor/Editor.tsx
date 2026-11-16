@@ -72,6 +72,12 @@ const MD_HINT = 'Markdown : **gras**, *italique*, [lien](https://…), listes, !
 
 type Tab = 'content' | 'style' | 'versions'
 
+const TABS: { id: Tab; label: string; icon: ReactNode }[] = [
+  { id: 'content', label: 'Contenu', icon: <PenLine size={15} /> },
+  { id: 'style', label: 'Apparence', icon: <Palette size={15} /> },
+  { id: 'versions', label: 'Versions', icon: <Layers size={15} /> },
+]
+
 function loadTab(): Tab {
   try {
     const t = localStorage.getItem(TAB_KEY)
@@ -169,28 +175,39 @@ export function Editor({ resume, setResume, selection, onSelect, store }: Props)
 
   return (
     <div className="editor">
-      <div className="editor-tabs" role="tablist">
-        <button
-          role="tab"
-          aria-selected={tab === 'content'}
-          className={tab === 'content' ? 'is-active' : ''}
-          onClick={() => switchTab('content')}
-        >
-          <PenLine size={15} /> Contenu
-        </button>
-        <button role="tab" aria-selected={tab === 'style'} className={tab === 'style' ? 'is-active' : ''} onClick={() => switchTab('style')}>
-          <Palette size={15} /> Apparence
-        </button>
-        <button
-          role="tab"
-          aria-selected={tab === 'versions'}
-          className={tab === 'versions' ? 'is-active' : ''}
-          onClick={() => switchTab('versions')}
-        >
-          <Layers size={15} /> Versions <span className="tab-count">{store.versions.length}</span>
-        </button>
+      {/* Tabs pattern: one tab stop, arrow keys / Home / End move between tabs */}
+      <div
+        className="editor-tabs"
+        role="tablist"
+        aria-label="Panneaux"
+        onKeyDown={(e) => {
+          const i = TABS.findIndex((t) => t.id === tab)
+          const next =
+            e.key === 'ArrowRight' ? (i + 1) % TABS.length : e.key === 'ArrowLeft' ? (i + TABS.length - 1) % TABS.length : e.key === 'Home' ? 0 : e.key === 'End' ? TABS.length - 1 : -1
+          if (next < 0) return
+          e.preventDefault()
+          switchTab(TABS[next].id)
+          document.getElementById(`editor-tab-${TABS[next].id}`)?.focus()
+        }}
+      >
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            id={`editor-tab-${t.id}`}
+            role="tab"
+            aria-selected={tab === t.id}
+            aria-controls="editor-panel"
+            tabIndex={tab === t.id ? 0 : -1}
+            className={tab === t.id ? 'is-active' : ''}
+            onClick={() => switchTab(t.id)}
+          >
+            {t.icon} {t.label}
+            {t.id === 'versions' && <span className="tab-count">{store.versions.length}</span>}
+          </button>
+        ))}
       </div>
 
+      <div className="editor-panel" role="tabpanel" id="editor-panel" aria-labelledby={`editor-tab-${tab}`}>
       {tab === 'versions' ? (
         <VersionsPanel
           versions={store.versions}
@@ -331,9 +348,9 @@ export function Editor({ resume, setResume, selection, onSelect, store }: Props)
                       setItems={(fn) => setSection(s.id, (x) => ({ ...(x as LevelSection), items: fn((x as LevelSection).items) }))}
                       columns="minmax(0, 1fr) 96px 64px"
                       fields={[
-                        { key: 'name', placeholder: 'Anglais, C++…' },
-                        { key: 'level', placeholder: 'C1, Expert…' },
-                        { key: 'rating', type: 'rating' },
+                        { key: 'name', label: 'Nom', placeholder: 'Anglais, C++…' },
+                        { key: 'level', label: 'Niveau', placeholder: 'C1, Expert…' },
+                        { key: 'rating', label: 'Note', type: 'rating' },
                       ]}
                       make={() => newLevelItem()}
                       addLabel="Ajouter un niveau"
@@ -347,8 +364,8 @@ export function Editor({ resume, setResume, selection, onSelect, store }: Props)
                     setItems={(fn) => setSection(s.id, (x) => ({ ...(x as FactSection), items: fn((x as FactSection).items) }))}
                     columns="minmax(0, 0.8fr) minmax(0, 1.2fr)"
                     fields={[
-                      { key: 'key', placeholder: 'Permis, Disponibilité…' },
-                      { key: 'value', placeholder: 'B, immédiate… (facultatif)' },
+                      { key: 'key', label: 'Intitulé', placeholder: 'Permis, Disponibilité…' },
+                      { key: 'value', label: 'Valeur', placeholder: 'B, immédiate… (facultatif)' },
                     ]}
                     make={() => newFactItem()}
                     addLabel="Ajouter une info"
@@ -376,10 +393,10 @@ export function Editor({ resume, setResume, selection, onSelect, store }: Props)
                         }
                         columns="minmax(0, 1fr) minmax(0, 1fr)"
                         fields={[
-                          { key: 'name', placeholder: 'Nom' },
-                          { key: 'role', placeholder: 'Poste' },
-                          { key: 'company', placeholder: 'Entreprise' },
-                          { key: 'contact', placeholder: 'E-mail ou téléphone' },
+                          { key: 'name', label: 'Nom', placeholder: 'Nom' },
+                          { key: 'role', label: 'Poste', placeholder: 'Poste' },
+                          { key: 'company', label: 'Entreprise', placeholder: 'Entreprise' },
+                          { key: 'contact', label: 'Contact', placeholder: 'E-mail ou téléphone' },
                         ]}
                         make={() => newReferenceItem()}
                         addLabel="Ajouter une référence"
@@ -394,8 +411,8 @@ export function Editor({ resume, setResume, selection, onSelect, store }: Props)
                     setItems={(fn) => setSection(s.id, (x) => ({ ...(x as HighlightSection), items: fn((x as HighlightSection).items) }))}
                     columns="88px minmax(0, 1fr)"
                     fields={[
-                      { key: 'value', placeholder: '1 M+' },
-                      { key: 'label', placeholder: 'téléchargements' },
+                      { key: 'value', label: 'Chiffre', placeholder: '1 M+' },
+                      { key: 'label', label: 'Libellé', placeholder: 'téléchargements' },
                     ]}
                     make={() => newHighlightItem()}
                     addLabel="Ajouter un chiffre"
@@ -439,6 +456,7 @@ export function Editor({ resume, setResume, selection, onSelect, store }: Props)
           </div>
         </>
       )}
+      </div>
     </div>
   )
 }
@@ -520,6 +538,8 @@ interface ItemSel {
 
 interface RecordField<T> {
   key: keyof T & string
+  /** Accessible name of the input (the grid has no visible labels) */
+  label: string
   placeholder?: string
   type?: 'text' | 'rating'
 }
@@ -561,6 +581,7 @@ function RecordListEditor<T extends { id: string; hidden: boolean }>({
                     <select
                       key={f.key}
                       className="item-input"
+                      aria-label={f.label}
                       title="Note (dessine les points / la barre)"
                       value={Number(it[f.key])}
                       onFocus={() => sel.focusItem(it.id)}
@@ -576,6 +597,7 @@ function RecordListEditor<T extends { id: string; hidden: boolean }>({
                     <input
                       key={f.key}
                       className="item-input"
+                      aria-label={f.label}
                       placeholder={f.placeholder}
                       value={String(it[f.key] ?? '')}
                       onFocus={() => sel.focusItem(it.id)}
@@ -709,11 +731,13 @@ function ProfileEditor({ profile, setProfile, accent }: { profile: Profile; setP
                 onChange={(v) => setContacts((cs) => cs.map((x) => (x.id === c.id ? { ...x, icon: v } : x)))}
               />
               <input
+                aria-label="Texte affiché"
                 placeholder="Texte affiché"
                 value={c.label}
                 onChange={(e) => setContacts((cs) => cs.map((x) => (x.id === c.id ? { ...x, label: e.target.value } : x)))}
               />
               <input
+                aria-label="Lien"
                 placeholder="Lien (auto pour e-mail / tél.)"
                 title="Laisser vide pour un e-mail ou un numéro : le lien mailto: / tel: est créé automatiquement"
                 value={c.url}
@@ -900,6 +924,7 @@ function ListEditor({ section, update, openItem, toggleItem, registerItem }: Ite
                 {handle}
                 <input
                   className="item-input"
+                  aria-label="Élément"
                   value={it.text}
                   onChange={(e) => patch(it.id, { text: e.target.value })}
                   onPaste={pasteSplit(it)}

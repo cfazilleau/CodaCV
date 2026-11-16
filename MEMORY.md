@@ -126,6 +126,9 @@ with **pypdf** (stream order, like most ATS / LLM loaders) and **pdfminer** (lay
   (row / column / under the previous section, `setPlacement`) and, for a column's first section,
   "Largeur de la colonne" (`setColumnWidth`). Page margins are sliders in Apparence. The overlay is
   `aria-hidden` and its grips are `tabIndex={-1}` (mouse only).
+- Keyboard on the preview: Tab stops on the header and sections; arrow keys move through every
+  clickable entry / item (`clickable()` in ResumeDocument). Side-panel tabs follow the WAI tabs
+  pattern (one tab stop, arrows / Home / End).
 - Selected section = dashed frame around the whole `<section>` (not the title). The overlay's hover
   frame steps aside when the section is selected.
 - Removed on purpose (don't bring back unless asked): the "Page web" / `#/view` interactive page and

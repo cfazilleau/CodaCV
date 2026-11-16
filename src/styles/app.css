@@ -4,7 +4,7 @@
   --ui-border: #e2e5ea;
   --ui-border-strong: #cdd2da;
   --ui-text: #1d2330;
-  --ui-muted: #6b7383;
+  --ui-muted: #5f6775; /* ≥ 4.5:1 on the light panels */
   --ui-primary: #b35f22;
   --ui-primary-soft: #fbefe6;
   --ui-danger: #c62828;
@@ -259,6 +259,12 @@ button {
   flex-direction: column;
   gap: 10px;
   padding-bottom: 40vh;
+}
+
+.editor-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .card {
@@ -646,7 +652,7 @@ button {
   border: 0;
   border-radius: 5px;
   background: none;
-  color: #a3aab6;
+  color: #858c99; /* ≥ 3:1 for an icon */
   cursor: grab;
   touch-action: none;
 }
