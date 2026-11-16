@@ -315,12 +315,15 @@ button {
 
 .preview-stage {
   display: flex;
-  justify-content: center;
   padding: 18px 24px 48px;
 }
 
 .page-shell {
   position: relative;
+  /* Centered by auto margins, not justify-content: when zoomed in wider than the pane, the page
+     then overflows to the right only, so its left side stays reachable by scrolling.
+     (It may shrink: print narrows it to the printable width.) */
+  margin-inline: auto;
   width: 210mm;
   background: #fff;
   box-shadow:
