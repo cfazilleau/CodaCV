@@ -31,7 +31,8 @@ headless printing, and PDF text extraction (see "Testing" below).
 | `src/components/StorageBanner.tsx`, `ErrorBoundary.tsx` | Storage warnings (other tab, unreadable data) and the crash screen |
 | `src/components/ResumeDocument.tsx` | Renders the resume (preview **and** print). All style variants live here |
 | `src/components/LayoutOverlay.tsx` | On-page handles drawn over the preview (edit only, never printed) |
-| `src/components/editor/Editor.tsx` | Sidebar: tabs Contenu / Apparence / Versions, section cards, item editors, theme editor |
+| `src/components/editor/Editor.tsx` | Sidebar: tabs Contenu / Apparence / Versions, section cards (fields per section kind) |
+| `src/components/editor/ProfileEditor.tsx`, `ItemEditors.tsx`, `ThemeEditor.tsx`, `PlacementFields.tsx`, `Card.tsx` | Personal info; timeline / list / record item editors; Apparence tab; placement + column width fields; collapsible card |
 | `src/components/editor/VersionsPanel.tsx` | Versions tab |
 | `src/components/editor/Sortable.tsx` | dnd-kit vertical sortable list (grip handle, keyboard support) |
 | `src/components/editor/fields.tsx`, `IconPicker.tsx`, `icons.tsx` | Form fields, icon picker, icon set (lucide + a few hand-drawn brand SVGs) |
