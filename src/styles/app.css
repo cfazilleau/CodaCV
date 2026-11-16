@@ -1068,3 +1068,98 @@ body.is-layout-dragging * {
   margin-top: 0;
   background: linear-gradient(to bottom, rgb(120 130 150 / 0.4) 1px, transparent 1px);
 }
+
+/* ---------------------------------------------------------------- Sidebar tabs & groups */
+
+.editor-tabs {
+  position: sticky;
+  top: -16px;
+  z-index: 6;
+  display: flex;
+  gap: 2px;
+  margin: -16px -16px 4px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--ui-border);
+  background: #f7f8fa;
+}
+
+.editor-tabs button {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 34px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--ui-muted);
+  font-weight: 600;
+}
+
+.editor-tabs button:hover {
+  background: #eceef2;
+  color: var(--ui-text);
+}
+
+.editor-tabs button.is-active {
+  background: #fff;
+  color: var(--ui-text);
+  box-shadow:
+    0 0 0 1px var(--ui-border),
+    0 1px 3px rgb(0 0 0 / 0.06);
+}
+
+.editor-tabs button.is-active svg {
+  color: var(--ui-primary);
+}
+
+.editor-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 2px 0;
+  color: var(--ui-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.editor-heading span {
+  padding: 0 6px;
+  border-radius: 99px;
+  background: #e9ebef;
+  font-size: 10.5px;
+  line-height: 17px;
+  letter-spacing: 0;
+}
+
+.style-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.style-group {
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  background: var(--ui-panel);
+}
+
+.style-group-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 12px 4px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.style-group-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 8px 14px 16px;
+}

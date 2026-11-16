@@ -1,5 +1,23 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { ChevronRight, Columns2, Copy, Eye, EyeOff, ImagePlus, List, ListTree, Palette, Plus, Text, Trash2, User } from 'lucide-react'
+import {
+  ChevronRight,
+  Columns2,
+  Copy,
+  Eye,
+  EyeOff,
+  FileText,
+  Image as ImageIcon,
+  ImagePlus,
+  List,
+  ListTree,
+  Palette,
+  PenLine,
+  Plus,
+  Text,
+  Trash2,
+  Type,
+  User,
+} from 'lucide-react'
 import type {
   Contact,
   ListItem,
@@ -27,17 +45,39 @@ interface Props {
 
 const MD_HINT = 'Markdown : **gras**, *italique*, [lien](https://…), listes, ![image](https://…)'
 
+type Tab = 'content' | 'style'
+const TAB_KEY = 'codacv.sidebarTab'
+
+function loadTab(): Tab {
+  try {
+    return localStorage.getItem(TAB_KEY) === 'style' ? 'style' : 'content'
+  } catch {
+    return 'content'
+  }
+}
+
 export function Editor({ resume, setResume, selection, onSelect }: Props) {
+  const [tab, setTabState] = useState<Tab>(loadTab)
   const [openCard, setOpenCard] = useState<string | null>('profile')
   const [openItem, setOpenItem] = useState<string | null>(null)
   const cardRefs = useRef(new Map<string, HTMLElement>())
   const itemRefs = useRef(new Map<string, HTMLElement>())
+
+  const setTab = (t: Tab) => {
+    setTabState(t)
+    try {
+      localStorage.setItem(TAB_KEY, t)
+    } catch {
+      /* per-browser convenience only */
+    }
+  }
 
   // Follow clicks made on the resume preview
   useEffect(() => {
     if (!selection) return
     const card = selection.kind === 'profile' ? 'profile' : selection.sectionId
     const item = selection.kind === 'section' ? (selection.itemId ?? null) : null
+    setTab('content')
     setOpenCard(card)
     setOpenItem(item)
     requestAnimationFrame(() => {
@@ -51,7 +91,7 @@ export function Editor({ resume, setResume, selection, onSelect }: Props) {
     setOpenCard(next)
     setOpenItem(null)
     if (next === 'profile') onSelect({ kind: 'profile' })
-    else if (next && next !== 'theme') onSelect({ kind: 'section', sectionId: next })
+    else if (next) onSelect({ kind: 'section', sectionId: next })
     else onSelect(null)
   }
 
@@ -85,109 +125,122 @@ export function Editor({ resume, setResume, selection, onSelect }: Props) {
 
   return (
     <div className="editor">
-      <Card
-        ref={registerCard('profile')}
-        icon={<User size={16} />}
-        title="Informations personnelles"
-        open={openCard === 'profile'}
-        selected={selection?.kind === 'profile'}
-        onToggle={() => toggleCard('profile')}
-      >
-        <ProfileEditor profile={resume.profile} setProfile={setProfile} accent={resume.theme.accent} />
-      </Card>
-
-      <SortableList
-        items={resume.sections}
-        className="sortable-list--cards"
-        onReorder={(sections) => setResume((r) => ({ ...r, sections }))}
-      >
-        {(s, handle) => (
-          <Card
-            handle={handle}
-            ref={registerCard(s.id)}
-            icon={s.kind === 'timeline' ? <ListTree size={16} /> : s.kind === 'list' ? <List size={16} /> : <Text size={16} />}
-            title={s.title || 'Sans titre'}
-            muted={!s.visible}
-            open={openCard === s.id}
-            selected={selection?.kind === 'section' && selection.sectionId === s.id}
-            onToggle={() => toggleCard(s.id)}
-            actions={
-              <>
-                <IconButton
-                  title={s.visible ? 'Masquer la section' : 'Afficher la section'}
-                  onClick={() => setSection(s.id, (x) => ({ ...x, visible: !x.visible }))}
-                >
-                  {s.visible ? <Eye size={15} /> : <EyeOff size={15} />}
-                </IconButton>
-                <IconButton
-                  title="Supprimer la section"
-                  danger
-                  onClick={() => {
-                    if (confirm(`Supprimer la section « ${s.title} » ?`))
-                      setResume((r) => ({ ...r, sections: r.sections.filter((x) => x.id !== s.id) }))
-                  }}
-                >
-                  <Trash2 size={15} />
-                </IconButton>
-              </>
-            }
-          >
-            <TextField label="Titre de la section" value={s.title} onChange={(v) => setSection(s.id, (x) => ({ ...x, title: v }))} />
-            {s.kind === 'timeline' && (
-              <TimelineEditor
-                section={s}
-                update={(fn) => setSection(s.id, (x) => fn(x as TimelineSection))}
-                openItem={openItem}
-                toggleItem={(id) => toggleItem(s.id, id)}
-                registerItem={registerItem}
-              />
-            )}
-            {s.kind === 'list' && (
-              <ListEditor
-                section={s}
-                update={(fn) => setSection(s.id, (x) => fn(x as ListSection))}
-                openItem={openItem}
-                toggleItem={(id) => toggleItem(s.id, id)}
-                registerItem={registerItem}
-              />
-            )}
-            {s.kind === 'text' && (
-              <TextArea
-                label="Contenu"
-                hint={MD_HINT}
-                minRows={4}
-                value={s.text}
-                onChange={(v) => setSection(s.id, (x) => ({ ...x, text: v }))}
-              />
-            )}
-          </Card>
-        )}
-      </SortableList>
-
-      <div className="add-section">
-        <span>Ajouter une section</span>
-        <div className="add-section-buttons">
-          <button type="button" onClick={() => addSection('timeline')}>
-            <ListTree size={15} /> Chronologie
-          </button>
-          <button type="button" onClick={() => addSection('list')}>
-            <List size={15} /> Liste
-          </button>
-          <button type="button" onClick={() => addSection('text')}>
-            <Text size={15} /> Texte libre
-          </button>
-        </div>
+      <div className="editor-tabs" role="tablist">
+        <button
+          role="tab"
+          aria-selected={tab === 'content'}
+          className={tab === 'content' ? 'is-active' : ''}
+          onClick={() => setTab('content')}
+        >
+          <PenLine size={15} /> Contenu
+        </button>
+        <button role="tab" aria-selected={tab === 'style'} className={tab === 'style' ? 'is-active' : ''} onClick={() => setTab('style')}>
+          <Palette size={15} /> Apparence
+        </button>
       </div>
 
-      <Card
-        ref={registerCard('theme')}
-        icon={<Palette size={16} />}
-        title="Mise en page & style"
-        open={openCard === 'theme'}
-        onToggle={() => toggleCard('theme')}
-      >
+      {tab === 'style' ? (
         <ThemeEditor resume={resume} setResume={setResume} />
-      </Card>
+      ) : (
+        <>
+          <Card
+            ref={registerCard('profile')}
+            icon={<User size={16} />}
+            title="Informations personnelles"
+            open={openCard === 'profile'}
+            selected={selection?.kind === 'profile'}
+            onToggle={() => toggleCard('profile')}
+          >
+            <ProfileEditor profile={resume.profile} setProfile={setProfile} accent={resume.theme.accent} />
+          </Card>
+
+          <h2 className="editor-heading">
+            Sections <span>{resume.sections.length}</span>
+          </h2>
+          <SortableList
+            items={resume.sections}
+            className="sortable-list--cards"
+            onReorder={(sections) => setResume((r) => ({ ...r, sections }))}
+          >
+            {(s, handle) => (
+              <Card
+                handle={handle}
+                ref={registerCard(s.id)}
+                icon={s.kind === 'timeline' ? <ListTree size={16} /> : s.kind === 'list' ? <List size={16} /> : <Text size={16} />}
+                title={s.title || 'Sans titre'}
+                muted={!s.visible}
+                open={openCard === s.id}
+                selected={selection?.kind === 'section' && selection.sectionId === s.id}
+                onToggle={() => toggleCard(s.id)}
+                actions={
+                  <>
+                    <IconButton
+                      title={s.visible ? 'Masquer la section' : 'Afficher la section'}
+                      onClick={() => setSection(s.id, (x) => ({ ...x, visible: !x.visible }))}
+                    >
+                      {s.visible ? <Eye size={15} /> : <EyeOff size={15} />}
+                    </IconButton>
+                    <IconButton
+                      title="Supprimer la section"
+                      danger
+                      onClick={() => {
+                        if (confirm(`Supprimer la section « ${s.title} » ?`))
+                          setResume((r) => ({ ...r, sections: r.sections.filter((x) => x.id !== s.id) }))
+                      }}
+                    >
+                      <Trash2 size={15} />
+                    </IconButton>
+                  </>
+                }
+              >
+                <TextField label="Titre de la section" value={s.title} onChange={(v) => setSection(s.id, (x) => ({ ...x, title: v }))} />
+                {s.kind === 'timeline' && (
+                  <TimelineEditor
+                    section={s}
+                    update={(fn) => setSection(s.id, (x) => fn(x as TimelineSection))}
+                    openItem={openItem}
+                    toggleItem={(id) => toggleItem(s.id, id)}
+                    registerItem={registerItem}
+                  />
+                )}
+                {s.kind === 'list' && (
+                  <ListEditor
+                    section={s}
+                    update={(fn) => setSection(s.id, (x) => fn(x as ListSection))}
+                    openItem={openItem}
+                    toggleItem={(id) => toggleItem(s.id, id)}
+                    registerItem={registerItem}
+                  />
+                )}
+                {s.kind === 'text' && (
+                  <TextArea
+                    label="Contenu"
+                    hint={MD_HINT}
+                    minRows={4}
+                    value={s.text}
+                    onChange={(v) => setSection(s.id, (x) => ({ ...x, text: v }))}
+                  />
+                )}
+              </Card>
+            )}
+          </SortableList>
+
+          <div className="add-section">
+            <span>Ajouter une section</span>
+            <div className="add-section-buttons">
+              <button type="button" onClick={() => addSection('timeline')}>
+                <ListTree size={15} /> Chronologie
+              </button>
+              <button type="button" onClick={() => addSection('list')}>
+                <List size={15} /> Liste
+              </button>
+              <button type="button" onClick={() => addSection('text')}>
+                <Text size={15} /> Texte libre
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   )
 }
@@ -460,95 +513,113 @@ function ThemeEditor({ resume, setResume }: { resume: Resume; setResume: (fn: (r
   const setMeta = (p: Partial<Resume['meta']>) => setResume((r) => ({ ...r, meta: { ...r.meta, ...p } }))
 
   return (
-    <>
-      <div className="subhead">Couleurs</div>
-      <div className="swatches">
-        {ACCENTS.map((c) => (
-          <button
-            key={c}
-            type="button"
-            className={`swatch${t.accent.toLowerCase() === c ? ' is-active' : ''}`}
-            style={{ background: c }}
-            title={c}
-            onClick={() => setTheme({ accent: c })}
+    <div className="style-panel">
+      <StyleGroup icon={<Palette size={15} />} title="Couleurs">
+        <div className="swatches">
+          {ACCENTS.map((c) => (
+            <button
+              key={c}
+              type="button"
+              className={`swatch${t.accent.toLowerCase() === c ? ' is-active' : ''}`}
+              style={{ background: c }}
+              title={c}
+              onClick={() => setTheme({ accent: c })}
+            />
+          ))}
+        </div>
+        <div className="grid-2">
+          <ColorField label="Couleur d'accent" value={t.accent} onChange={(v) => setTheme({ accent: v })} />
+          <ColorField label="Couleur du texte" value={t.text} onChange={(v) => setTheme({ text: v })} />
+        </div>
+      </StyleGroup>
+
+      <StyleGroup icon={<Type size={15} />} title="Typographie">
+        <div className="grid-2">
+          <Select
+            label="Police"
+            value={t.font}
+            options={Object.entries(FONT_FAMILIES).map(([value, f]) => ({ value: value as typeof t.font, label: f.label }))}
+            onChange={(v) => setTheme({ font: v })}
           />
-        ))}
-      </div>
-      <div className="grid-2">
-        <ColorField label="Couleur d'accent" value={t.accent} onChange={(v) => setTheme({ accent: v })} />
-        <ColorField label="Couleur du texte" value={t.text} onChange={(v) => setTheme({ text: v })} />
-      </div>
-
-      <div className="subhead">Typographie</div>
-      <div className="grid-2">
-        <Select
-          label="Police"
-          value={t.font}
-          options={Object.entries(FONT_FAMILIES).map(([value, f]) => ({ value: value as typeof t.font, label: f.label }))}
-          onChange={(v) => setTheme({ font: v })}
+          <Select
+            label="Densité"
+            value={t.density}
+            options={[
+              { value: 'compact', label: 'Compacte' },
+              { value: 'normal', label: 'Normale' },
+              { value: 'airy', label: 'Aérée' },
+            ]}
+            onChange={(v) => setTheme({ density: v })}
+          />
+        </div>
+        <Slider
+          label="Taille du texte"
+          min={8}
+          max={13}
+          step={0.5}
+          unit=" pt"
+          value={t.fontSize}
+          onChange={(v) => setTheme({ fontSize: v })}
         />
-        <Select
-          label="Densité"
-          value={t.density}
-          options={[
-            { value: 'compact', label: 'Compacte' },
-            { value: 'normal', label: 'Normale' },
-            { value: 'airy', label: 'Aérée' },
-          ]}
-          onChange={(v) => setTheme({ density: v })}
-        />
-      </div>
-      <Slider
-        label="Taille du texte"
-        min={8}
-        max={13}
-        step={0.5}
-        unit=" pt"
-        value={t.fontSize}
-        onChange={(v) => setTheme({ fontSize: v })}
-      />
+      </StyleGroup>
 
-      <div className="subhead">Mise en page</div>
-      <Slider label="Colonne des dates" min={18} max={45} unit=" mm" value={t.dateColumn} onChange={(v) => setTheme({ dateColumn: v })} />
-      <div className="grid-2">
-        <Slider label="Marges horizontales" min={5} max={25} unit=" mm" value={t.marginX} onChange={(v) => setTheme({ marginX: v })} />
-        <Slider label="Marges verticales" min={5} max={25} unit=" mm" value={t.marginY} onChange={(v) => setTheme({ marginY: v })} />
-      </div>
-      <Toggle label="Icônes de lien sur les entrées" checked={t.showLinkIcons} onChange={(v) => setTheme({ showLinkIcons: v })} />
+      <StyleGroup icon={<Columns2 size={15} />} title="Mise en page">
+        <p className="note">
+          Sur la page, survolez une section et glissez sa poignée pour la placer en ligne, en colonne ou sous une autre. Glissez le
+          séparateur entre colonnes pour les redimensionner, et les bords de page pour les marges.
+        </p>
+        <Slider label="Colonne des dates" min={18} max={45} unit=" mm" value={t.dateColumn} onChange={(v) => setTheme({ dateColumn: v })} />
+        <div className="grid-2">
+          <Slider label="Marges horizontales" min={5} max={25} unit=" mm" value={t.marginX} onChange={(v) => setTheme({ marginX: v })} />
+          <Slider label="Marges verticales" min={5} max={25} unit=" mm" value={t.marginY} onChange={(v) => setTheme({ marginY: v })} />
+        </div>
+        <Toggle label="Icônes de lien sur les entrées" checked={t.showLinkIcons} onChange={(v) => setTheme({ showLinkIcons: v })} />
+      </StyleGroup>
 
-      <div className="subhead">Photo</div>
-      <Toggle label="Afficher la photo" checked={t.showPhoto} onChange={(v) => setTheme({ showPhoto: v })} />
-      <div className="grid-2">
-        <Select
-          label="Forme"
-          value={t.photoShape}
-          options={[
-            { value: 'circle', label: 'Cercle' },
-            { value: 'rounded', label: 'Arrondie' },
-            { value: 'square', label: 'Carrée' },
-          ]}
-          onChange={(v) => setTheme({ photoShape: v })}
-        />
-        <Slider label="Taille" min={15} max={45} unit=" mm" value={t.photoSize} onChange={(v) => setTheme({ photoSize: v })} />
-      </div>
+      <StyleGroup icon={<ImageIcon size={15} />} title="Photo">
+        <Toggle label="Afficher la photo" checked={t.showPhoto} onChange={(v) => setTheme({ showPhoto: v })} />
+        <div className="grid-2">
+          <Select
+            label="Forme"
+            value={t.photoShape}
+            options={[
+              { value: 'circle', label: 'Cercle' },
+              { value: 'rounded', label: 'Arrondie' },
+              { value: 'square', label: 'Carrée' },
+            ]}
+            onChange={(v) => setTheme({ photoShape: v })}
+          />
+          <Slider label="Taille" min={15} max={45} unit=" mm" value={t.photoSize} onChange={(v) => setTheme({ photoSize: v })} />
+        </div>
+      </StyleGroup>
 
-      <div className="subhead">Document</div>
-      <div className="grid-2">
-        <TextField label="Nom du fichier PDF" value={resume.meta.fileName} onChange={(v) => setMeta({ fileName: v })} />
-        <Select
-          label="Langue du CV"
-          value={resume.meta.locale}
-          options={[
-            { value: 'fr', label: 'Français' },
-            { value: 'en', label: 'English' },
-          ]}
-          onChange={(v) => setMeta({ locale: v })}
-        />
-      </div>
-      <p className="note">
-        <Columns2 size={13} /> Astuce : sur la page, survolez une section et glissez sa poignée pour la placer en ligne, en colonne ou
-        dessous une autre. Glissez le séparateur entre colonnes pour les redimensionner, et les bords de page pour les marges.
-      </p>
-    </>
+      <StyleGroup icon={<FileText size={15} />} title="Export PDF">
+        <div className="grid-2">
+          <TextField label="Nom du fichier PDF" value={resume.meta.fileName} onChange={(v) => setMeta({ fileName: v })} />
+          <Select
+            label="Langue du CV"
+            value={resume.meta.locale}
+            options={[
+              { value: 'fr', label: 'Français' },
+              { value: 'en', label: 'English' },
+            ]}
+            onChange={(v) => setMeta({ locale: v })}
+            hint="Indiquée dans le PDF pour les logiciels de recrutement."
+          />
+        </div>
+      </StyleGroup>
+    </div>
+  )
+}
+
+function StyleGroup({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
+  return (
+    <section className="style-group">
+      <h3 className="style-group-title">
+        <span className="card-icon">{icon}</span>
+        {title}
+      </h3>
+      <div className="style-group-body">{children}</div>
+    </section>
   )
 }
