@@ -202,6 +202,9 @@ with **pypdf** (stream order, like most ATS / LLM loaders) and **pdfminer** (lay
 - Check: Python venv with `pypdf` + `pdfminer.six`; assert reading order of key strings, fonts are
   `Type0`, structure tags (H1/H2/L/LI), links, no stray text. Run Python with `-I` on downloaded files.
 - Overlay / hover: real mouse events through CDP `Input.dispatchMouseEvent` in headless.
+- Gravatar: test the "picture found" path with **`example@cfaz.dev`** (the owner's test Gravatar
+  account; set up by the owner, 404 until then). `@example.com` addresses cover "no picture".
+  Gravatar publishes no official test address.
 
 ## Working agreements with the repo owner
 
