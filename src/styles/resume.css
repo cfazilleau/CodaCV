@@ -114,6 +114,17 @@
   gap: 2mm;
 }
 
+/* Invisible comma after each contact, as for chips: without it, stream readers can glue
+   "example.com" and "06 12…" together. Zero width, not clipped; the negative margin cancels the
+   flex gap it would add. */
+.cv-contacts li:not(:last-child)::after {
+  content: ",";
+  display: inline-block;
+  width: 0;
+  margin-left: -2mm;
+  color: transparent;
+}
+
 .cv-summary {
   align-items: flex-start;
 }

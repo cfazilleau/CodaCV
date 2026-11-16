@@ -94,7 +94,7 @@ with **pypdf** (stream order, like most ATS / LLM loaders) and **pdfminer** (lay
 2. **No `opacity` on text** (also paints last). Use a mixed colour instead.
 3. **Static fonts only** (`@fontsource/*`, not `@fontsource-variable/*`): variable fonts are embedded
    as Type 3 fonts, which older parsers read badly. Ligatures are disabled.
-4. **Hidden separators** (chips comma, key-figures comma) must be transparent and zero-width but
+4. **Hidden separators** (chips comma, key-figures comma, contacts comma) must be transparent and zero-width but
    **not clipped**: `overflow: hidden` / fully clipped text is dropped from the PDF. Prefer visible
    separators when possible ("Anglais — C1" uses a visible dash because an invisible one overlapped
    the next glyph for one reader).
