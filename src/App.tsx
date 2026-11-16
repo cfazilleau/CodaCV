@@ -8,7 +8,7 @@ import { ResumeDocument } from './components/ResumeDocument'
 import { LayoutOverlay } from './components/LayoutOverlay'
 import { Editor } from './components/editor/Editor'
 import { StorageBanner } from './components/StorageBanner'
-import { downloadText } from './utils'
+import { downloadText, downscaleImage, PHOTO_MAX_CHARS } from './utils'
 
 const MM = 96 / 25.4 // CSS px per mm
 const A4_W = 210
@@ -86,7 +86,12 @@ export default function App() {
   const importJson = async (file: File) => {
     try {
       if (file.size > MAX_IMPORT_BYTES) throw new Error(`fichier trop volumineux (${MAX_IMPORT_BYTES / 1e6} Mo maximum)`)
-      const r = parseResume(await file.text())
+      let r = parseResume(await file.text())
+      // A photo from another tool can weigh megabytes: shrink it like an uploaded one
+      if (r.profile.photo.startsWith('data:image/') && r.profile.photo.length > PHOTO_MAX_CHARS) {
+        const photo = await downscaleImage(r.profile.photo).catch(() => '')
+        r = { ...r, profile: { ...r.profile, photo } }
+      }
       // Imported files become a new version (named after the file), the current one is kept
       store.createVersion('copy', file.name.replace(/\.json$/i, ''), r)
       setSelection(null)

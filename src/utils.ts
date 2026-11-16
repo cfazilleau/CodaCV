@@ -124,27 +124,42 @@ export function autoHref(text: string): string | undefined {
   return contactHref({ id: '', icon: 'none', label: text, url: '' })
 }
 
-/** Downscale an uploaded image to keep localStorage small. */
-export function readImageFile(file: File, maxSize = 480): Promise<string> {
+/** Largest side of a stored photo, in pixels (about 45 mm at 270 dpi: plenty for print). */
+const PHOTO_MAX_PX = 480
+
+/** Downscale an image (any URL the browser can load) to a JPEG data URL, to keep localStorage small. */
+export function downscaleImage(src: string, maxSize = PHOTO_MAX_PX): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onerror = () => reject(new Error('Image illisible'))
+    img.onload = () => {
+      try {
+        const scale = Math.min(1, maxSize / Math.max(img.width, img.height))
+        const canvas = document.createElement('canvas')
+        canvas.width = Math.max(1, Math.round(img.width * scale))
+        canvas.height = Math.max(1, Math.round(img.height * scale))
+        canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height)
+        resolve(canvas.toDataURL('image/jpeg', 0.9))
+      } catch (e) {
+        reject(e)
+      }
+    }
+    img.src = src
+  })
+}
+
+/** Read an uploaded image file, downscaled. */
+export function readImageFile(file: File, maxSize = PHOTO_MAX_PX): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onerror = () => reject(reader.error)
-    reader.onload = () => {
-      const img = new Image()
-      img.onerror = () => reject(new Error('Invalid image'))
-      img.onload = () => {
-        const scale = Math.min(1, maxSize / Math.max(img.width, img.height))
-        const canvas = document.createElement('canvas')
-        canvas.width = Math.round(img.width * scale)
-        canvas.height = Math.round(img.height * scale)
-        canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height)
-        resolve(canvas.toDataURL('image/jpeg', 0.9))
-      }
-      img.src = reader.result as string
-    }
+    reader.onload = () => downscaleImage(reader.result as string, maxSize).then(resolve, reject)
     reader.readAsDataURL(file)
   })
 }
+
+/** Imported photos above this size (characters of data URL) are downscaled like uploads. */
+export const PHOTO_MAX_CHARS = 150_000
 
 export function downloadText(fileName: string, text: string, type = 'application/json') {
   const blob = new Blob([text], { type })

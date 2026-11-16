@@ -59,6 +59,12 @@ export function StorageBanner({ issue, onOverwrite, onDismiss }: Props) {
           </button>
         </>
       )}
+      {issue.kind === 'save-failed' && (
+        <span>
+          Impossible d'enregistrer : l'espace de stockage du navigateur est plein. Retirez une photo ou des versions inutiles, ou
+          exportez vos CV en JSON. Le prochain changement réessaiera.
+        </span>
+      )}
       {issue.kind === 'quarantined' && (
         <>
           <span>

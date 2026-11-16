@@ -40,7 +40,11 @@ headless printing, and PDF text extraction (see "Testing" below).
 
 ## Data model and storage
 
-- **Versions library**: localStorage key `codacv.library.v1` = `{ activeId, versions: [{ id, name, updatedAt, resume }] }`.
+- **Versions library**: localStorage key `codacv.library.v1` = `{ activeId, versions: [{ id, name, updatedAt, resume }], photos }`.
+  Photo data URLs are stored once in `photos` (key = hash + length) and versions hold
+  `"photo:<key>"`; `loadLibrary` puts them back before `migrate()`. Libraries without `photos`
+  (older saves) load as they are. Photos are 480 px JPEGs; imported ones over 150 k characters
+  are downscaled the same way. A failed save (storage full) shows a banner until a save succeeds.
   The old single-resume key `codacv.resume.v1` is read once to seed the library ("Principal") and
   then left untouched as a backup — never delete it automatically.
 - Other keys: `codacv.sidebarTab` (last sidebar tab, written only after the tab rendered),

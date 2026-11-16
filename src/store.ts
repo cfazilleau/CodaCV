@@ -36,7 +36,48 @@ interface Library {
  * - unreadable: the saved library could not be read nor copied aside; saving would erase it
  * - quarantined: some versions could not be read; they were copied to `key` and left out
  */
-export type StorageIssue = { kind: 'other-tab' } | { kind: 'unreadable' } | { kind: 'quarantined'; count: number; key: string }
+export type StorageIssue =
+  | { kind: 'other-tab' }
+  | { kind: 'unreadable' }
+  | { kind: 'quarantined'; count: number; key: string }
+  /** The last save failed (storage full); the next change tries again */
+  | { kind: 'save-failed' }
+
+/* Photos are data URLs of tens of kB, and duplicated versions share them: the saved library keeps
+   each distinct photo once, in `photos`, and versions refer to it as "photo:<key>". */
+const PHOTO_REF = 'photo:'
+
+function photoKey(data: string): string {
+  let h = 0x811c9dc5
+  for (let i = 0; i < data.length; i++) h = Math.imul(h ^ data.charCodeAt(i), 0x01000193)
+  return `${(h >>> 0).toString(36)}-${data.length.toString(36)}`
+}
+
+/** Library as written to storage: photos moved out of the versions, each distinct one once. */
+function packLibrary(activeId: string, versions: Version[]) {
+  const photos: Record<string, string> = {}
+  const packed = versions.map((v) => {
+    const photo = v.resume.profile.photo
+    if (!photo.startsWith('data:')) return v
+    let key = photoKey(photo)
+    while (photos[key] !== undefined && photos[key] !== photo) key += '_'
+    photos[key] = photo
+    return { ...v, resume: { ...v.resume, profile: { ...v.resume.profile, photo: PHOTO_REF + key } } }
+  })
+  return { activeId, versions: packed, photos }
+}
+
+/** Put the shared photos back into the stored versions (before they are migrated or quarantined). */
+function unpackPhotos(versions: unknown[], photos: unknown) {
+  if (!isObj(photos)) return
+  for (const v of versions) {
+    const profile = isObj(v) && isObj(v.resume) && isObj(v.resume.profile) ? v.resume.profile : null
+    if (profile && typeof profile.photo === 'string' && profile.photo.startsWith(PHOTO_REF)) {
+      const data = photos[profile.photo.slice(PHOTO_REF.length)]
+      profile.photo = typeof data === 'string' ? data : ''
+    }
+  }
+}
 
 interface Loaded {
   library: Library
@@ -94,7 +135,9 @@ function loadLibrary(): Loaded {
     const versions: Version[] = []
     const bad: unknown[] = []
     const ids = new Set<string>()
-    for (const v of isObj(parsed) && Array.isArray(parsed.versions) ? parsed.versions : []) {
+    const stored = isObj(parsed) && Array.isArray(parsed.versions) ? parsed.versions : []
+    unpackPhotos(stored, isObj(parsed) ? parsed.photos : undefined)
+    for (const v of stored) {
       try {
         if (!isObj(v)) throw new Error('Not a version')
         let id = typeof v.id === 'string' && v.id ? v.id : uid()
@@ -184,13 +227,15 @@ export function useResumeStore() {
       }
       try {
         const next = rev.current + 1
-        localStorage.setItem(LIBRARY_KEY, JSON.stringify({ activeId, versions: liveVersions }))
+        localStorage.setItem(LIBRARY_KEY, JSON.stringify(packLibrary(activeId, liveVersions)))
         localStorage.setItem(REV_KEY, String(next))
         rev.current = next
         saved.current = { versions, activeId, resume }
+        setIssue((i) => (i?.kind === 'save-failed' ? null : i))
       } catch (e) {
+        // Shown until a save succeeds (no alert: it would pop up after every edit)
         console.warn('Could not save', e)
-        alert("Impossible d'enregistrer : l'espace de stockage du navigateur est plein (photos trop lourdes ?).")
+        setIssue((i) => (i?.kind === 'other-tab' || i?.kind === 'unreadable' ? i : { kind: 'save-failed' }))
       }
     }, 300)
     return () => clearTimeout(t)
