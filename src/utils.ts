@@ -64,8 +64,15 @@ export function contactHref(c: Contact): string | undefined {
   if (c.url.trim()) return normalizeHref(c.url)
   const label = c.label.trim()
   if (EMAIL.test(label)) return `mailto:${label}`
-  if (/^\+?[\d\s().-]{6,}$/.test(label)) return `tel:${label.replace(/[^\d+]/g, '')}`
+  if (isPhone(label)) return `tel:${label.replace(/[^\d+]/g, '')}`
   return undefined
+}
+
+/** A phone number: digits with spaces / dots / dashes / brackets, 8 to 15 digits, not a year range ("2015-2024"). */
+function isPhone(text: string): boolean {
+  if (!/^\+?[\d\s().-]+$/.test(text)) return false
+  const digits = text.replace(/\D/g, '').length
+  return digits >= 8 && digits <= 15 && !/^\d{4}\s*[-–]\s*\d{4}$/.test(text)
 }
 
 export function newEntry(): TimelineEntry {
