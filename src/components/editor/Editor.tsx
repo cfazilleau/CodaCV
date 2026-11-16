@@ -74,6 +74,18 @@ export function Editor({ resume, setResume, selection, onSelect }: Props) {
     }
   }
 
+  /**
+   * Tab buttons: Apparence clears the highlight on the page (the Contenu panel keeps its open
+   * card / item); coming back to Contenu highlights that card / item on the page again.
+   */
+  const switchTab = (t: Tab) => {
+    if (t === tab) return
+    setTab(t)
+    if (t === 'style') onSelect(null)
+    else if (openCard === 'profile') onSelect({ kind: 'profile' })
+    else if (openCard) onSelect({ kind: 'section', sectionId: openCard, itemId: openItem ?? undefined })
+  }
+
   // Follow clicks made on the resume preview
   useEffect(() => {
     if (!selection) return
@@ -132,11 +144,11 @@ export function Editor({ resume, setResume, selection, onSelect }: Props) {
           role="tab"
           aria-selected={tab === 'content'}
           className={tab === 'content' ? 'is-active' : ''}
-          onClick={() => setTab('content')}
+          onClick={() => switchTab('content')}
         >
           <PenLine size={15} /> Contenu
         </button>
-        <button role="tab" aria-selected={tab === 'style'} className={tab === 'style' ? 'is-active' : ''} onClick={() => setTab('style')}>
+        <button role="tab" aria-selected={tab === 'style'} className={tab === 'style' ? 'is-active' : ''} onClick={() => switchTab('style')}>
           <Palette size={15} /> Apparence
         </button>
       </div>
