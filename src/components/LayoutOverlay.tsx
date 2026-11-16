@@ -167,7 +167,8 @@ export function LayoutOverlay({ shellRef, resume, setResume, zoom, selection }: 
         label,
       }
     }
-    setGeo(next)
+    // Measured after every edit: only re-render the overlay when something actually moved
+    setGeo((g) => (JSON.stringify(g) === JSON.stringify(next) ? g : next))
   }, [hover, resume, zoom, frame, selection])
 
   /* ------------------------------------------------------------- hit testing */

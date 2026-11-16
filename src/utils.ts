@@ -50,15 +50,32 @@ const INLINE_TAGS = ['a', 'b', 'strong', 'i', 'em', 'u', 's', 'del', 'code', 'su
 const BLOCK_TAGS = [...INLINE_TAGS, 'p', 'ul', 'ol', 'li', 'blockquote', 'pre', 'hr', 'h3', 'h4', 'h5', 'h6', 'img', 'table', 'thead', 'tbody', 'tr', 'th', 'td']
 const ALLOWED_ATTR = ['href', 'title', 'alt', 'src']
 
-/** Inline markdown (bold, italic, links, code) for one-line fields like bullets. */
-export function inlineMd(src: string): string {
-  return DOMPurify.sanitize(marked.parseInline(src, { async: false }) as string, { ALLOWED_TAGS: INLINE_TAGS, ALLOWED_ATTR })
+/**
+ * The whole resume re-renders on every keystroke: parsing + sanitizing every bullet each time is
+ * the costly part, so results are cached by source text (output only depends on it).
+ */
+function cached(fn: (src: string) => string): (src: string) => string {
+  const cache = new Map<string, string>()
+  return (src) => {
+    let html = cache.get(src)
+    if (html === undefined) {
+      if (cache.size > 2000) cache.clear() // old texts pile up while typing
+      html = fn(src)
+      cache.set(src, html)
+    }
+    return html
+  }
 }
 
+/** Inline markdown (bold, italic, links, code) for one-line fields like bullets. */
+export const inlineMd = cached((src) =>
+  DOMPurify.sanitize(marked.parseInline(src, { async: false }) as string, { ALLOWED_TAGS: INLINE_TAGS, ALLOWED_ATTR }),
+)
+
 /** Block markdown (free-text sections). Images are allowed here (documented in the editor hint). */
-export function blockMd(src: string): string {
-  return DOMPurify.sanitize(marked.parse(src, { async: false }) as string, { ALLOWED_TAGS: BLOCK_TAGS, ALLOWED_ATTR })
-}
+export const blockMd = cached((src) =>
+  DOMPurify.sanitize(marked.parse(src, { async: false }) as string, { ALLOWED_TAGS: BLOCK_TAGS, ALLOWED_ATTR }),
+)
 
 export function contactHref(c: Contact): string | undefined {
   if (c.url.trim()) return normalizeHref(c.url)
