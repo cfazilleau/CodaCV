@@ -42,6 +42,7 @@ headless printing, and PDF text extraction (see "Testing" below).
 | `src/flags.ts` | Flag SVGs bundled for the countries offered in the editor (`COUNTRY_CODES` in `fields.tsx`); flag-icons' CSS is not used |
 | `src/i18n.ts` | Editor UI language (`fr` / `en`, key `codacv.uiLang`, default from the browser); `defineStrings` / `useStrings` / `strings` |
 | `src/locale.ts` | Resume languages (`RESUME_LOCALES`: label + word for "present"), date storage format and locale formatting, `contentLang()` |
+| `ai-import/` | `resume-template.json` + `prompt.md`: lets an AI assistant convert an existing CV for Import. **Update both when the data model changes**; check the template still passes `migrate()` unchanged (only its `<..>` country placeholders are cleared) |
 | `src/styles/resume.css` | Resume styles (mm/pt units), `print.css` print overrides, `app.css` editor UI |
 
 ## Data model and storage
