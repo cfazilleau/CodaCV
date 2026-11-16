@@ -59,7 +59,8 @@ headless printing, and PDF text extraction (see "Testing" below).
 - `resume.version` is still `1`; migrations are shape-based, not version-based.
 - Import adds the JSON as a **new version** (5 MB max); export / reset act on the active version.
 - Undo history is per session and resets when switching versions. Rapid edits within 600 ms are
-  grouped into one undo step.
+  grouped into one undo step only when they touch the same thing (`changeKey` in `store.ts`: a
+  profile / theme field, one section, the sections order).
 - Loading reads each version on its own; a bad one goes to quarantine with a banner, the others load.
   Nothing is written until something changes, so a fallback never overwrites stored data.
 - Several tabs: a save first checks `codacv.library.rev`; `storage` events warn the other tabs. A

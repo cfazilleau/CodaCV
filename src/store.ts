@@ -181,8 +181,28 @@ let loaded: Loaded | undefined
 const loadOnce = () => (loaded ??= loadLibrary())
 
 const HISTORY_LIMIT = 100
-/** Edits closer together than this are merged into one undo step (typing). */
+/** Edits of the same thing closer together than this are merged into one undo step (typing, a drag). */
 const GROUP_MS = 600
+
+/**
+ * What an edit touched: profile / theme fields, meta, one section, or the sections order. Only
+ * consecutive edits with the same key are merged, so typing then dropping a section quickly are
+ * two undo steps. (Layout operations rebuild every section, so a drag keeps one key throughout.)
+ */
+function changeKey(prev: Resume, next: Resume): string {
+  const parts: string[] = []
+  if (prev.meta !== next.meta) parts.push('meta')
+  const fields = <T extends object>(name: string, a: T, b: T) => {
+    if (a !== b) for (const k of Object.keys(b) as (keyof T)[]) if (a[k] !== b[k]) parts.push(`${name}.${String(k)}`)
+  }
+  fields('profile', prev.profile, next.profile)
+  fields('theme', prev.theme, next.theme)
+  if (prev.sections !== next.sections) {
+    if (prev.sections.map((s) => s.id).join() !== next.sections.map((s) => s.id).join()) parts.push('sections')
+    else next.sections.forEach((s, i) => s !== prev.sections[i] && parts.push(`section.${s.id}`))
+  }
+  return parts.join(' ')
+}
 
 /**
  * Resume versions persisted in localStorage. `resume` is the active version; undo / redo work on it
@@ -201,6 +221,8 @@ export function useResumeStore() {
   const past = useRef<Resume[]>([])
   const future = useRef<Resume[]>([])
   const lastPush = useRef(0)
+  /** changeKey of the last edit, for undo grouping */
+  const lastKey = useRef('')
   /** Revision of the library this tab last loaded or saved */
   const rev = useRef(initial.rev)
   /** State last loaded or saved: no write while it is unchanged */
@@ -278,11 +300,13 @@ export function useResumeStore() {
     const next = typeof updater === 'function' ? updater(prev) : updater
     if (next === prev) return
     const now = Date.now()
-    if (now - lastPush.current > GROUP_MS) {
+    const key = changeKey(prev, next)
+    if (now - lastPush.current > GROUP_MS || key !== lastKey.current) {
       past.current.push(prev)
       if (past.current.length > HISTORY_LIMIT) past.current.shift()
     }
     lastPush.current = now
+    lastKey.current = key
     future.current = []
     commit(next)
   }, [])
