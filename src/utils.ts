@@ -290,6 +290,30 @@ export function readImageFile(file: File, maxSize = PHOTO_MAX_PX): Promise<strin
   })
 }
 
+export const isEmail = (text: string) => EMAIL.test(text.trim())
+
+/** No Gravatar image for the address (gravatar.com answers 404 with `d=404`). */
+export class NoGravatarError extends Error {}
+
+/**
+ * The Gravatar image of an e-mail address, downscaled to a data URL like an uploaded photo: it is
+ * fetched once and copied into the resume, so later views and prints never call gravatar.com.
+ * Only the SHA-256 hash of the address is sent (crypto.subtle needs https or localhost).
+ */
+export async function gravatarPhoto(email: string): Promise<string> {
+  const bytes = new TextEncoder().encode(email.trim().toLowerCase())
+  const hash = [...new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))].map((b) => b.toString(16).padStart(2, '0')).join('')
+  const res = await fetch(`https://gravatar.com/avatar/${hash}?s=${PHOTO_MAX_PX}&d=404`, { referrerPolicy: 'no-referrer' })
+  if (res.status === 404) throw new NoGravatarError()
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  const url = URL.createObjectURL(await res.blob())
+  try {
+    return await downscaleImage(url)
+  } finally {
+    URL.revokeObjectURL(url)
+  }
+}
+
 /** Imported photos above this size (characters of data URL) are downscaled like uploads. */
 export const PHOTO_MAX_CHARS = 150_000
 

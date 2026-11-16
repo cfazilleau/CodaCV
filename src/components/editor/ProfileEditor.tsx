@@ -1,8 +1,8 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { ImagePlus, Plus, Trash2 } from 'lucide-react'
 import type { Contact, Profile } from '../../types'
-import { readImageFile, uid } from '../../utils'
-import { IconButton, TextArea, TextField } from './fields'
+import { gravatarPhoto, isEmail, NoGravatarError, readImageFile, uid } from '../../utils'
+import { Field, IconButton, TextArea, TextField } from './fields'
 import { IconPicker } from './IconPicker'
 import { SortableList } from './Sortable'
 import { defineStrings, useStrings } from '../../i18n'
@@ -13,6 +13,16 @@ const S = defineStrings(
     addPhoto: 'Ajouter une photo',
     removePhoto: 'Retirer',
     badImage: (msg: string) => `Impossible d'utiliser cette image : ${msg}`,
+    gravatar: 'Gravatar',
+    gravatarTitle: 'Utiliser la photo Gravatar d’une adresse e-mail',
+    gravatarEmail: 'Adresse e-mail du compte Gravatar',
+    gravatarHint: 'Seule une empreinte (hash) de l’adresse est envoyée à gravatar.com. La photo est copiée dans le CV : elle ne change plus ensuite.',
+    gravatarUse: 'Utiliser cette photo',
+    gravatarLoading: 'Chargement…',
+    cancel: 'Annuler',
+    gravatarBadEmail: 'Adresse e-mail invalide',
+    gravatarNone: 'Aucune photo Gravatar pour cette adresse',
+    gravatarFailed: (msg: string) => `Impossible de récupérer la photo Gravatar : ${msg}`,
     name: 'Nom complet',
     jobTitle: 'Intitulé du poste',
     summary: 'Accroche',
@@ -29,6 +39,16 @@ const S = defineStrings(
     addPhoto: 'Add a photo',
     removePhoto: 'Remove',
     badImage: (msg) => `Can't use this image: ${msg}`,
+    gravatar: 'Gravatar',
+    gravatarTitle: 'Use the Gravatar picture of an email address',
+    gravatarEmail: 'Email address of the Gravatar account',
+    gravatarHint: 'Only a fingerprint (hash) of the address is sent to gravatar.com. The picture is copied into the resume: it does not change afterwards.',
+    gravatarUse: 'Use this picture',
+    gravatarLoading: 'Loading…',
+    cancel: 'Cancel',
+    gravatarBadEmail: 'Invalid email address',
+    gravatarNone: 'No Gravatar picture for this address',
+    gravatarFailed: (msg) => `Could not get the Gravatar picture: ${msg}`,
     name: 'Full name',
     jobTitle: 'Job title',
     summary: 'Summary',
@@ -46,6 +66,31 @@ export function ProfileEditor({ profile, setProfile, accent }: { profile: Profil
   const t = useStrings(S)
   const fileRef = useRef<HTMLInputElement>(null)
   const setContacts = (fn: (c: Contact[]) => Contact[]) => setProfile({ contacts: fn(profile.contacts) })
+  // Gravatar form: null = closed, else the address typed (prefilled with the resume's e-mail contact)
+  const [gravatarEmail, setGravatarEmail] = useState<string | null>(null)
+  const [gravatarBusy, setGravatarBusy] = useState(false)
+  const [gravatarError, setGravatarError] = useState('')
+
+  const openGravatar = () => {
+    const contact = profile.contacts.find((c) => isEmail(c.label) || /^mailto:/i.test(c.url.trim()))
+    setGravatarEmail(contact ? (isEmail(contact.label) ? contact.label : contact.url.trim().slice(7)).trim() : '')
+    setGravatarError('')
+  }
+
+  const applyGravatar = async () => {
+    const email = gravatarEmail?.trim() ?? ''
+    if (!isEmail(email)) return setGravatarError(t.gravatarBadEmail)
+    setGravatarBusy(true)
+    setGravatarError('')
+    try {
+      setProfile({ photo: await gravatarPhoto(email) })
+      setGravatarEmail(null)
+    } catch (err) {
+      setGravatarError(err instanceof NoGravatarError ? t.gravatarNone : t.gravatarFailed(String((err as Error).message ?? err)))
+    } finally {
+      setGravatarBusy(false)
+    }
+  }
 
   return (
     <>
@@ -56,6 +101,9 @@ export function ProfileEditor({ profile, setProfile, accent }: { profile: Profil
         <div className="photo-actions">
           <button type="button" className="btn btn--small" onClick={() => fileRef.current?.click()}>
             {profile.photo ? t.changePhoto : t.addPhoto}
+          </button>
+          <button type="button" className="btn btn--small btn--ghost" title={t.gravatarTitle} aria-expanded={gravatarEmail !== null} onClick={openGravatar}>
+            {t.gravatar}
           </button>
           {profile.photo && (
             <button type="button" className="btn btn--small btn--ghost" onClick={() => setProfile({ photo: '' })}>
@@ -81,6 +129,40 @@ export function ProfileEditor({ profile, setProfile, accent }: { profile: Profil
           }}
         />
       </div>
+      {gravatarEmail !== null && (
+        <form
+          className="gravatar-form"
+          onSubmit={(e) => {
+            e.preventDefault()
+            void applyGravatar()
+          }}
+        >
+          <Field label={t.gravatarEmail} hint={t.gravatarHint}>
+            <input
+              type="email"
+              autoFocus
+              value={gravatarEmail}
+              onChange={(e) => {
+                setGravatarEmail(e.target.value)
+                setGravatarError('')
+              }}
+            />
+          </Field>
+          {gravatarError && (
+            <p className="gravatar-error" role="alert">
+              {gravatarError}
+            </p>
+          )}
+          <div className="photo-actions">
+            <button type="submit" className="btn btn--small" disabled={gravatarBusy}>
+              {gravatarBusy ? t.gravatarLoading : t.gravatarUse}
+            </button>
+            <button type="button" className="btn btn--small btn--ghost" onClick={() => setGravatarEmail(null)}>
+              {t.cancel}
+            </button>
+          </div>
+        </form>
+      )}
 
       <div className="grid-2">
         <TextField label={t.name} value={profile.name} onChange={(v) => setProfile({ name: v })} />

@@ -621,7 +621,24 @@ button {
 
 .photo-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
+}
+
+.gravatar-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--ui-border);
+  border-radius: 8px;
+  background: #fafbfc;
+}
+
+.gravatar-error {
+  margin: 0;
+  color: var(--ui-danger);
+  font-size: 12.5px;
 }
 
 .contacts-editor {

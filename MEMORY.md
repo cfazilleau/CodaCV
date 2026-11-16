@@ -51,7 +51,11 @@ headless printing, and PDF text extraction (see "Testing" below).
   Photo data URLs are stored once in `photos` (key = hash + length) and versions hold
   `"photo:<key>"`; `loadLibrary` puts them back before `migrate()`. Libraries without `photos`
   (older saves) load as they are. Photos are 480 px JPEGs; imported ones over 150 k characters
-  are downscaled the same way. A failed save (storage full) shows a banner until a save succeeds.
+  are downscaled the same way. **Gravatar** (`gravatarPhoto` in `utils.ts`, button in
+  ProfileEditor): SHA-256 of the trimmed lower-case address, fetched once from
+  `gravatar.com/avatar/<hash>?s=480&d=404` (404 = no picture; CORS is `*`), downscaled and stored
+  as a data URL like an upload. Never store a live Gravatar URL: every view and print would call
+  gravatar.com, and the PDF would depend on the network. A failed save (storage full) shows a banner until a save succeeds.
   The old single-resume key `codacv.resume.v1` is read once to seed the library ("Principal") and
   then left untouched as a backup — never delete it automatically.
 - Other keys: `codacv.uiLang` (editor UI language), `codacv.sidebarTab` (last sidebar tab, written only after the tab rendered),
