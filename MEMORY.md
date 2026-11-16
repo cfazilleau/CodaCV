@@ -170,6 +170,13 @@ with **pypdf** (stream order, like most ATS / LLM loaders) and **pdfminer** (lay
 - Markdown (`inlineMd` / `blockMd` in `utils.ts`): DOMPurify with a tag / attribute allow-list (no
   `style`, `class`, `id`, forms or media; images only in free-text sections). Markdown headings start
   at H3 so the tagged PDF keeps one H1 (name) and H2 section titles.
+- **No outside requests**: the app is static, keeps everything in localStorage, sets no cookies and
+  makes no requests of its own (fonts and flags are bundled). The only thing that can load from
+  another site is an image written in a free-text section's markdown — kept on purpose (owner's
+  choice). The photo is shown only when embedded (`isEmbeddedImage`: data:image png/jpeg/gif/webp);
+  a web address from an imported file stays in the data but is never loaded. Theme colours go
+  through `cssColor()` before reaching CSS variables (`url(…)` would be fetched by `background:
+  var(--accent)`).
 
 ## Gotchas hit while developing
 

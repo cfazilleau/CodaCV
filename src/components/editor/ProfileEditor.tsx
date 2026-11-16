@@ -1,7 +1,7 @@
 import { useRef } from 'react'
 import { ImagePlus, Plus, Trash2 } from 'lucide-react'
 import type { Contact, Profile } from '../../types'
-import { readImageFile, uid } from '../../utils'
+import { isEmbeddedImage, readImageFile, uid } from '../../utils'
 import { IconButton, TextArea, TextField } from './fields'
 import { IconPicker } from './IconPicker'
 import { SortableList } from './Sortable'
@@ -51,7 +51,8 @@ export function ProfileEditor({ profile, setProfile, accent }: { profile: Profil
     <>
       <div className="photo-row">
         <button type="button" className="photo-pick" onClick={() => fileRef.current?.click()} title={t.changePhoto}>
-          {profile.photo ? <img src={profile.photo} alt="" /> : <ImagePlus size={22} />}
+          {/* Embedded photos only, as on the resume: a web address is never loaded */}
+          {isEmbeddedImage(profile.photo) ? <img src={profile.photo} alt="" /> : <ImagePlus size={22} />}
         </button>
         <div className="photo-actions">
           <button type="button" className="btn btn--small" onClick={() => fileRef.current?.click()}>

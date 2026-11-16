@@ -3,6 +3,7 @@ import { Ban, ChevronDown } from 'lucide-react'
 import type { IconKey } from '../../types'
 import { defineStrings, useStrings } from '../../i18n'
 import { ICONS, ICON_LABELS, Icon } from '../icons'
+import { cssColor } from '../../utils'
 
 const S = defineStrings(
   { current: (name: string) => `Icône : ${name}`, choose: 'Choisir une icône', none: 'Aucune icône' },
@@ -43,7 +44,7 @@ export function IconPicker({ value, onChange, accent }: Props) {
   }
 
   return (
-    <div className="icon-picker" ref={root} style={{ ['--pick-accent' as string]: accent }}>
+    <div className="icon-picker" ref={root} style={{ ['--pick-accent' as string]: cssColor(accent, 'var(--ui-primary)') }}>
       <button
         type="button"
         className="icon-picker-btn"

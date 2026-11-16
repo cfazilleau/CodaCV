@@ -45,11 +45,29 @@ DOMPurify.addHook('afterSanitizeAttributes', (node) => {
 /*
  * Markdown may contain raw HTML (typed, pasted, or from an imported file). Only plain text
  * formatting is kept: no style / class / id (positioned elements break the PDF reading order, and
- * app class names would restyle the page), no forms, media or embeds.
+ * app class names would restyle the page), no forms, media or embeds. Images written in a free-text
+ * section are allowed on purpose (the owner's choice): they are the only content that can load
+ * something from another site.
  */
 const INLINE_TAGS = ['a', 'b', 'strong', 'i', 'em', 'u', 's', 'del', 'code', 'sub', 'sup', 'span', 'br']
 const BLOCK_TAGS = [...INLINE_TAGS, 'p', 'ul', 'ol', 'li', 'blockquote', 'pre', 'hr', 'h3', 'h4', 'h5', 'h6', 'img', 'table', 'thead', 'tbody', 'tr', 'th', 'td']
 const ALLOWED_ATTR = ['href', 'title', 'alt', 'src']
+
+/**
+ * The photo is shown only when it is embedded in the data (uploads are stored as JPEG data URLs).
+ * A web address (possible in an imported file) is kept but never loaded.
+ */
+export const isEmbeddedImage = (src: string) => /^data:image\/(png|jpe?g|gif|webp);base64,/i.test(src)
+
+/**
+ * A colour as it may be written into a CSS variable: hex, a colour name, rgb() / hsl(). Anything
+ * else (e.g. "url(https://…)" from an imported theme, which `background: var(--accent)` would
+ * fetch) gives the fallback.
+ */
+export function cssColor(value: string, fallback: string): string {
+  const v = value.trim()
+  return /^#[0-9a-f]{3,8}$/i.test(v) || /^[a-z]{3,30}$/i.test(v) || /^(rgb|hsl)a?\([\d\s.,%/+-]*\)$/i.test(v) ? v : fallback
+}
 
 /**
  * The whole resume re-renders on every keystroke: parsing + sanitizing every bullet each time is
