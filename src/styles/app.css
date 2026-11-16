@@ -44,6 +44,7 @@ button {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  height: 100dvh; /* phones: the visible height, without the browser bars */
 }
 
 .topbar {
@@ -127,6 +128,85 @@ button {
   height: 22px;
   margin: 0 4px;
   background: var(--ui-border);
+}
+
+/* Import / export / reset / language / about: inline on wide screens, in the "more" menu below 640px */
+.tb-secondary {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tb-more {
+  display: none;
+}
+
+.tb-menu {
+  position: fixed;
+  inset: auto;
+  top: calc(var(--topbar-h) - 6px);
+  right: 8px;
+  width: min(300px, calc(100vw - 16px));
+  margin: 0;
+  padding: 6px;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius);
+  background: var(--ui-panel);
+  color: var(--ui-text);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.16);
+}
+
+.tb-menu:popover-open {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tb-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--ui-text);
+  text-align: left;
+}
+
+.tb-menu-item:hover {
+  background: #f1f2f5;
+}
+
+.tb-menu-lang .tb-lang {
+  flex: 1;
+  height: 36px;
+}
+
+@media (max-width: 640px) {
+  .tb-secondary {
+    display: none;
+  }
+  .tb-more {
+    display: inline-flex;
+  }
+  .topbar {
+    gap: 8px;
+    padding: 0 10px;
+  }
+  .topbar-actions {
+    margin-left: auto;
+  }
+  .brand-version {
+    display: none;
+  }
+}
+
+@media (max-width: 380px) {
+  .brand-name {
+    display: none;
+  }
 }
 
 .btn {
@@ -564,6 +644,7 @@ button {
 
 .slider input {
   flex: 1;
+  min-width: 0;
   accent-color: var(--ui-primary);
 }
 
@@ -1477,6 +1558,7 @@ body.is-layout-dragging * {
 .welcome {
   width: min(520px, calc(100vw - 32px));
   max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
   padding: 0; /* clicks inside land on .welcome-body; only the backdrop is the dialog itself */
   border: 0;
   border-radius: 14px;
@@ -1568,4 +1650,33 @@ body.is-layout-dragging * {
 
 .welcome-actions .btn--primary {
   margin-left: 0;
+}
+
+/* ---------------------------------------------------------------- Touch screens */
+
+@media (pointer: coarse) {
+  /* iOS zooms into any text field under 16px when it gets focus */
+  input:not([type='checkbox'], [type='radio'], [type='range'], [type='color'], [type='file']),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+  /* Finger-sized targets (about 36-44px) */
+  .icon-btn {
+    width: 36px;
+    height: 36px;
+  }
+  .drag-handle {
+    width: 32px;
+    height: 36px;
+  }
+  .card-toggle,
+  .item-toggle {
+    min-height: 40px;
+  }
+  .tb-btn {
+    min-width: 36px;
+    height: 40px;
+    justify-content: center;
+  }
 }

@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { Download, FileUp, Info, Printer, Redo2, RotateCcw, Undo2, ZoomIn, ZoomOut } from 'lucide-react'
+import { Download, Ellipsis, FileUp, Info, Languages, Printer, Redo2, RotateCcw, Undo2, ZoomIn, ZoomOut } from 'lucide-react'
 import { useResumeStore, parseResume } from './store'
 import { MAX_IMPORT_BYTES } from './validate'
 import { templateResume } from './defaultResume'
@@ -29,6 +29,8 @@ const S = defineStrings(
     print: 'Imprimer ou enregistrer en PDF (Ctrl+P)',
     uiLang: "Langue de l'interface",
     about: 'À propos de CodaCV : gratuit, open source, vos données restent chez vous',
+    aboutShort: 'À propos de CodaCV',
+    more: "Plus d'actions",
     zoomOut: 'Dézoomer',
     fit: 'Ajuster à la largeur',
     zoomIn: 'Zoomer',
@@ -50,6 +52,8 @@ const S = defineStrings(
     print: 'Print or save as PDF (Ctrl+P)',
     uiLang: 'Interface language',
     about: 'About CodaCV: free, open source, your data stays with you',
+    aboutShort: 'About CodaCV',
+    more: 'More actions',
     zoomOut: 'Zoom out',
     fit: 'Fit to width',
     zoomIn: 'Zoom in',
@@ -149,60 +153,88 @@ export default function App() {
     }
   }
 
+  const importClick = () => fileInput.current?.click()
+  const exportJson = () => downloadText(`${resume.meta.fileName || 'cv'}.json`, JSON.stringify(resume, null, 2))
+  const reset = () => {
+    if (confirm(t.resetConfirm)) setResume(templateResume())
+  }
+  // Narrow screens: the secondary actions live in a native popover menu, closed after each action
+  const menu = useRef<HTMLDivElement>(null)
+  const menuAction = (fn: () => void) => () => {
+    menu.current?.hidePopover()
+    fn()
+  }
+  const langSelect = (className: string) => (
+    <select
+      className={className}
+      aria-label={t.uiLang}
+      title={t.uiLang}
+      value={uiLang}
+      onChange={(e) => setUiLang(e.target.value as typeof uiLang)}
+    >
+      {UI_LANGS.map((l) => (
+        <option key={l.value} value={l.value}>
+          {l.value.toUpperCase()} · {l.label}
+        </option>
+      ))}
+    </select>
+  )
+
   return (
     <div className="app" lang={uiLang}>
       <header className="topbar">
         <div className="brand">
           <span className="brand-logo">CV</span>
-          <span>CodaCV</span>
+          <span className="brand-name">CodaCV</span>
           <span className="brand-version" title={t.activeVersion}>
             {store.versions.find((v) => v.id === store.activeId)?.name}
           </span>
         </div>
 
         <div className="topbar-actions">
-          <button className="tb-btn" title={t.undo} disabled={!store.canUndo} onClick={undo}>
+          <button className="tb-btn" title={t.undo} aria-label={t.undo} disabled={!store.canUndo} onClick={undo}>
             <Undo2 size={16} />
           </button>
-          <button className="tb-btn" title={t.redo} disabled={!store.canRedo} onClick={redo}>
+          <button className="tb-btn" title={t.redo} aria-label={t.redo} disabled={!store.canRedo} onClick={redo}>
             <Redo2 size={16} />
           </button>
           <span className="tb-sep" />
-          <button className="tb-btn" title={t.importTitle} onClick={() => fileInput.current?.click()}>
-            <FileUp size={16} /> <span className="tb-label">{t.import}</span>
+          {/* Wide screens: inline. Narrow screens: the same actions in the "more" menu below */}
+          <div className="tb-secondary">
+            <button className="tb-btn" title={t.importTitle} onClick={importClick}>
+              <FileUp size={16} /> <span className="tb-label">{t.import}</span>
+            </button>
+            <button className="tb-btn" title={t.exportTitle} onClick={exportJson}>
+              <Download size={16} /> <span className="tb-label">{t.export}</span>
+            </button>
+            <button className="tb-btn" title={t.resetTitle} aria-label={t.resetTitle} onClick={reset}>
+              <RotateCcw size={16} />
+            </button>
+            {langSelect('tb-lang')}
+            <button className="tb-btn" title={t.about} aria-label={t.about} onClick={() => setWelcome(true)}>
+              <Info size={16} />
+            </button>
+          </div>
+          <button className="tb-btn tb-more" popoverTarget="tb-menu" title={t.more} aria-label={t.more}>
+            <Ellipsis size={18} />
           </button>
-          <button
-            className="tb-btn"
-            title={t.exportTitle}
-            onClick={() => downloadText(`${resume.meta.fileName || 'cv'}.json`, JSON.stringify(resume, null, 2))}
-          >
-            <Download size={16} /> <span className="tb-label">{t.export}</span>
-          </button>
-          <button
-            className="tb-btn"
-            title={t.resetTitle}
-            onClick={() => {
-              if (confirm(t.resetConfirm)) setResume(templateResume())
-            }}
-          >
-            <RotateCcw size={16} />
-          </button>
-          <select
-            className="tb-lang"
-            aria-label={t.uiLang}
-            title={t.uiLang}
-            value={uiLang}
-            onChange={(e) => setUiLang(e.target.value as typeof uiLang)}
-          >
-            {UI_LANGS.map((l) => (
-              <option key={l.value} value={l.value}>
-                {l.value.toUpperCase()} · {l.label}
-              </option>
-            ))}
-          </select>
-          <button className="tb-btn" title={t.about} aria-label={t.about} onClick={() => setWelcome(true)}>
-            <Info size={16} />
-          </button>
+          <div id="tb-menu" className="tb-menu" popover="auto" ref={menu}>
+            <button className="tb-menu-item" onClick={menuAction(importClick)}>
+              <FileUp size={16} /> {t.importTitle}
+            </button>
+            <button className="tb-menu-item" onClick={menuAction(exportJson)}>
+              <Download size={16} /> {t.exportTitle}
+            </button>
+            <button className="tb-menu-item" onClick={menuAction(reset)}>
+              <RotateCcw size={16} /> {t.resetTitle}
+            </button>
+            <button className="tb-menu-item" onClick={menuAction(() => setWelcome(true))}>
+              <Info size={16} /> {t.aboutShort}
+            </button>
+            <label className="tb-menu-item tb-menu-lang">
+              <Languages size={16} /> {langSelect('tb-lang')}
+            </label>
+          </div>
           <button className="btn btn--primary" onClick={() => window.print()} title={t.print}>
             <Printer size={16} /> PDF
           </button>
