@@ -59,6 +59,8 @@ interface Geometry {
   section?: { id: string; rect: Rect; titleRect: Rect; label: string; selected: boolean }
   item?: { id: string; owner: string; kind: ItemKind; rect: Rect; label: string; inline: boolean }
   row?: { rect: Rect; cols: { id: string; rect: Rect }[] }
+  /** Section being dragged (touch: outlined, since no grip shows what was picked up) */
+  held?: Rect
 }
 
 interface Props {
@@ -97,14 +99,72 @@ export function LayoutOverlay({ shellRef, resume, setResume, zoom, selection }: 
 
   /* ------------------------------------------------------------- hover tracking */
 
-  // Touch screens have no hover: the tools follow the selected section (tap it on the page),
-  // and only sections and columns are handled there (items and margins: editor / sliders)
+  // Touch screens have no hover: the column dividers follow the selected section (tap it on the
+  // page), and a section is dragged by pressing on it (no grip). Items and margins are edited in
+  // the side panel there.
   const touch = useMediaQuery(TOUCH)
   useEffect(() => {
     if (!touch || drag) return
     const sectionId = selection?.kind === 'section' ? selection.sectionId : undefined
     setHover((h) => (h.sectionId === sectionId && !h.itemId ? h : { sectionId }))
   }, [touch, selection, drag])
+
+  // Touch: a long press on a section lifts it; moving before that is a normal scroll
+  const touchDragging = useRef(false)
+  useEffect(() => {
+    touchDragging.current = !!drag
+  }, [drag])
+  useEffect(() => {
+    const shell = shellRef.current
+    if (!shell || !touch) return
+    const HOLD_MS = 350
+    const SLOP = 8
+    let timer = 0
+    let origin: { x: number; y: number } | null = null
+    const clear = () => {
+      window.clearTimeout(timer)
+      timer = 0
+      origin = null
+    }
+    const onDown = (e: PointerEvent) => {
+      if (!e.isPrimary || touchDragging.current) return
+      const t = e.target as HTMLElement
+      if (t.closest('.layout-overlay')) return // column dividers handle themselves
+      const secEl = t.closest<HTMLElement>('[data-section-id]')
+      const section = resume.sections.find((s) => s.id === secEl?.dataset.sectionId)
+      if (!section) return
+      origin = { x: e.clientX, y: e.clientY }
+      timer = window.setTimeout(() => {
+        timer = 0
+        navigator.vibrate?.(10)
+        setDrag({ kind: 'section', id: section.id, label: section.title })
+      }, HOLD_MS)
+    }
+    const onMove = (e: PointerEvent) => {
+      if (timer && origin && Math.hypot(e.clientX - origin.x, e.clientY - origin.y) > SLOP) clear()
+    }
+    // While a section is held the page must not scroll (it would cancel the drag)
+    const onTouchMove = (e: TouchEvent) => {
+      if (touchDragging.current) e.preventDefault()
+    }
+    // No long-press menu / text selection on the page
+    const onContextMenu = (e: Event) => e.preventDefault()
+    shell.addEventListener('pointerdown', onDown)
+    shell.addEventListener('pointermove', onMove)
+    shell.addEventListener('pointerup', clear)
+    shell.addEventListener('pointercancel', clear)
+    shell.addEventListener('touchmove', onTouchMove, { passive: false })
+    shell.addEventListener('contextmenu', onContextMenu)
+    return () => {
+      clear()
+      shell.removeEventListener('pointerdown', onDown)
+      shell.removeEventListener('pointermove', onMove)
+      shell.removeEventListener('pointerup', clear)
+      shell.removeEventListener('pointercancel', clear)
+      shell.removeEventListener('touchmove', onTouchMove)
+      shell.removeEventListener('contextmenu', onContextMenu)
+    }
+  }, [shellRef, touch, resume.sections])
 
   useEffect(() => {
     const shell = shellRef.current
@@ -199,9 +259,11 @@ export function LayoutOverlay({ shellRef, resume, setResume, zoom, selection }: 
         label,
       }
     }
+    const heldEl = drag?.kind === 'section' ? f.shell.querySelector<HTMLElement>(`[data-section-id="${CSS.escape(drag.id)}"]`) : null
+    if (heldEl) next.held = f.rel(heldEl.getBoundingClientRect())
     // Measured after every edit: only re-render the overlay when something actually moved
     setGeo((g) => (JSON.stringify(g) === JSON.stringify(next) ? g : next))
-  }, [hover, resume, zoom, frame, selection])
+  }, [hover, resume, zoom, frame, selection, drag])
 
   /* ------------------------------------------------------------- hit testing */
 
@@ -474,15 +536,11 @@ export function LayoutOverlay({ shellRef, resume, setResume, zoom, selection }: 
   const marginDrag = drag?.kind === 'margin' ? drag.side : null
   const xActive = marginDrag === 'left' || marginDrag === 'right'
   const yActive = marginDrag === 'top' || marginDrag === 'bottom'
-  // Touch: finger-sized handles whatever the zoom (the overlay is inside the zoomed stage)
+  // Touch: finger-sized column handles whatever the zoom (the overlay is inside the zoomed stage)
   const inv = 1 / zoom
-  const grip = touch ? 40 * inv : 22
-  const gripPos = (s: NonNullable<Geometry['section']>) =>
-    touch
-      ? // Inside the selected section, at the end of its title row (no room left of the page margin)
-        { left: s.rect.x + s.rect.w - grip, top: s.titleRect.y + s.titleRect.h / 2 - grip / 2 }
-      : { left: s.rect.x - 26, top: s.titleRect.y + s.titleRect.h / 2 - 11 }
   const dividerW = touch ? 28 * inv : 10
+  // Touch: the held section, outlined while it is dragged
+  const heldRect = touch && drag?.kind === 'section' && geo.held ? geo.held : null
 
   return (
     <div
@@ -498,22 +556,24 @@ export function LayoutOverlay({ shellRef, resume, setResume, zoom, selection }: 
         <div className={`margin-guide margin-guide--h margin-guide--bottom${yActive ? ' is-active' : ''}`} style={{ top: pageH - my, left: 0, width: pageW }} onPointerDown={start({ kind: 'margin', side: 'bottom' })} title={str.marginY} />
       </div>
 
-      {/* Hovered section: outline and grip */}
-      {showSectionTools && geo.section && (
+      {/* Hovered section: outline and grip (mouse; touch drags the section itself) */}
+      {showSectionTools && !touch && geo.section && (
         <>
           {!geo.section.selected && <div className="lo-outline" style={box(geo.section.rect, 1.2 * MM)} />}
           {/* Pointer only (the overlay is aria-hidden): the keyboard reorders in the side-panel list */}
           <button
             tabIndex={-1}
             className="lo-grip lo-grip--section"
-            style={gripPos(geo.section)}
+            style={{ left: geo.section.rect.x - 26, top: geo.section.titleRect.y + geo.section.titleRect.h / 2 - 11 }}
             onPointerDown={start({ kind: 'section', id: geo.section.id, label: geo.section.label })}
             title={str.moveSection}
           >
-            <GripVertical size={touch ? 22 * inv : 14} />
+            <GripVertical size={14} />
           </button>
         </>
       )}
+
+      {heldRect && <div className="lo-held" style={box(heldRect, 1.2 * MM)} />}
 
       {/* Hovered entry / list item grip */}
       {!drag && !touch && geo.item && (

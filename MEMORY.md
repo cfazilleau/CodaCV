@@ -164,11 +164,16 @@ with **pypdf** (stream order, like most ATS / LLM loaders) and **pdfminer** (lay
   (tapping the page selects and stays in Preview; back in the editor the selected card scrolls into
   view, via Editor's `visible` prop); ≤ 900px editor above preview. `.app` is `100dvh`. On coarse
   pointers text fields are 16px (iOS zooms into smaller ones) and buttons / grips are finger-sized.
-  **Touch overlay**: the tools follow the *selected* section instead of the hover: a grip at the
-  end of its title and, in a multi-column row, a knob on each divider, all sized `N px / zoom`
-  (`--lo-inv`) so they stay finger-sized at 45%. Item grips and margin guides are mouse-only
-  (owner's choice: items are reordered in the editor, margins with the sliders). Section / item
-  drags autoscroll the preview near its top / bottom edge (mouse too).
+  **Touch** (owner's choice): **no section grip**, the section itself is dragged: a long press
+  (350 ms without moving more than 8 px; moving earlier is a normal scroll) lifts it, outlined
+  (`.lo-held`), with a non-passive `touchmove` that blocks scrolling while held (else the browser
+  pans and cancels the pointer). **Entries / items are not selectable on the page** there
+  (`clickable()` in ResumeDocument skips them, a tap selects the section, which also shows as
+  selected when one of its items is open in the editor); no text selection / long-press callout on
+  the page. In a multi-column row the selected section's dividers get a knob, sized `N px / zoom`
+  (`--lo-inv`) so it stays finger-sized at 45%. Item grips and margin guides are mouse-only (items
+  are reordered in the editor, margins with the sliders). Section / item drags autoscroll the
+  preview near its top / bottom edge (mouse too).
 - Testing the touch path: the in-app browser's "mobile" preset matches `(hover: none)`; drive it
   with dispatched `PointerEvent`s (`pointerType: 'touch'`). When the browser pane is hidden, no
   frames run: ResizeObserver (preview fit) and rAF (autoscroll) never fire until a screenshot.

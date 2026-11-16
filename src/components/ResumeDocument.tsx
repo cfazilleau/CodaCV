@@ -23,6 +23,7 @@ import { buildRows, isInSidebar, mainLayout } from '../layout'
 import { ExternalIcon, Icon, IconBadge } from './icons'
 import { FLAGS } from '../flags'
 import { dateRangeParts } from '../locale'
+import { TOUCH, useMediaQuery } from '../media'
 
 export const FONT_FAMILIES: Record<FontKey, { label: string; css: string }> = {
   'source-sans': { label: 'Source Sans 3', css: "'Source Sans 3', 'Segoe UI', sans-serif" },
@@ -126,13 +127,17 @@ export function ResumeDocument({ resume, selection, onSelect }: Props) {
   const { profile, theme } = resume
   const sidebarMode = theme.headerStyle === 'sidebar'
 
+  // Touch screens: the section is the only target on the page (tap selects it, long press drags
+  // it); entries and items are not selectable there and are edited in the side panel
+  const touch = useMediaQuery(TOUCH)
+
   const isSel = (sectionId: string, itemId?: string) =>
-    selection?.kind === 'section' && selection.sectionId === sectionId && selection.itemId === itemId
+    selection?.kind === 'section' && selection.sectionId === sectionId && (touch ? !itemId : selection.itemId === itemId)
 
   // Clickable wrapper props (click to edit)
   const clickable = (sel: Selection, active: boolean) => {
-    if (!onSelect) return {}
     const isItem = sel?.kind === 'section' && !!sel.itemId
+    if (!onSelect || (touch && isItem)) return {}
     return {
       'data-clickable': true,
       'data-selected': active || undefined,

@@ -1166,15 +1166,15 @@ button {
   background: color-mix(in srgb, var(--ui-primary) 35%, transparent);
 }
 
-/* Touch screens: the selected section's grip and its row's dividers, finger-sized at any zoom
-   (--lo-inv = 1 / zoom, set on the overlay) */
-.is-touch .lo-grip--section {
-  width: calc(40px * var(--lo-inv));
-  height: calc(40px * var(--lo-inv));
-  border-width: calc(1px * var(--lo-inv));
-  border-radius: calc(10px * var(--lo-inv));
-  border-color: var(--ui-primary);
-  color: var(--ui-primary);
+/* Touch screens: a long press lifts the section itself (no grip); it is outlined while held.
+   The selected section's row dividers are finger-sized at any zoom (--lo-inv = 1 / zoom). */
+.lo-held {
+  position: absolute;
+  border: calc(2px * var(--lo-inv)) solid var(--ui-primary);
+  border-radius: 1.2mm;
+  background: color-mix(in srgb, var(--ui-primary) 8%, transparent);
+  box-shadow: 0 calc(6px * var(--lo-inv)) calc(18px * var(--lo-inv)) rgb(0 0 0 / 0.18);
+  pointer-events: none !important;
 }
 
 .is-touch .lo-divider::after {

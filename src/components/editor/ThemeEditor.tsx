@@ -64,7 +64,7 @@ const S = defineStrings(
     layoutNote:
       'Sur la page, survolez une section et glissez sa poignée pour la placer en ligne, en colonne ou sous une autre. Glissez le séparateur entre colonnes pour les redimensionner, et les bords de page pour les marges.',
     layoutNoteTouch:
-      'Sur la page, touchez une section puis glissez la poignée au bout de son titre pour la placer en ligne, en colonne ou sous une autre. Dans une ligne à plusieurs colonnes, glissez les poignées entre colonnes pour les redimensionner. Les marges se règlent ci-dessous.',
+      'Sur la page, appuyez longuement sur une section puis glissez-la pour la placer en ligne, en colonne ou sous une autre. Touchez une section d’une ligne à plusieurs colonnes pour afficher les poignées qui les redimensionnent. Les marges se règlent ci-dessous.',
     dateColumn: 'Colonne des dates',
     marginX: 'Marges horizontales',
     marginY: 'Marges verticales',
@@ -128,7 +128,7 @@ const S = defineStrings(
     layoutNote:
       'On the page, hover a section and drag its handle to place it in a row, a column or under another one. Drag the divider between columns to resize them, and the page edges for the margins.',
     layoutNoteTouch:
-      'On the page, tap a section, then drag the handle at the end of its title to place it in a row, a column or under another one. In a row with several columns, drag the handles between columns to resize them. Margins are set below.',
+      'On the page, press and hold a section, then drag it to place it in a row, a column or under another one. Tap a section in a row with several columns to show the handles that resize them. Margins are set below.',
     dateColumn: 'Date column',
     marginX: 'Horizontal margins',
     marginY: 'Vertical margins',

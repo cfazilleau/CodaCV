@@ -74,8 +74,8 @@ npm run build    # static site in dist/
   - divider between columns → resize (snaps to the date column, ¼ ⅓ ½ ⅔ ¾)
   - page edges → page margins
   - Ctrl+Z undoes any drop.
-  - On a touch screen: tap a section, then drag the grip at the end of its title, or the knobs
-    between columns (entries and margins are edited in the side panel there).
+  - On a touch screen: press and hold a section, then drag it; tap a section in a multi-column row
+    to show the knobs that resize the columns. Entries and margins are edited in the side panel there.
   - Model (`src/layout.ts`): sections keep one ordered list = reading / PDF order, each with a
     `place` (`row` | `column` | `stack`) and a column width.
 - **Click to edit** – click anything on the preview to jump to its fields.
