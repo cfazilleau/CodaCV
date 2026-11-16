@@ -259,6 +259,8 @@
 }
 
 .cv-flag {
+  /* flag-icons sets position: relative on .fi: no positioned elements in the resume */
+  position: static !important;
   width: 1.3em !important;
   line-height: 0.95em !important;
   border-radius: 1px;
