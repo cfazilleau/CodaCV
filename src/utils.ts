@@ -12,8 +12,30 @@ marked.use({
   },
 })
 
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+/**
+ * Link target as written in the PDF: http(s), mailto and tel are kept; an address without a scheme
+ * ("linkedin.com/in/x") gets https:// (it would otherwise resolve against the app's own URL); an
+ * e-mail gets mailto:; any other scheme (javascript:, data:, file:…) gives no link.
+ */
+export function normalizeHref(raw: string): string | undefined {
+  const url = raw.trim()
+  if (!url) return undefined
+  if (/^tel:/i.test(url)) return `tel:${url.slice(4).replace(/[^\d+]/g, '')}`
+  if (/^(https?|mailto):/i.test(url)) return url
+  if (url.startsWith('//')) return `https:${url}`
+  if (EMAIL.test(url)) return `mailto:${url}`
+  // A scheme, unless it is a host:port ("localhost:3000")
+  if (/^[a-z][a-z\d+-]*:(?!\d)/i.test(url)) return undefined
+  return `https://${url}`
+}
+
 DOMPurify.addHook('afterSanitizeAttributes', (node) => {
   if (node.tagName === 'A') {
+    const href = normalizeHref(node.getAttribute('href') ?? '')
+    if (href) node.setAttribute('href', href)
+    else node.removeAttribute('href')
     node.setAttribute('target', '_blank')
     node.setAttribute('rel', 'noopener noreferrer')
   }
@@ -39,9 +61,9 @@ export function blockMd(src: string): string {
 }
 
 export function contactHref(c: Contact): string | undefined {
-  if (c.url) return c.url
+  if (c.url.trim()) return normalizeHref(c.url)
   const label = c.label.trim()
-  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(label)) return `mailto:${label}`
+  if (EMAIL.test(label)) return `mailto:${label}`
   if (/^\+?[\d\s().-]{6,}$/.test(label)) return `tel:${label.replace(/[^\d+]/g, '')}`
   return undefined
 }

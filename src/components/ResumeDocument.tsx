@@ -15,7 +15,7 @@ import type {
   TimelineEntry,
   TimelineSection,
 } from '../types'
-import { autoHref, blockMd, contactHref, inlineMd } from '../utils'
+import { autoHref, blockMd, contactHref, inlineMd, normalizeHref } from '../utils'
 import { buildRows, isInSidebar, mainLayout } from '../layout'
 import { ExternalIcon, Icon, IconBadge } from './icons'
 
@@ -439,6 +439,7 @@ function EntryView({ entry: e, entryStyle, showLinkIcon, ...rest }: EntryProps) 
     </span>
   )
   const inline = entryStyle === 'right'
+  const href = normalizeHref(e.url)
   return (
     <div className="cv-entry" {...rest}>
       {!inline && (
@@ -455,8 +456,8 @@ function EntryView({ entry: e, entryStyle, showLinkIcon, ...rest }: EntryProps) 
             {e.subtitle ? ',' : ''}
           </strong>{' '}
           {e.subtitle && <em>{e.subtitle}</em>}
-          {e.url && showLinkIcon && (
-            <a className="cv-entry-link" href={e.url} target="_blank" rel="noopener noreferrer" title={e.url}>
+          {href && showLinkIcon && (
+            <a className="cv-entry-link" href={href} target="_blank" rel="noopener noreferrer" title={href}>
               <ExternalIcon size={9} />
             </a>
           )}
