@@ -125,6 +125,9 @@ with **pypdf** (stream order, like most ATS / LLM loaders) and **pdfminer** (lay
 - Removed on purpose (don't bring back unless asked): the "Page web" / `#/view` interactive page and
   per-item "Détails", per-section spacing, the one-column layout option, sidebar Position select.
 - 12 curated palettes, each accent ≥ 5.3:1 contrast on white (WCAG AA), text ≥ 13:1.
+- Markdown (`inlineMd` / `blockMd` in `utils.ts`): DOMPurify with a tag / attribute allow-list (no
+  `style`, `class`, `id`, forms or media; images only in free-text sections). Markdown headings start
+  at H3 so the tagged PDF keeps one H1 (name) and H2 section titles.
 
 ## Gotchas hit while developing
 

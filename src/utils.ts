@@ -5,6 +5,12 @@ import type { Contact, FactItem, HighlightItem, LevelItem, ListItem, ReferenceIt
 export const uid = () => Math.random().toString(36).slice(2, 10)
 
 marked.setOptions({ gfm: true, breaks: true })
+// The resume has one H1 (the name) and H2 section titles: markdown headings start at H3
+marked.use({
+  walkTokens(token) {
+    if (token.type === 'heading') token.depth = Math.max(3, token.depth)
+  },
+})
 
 DOMPurify.addHook('afterSanitizeAttributes', (node) => {
   if (node.tagName === 'A') {
@@ -13,14 +19,23 @@ DOMPurify.addHook('afterSanitizeAttributes', (node) => {
   }
 })
 
+/*
+ * Markdown may contain raw HTML (typed, pasted, or from an imported file). Only plain text
+ * formatting is kept: no style / class / id (positioned elements break the PDF reading order, and
+ * app class names would restyle the page), no forms, media or embeds.
+ */
+const INLINE_TAGS = ['a', 'b', 'strong', 'i', 'em', 'u', 's', 'del', 'code', 'sub', 'sup', 'span', 'br']
+const BLOCK_TAGS = [...INLINE_TAGS, 'p', 'ul', 'ol', 'li', 'blockquote', 'pre', 'hr', 'h3', 'h4', 'h5', 'h6', 'img', 'table', 'thead', 'tbody', 'tr', 'th', 'td']
+const ALLOWED_ATTR = ['href', 'title', 'alt', 'src']
+
 /** Inline markdown (bold, italic, links, code) for one-line fields like bullets. */
 export function inlineMd(src: string): string {
-  return DOMPurify.sanitize(marked.parseInline(src, { async: false }) as string)
+  return DOMPurify.sanitize(marked.parseInline(src, { async: false }) as string, { ALLOWED_TAGS: INLINE_TAGS, ALLOWED_ATTR })
 }
 
-/** Block markdown (free-text sections). */
+/** Block markdown (free-text sections). Images are allowed here (documented in the editor hint). */
 export function blockMd(src: string): string {
-  return DOMPurify.sanitize(marked.parse(src, { async: false }) as string)
+  return DOMPurify.sanitize(marked.parse(src, { async: false }) as string, { ALLOWED_TAGS: BLOCK_TAGS, ALLOWED_ATTR })
 }
 
 export function contactHref(c: Contact): string | undefined {
