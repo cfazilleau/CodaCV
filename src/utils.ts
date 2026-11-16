@@ -98,7 +98,7 @@ export function newSection(kind: SectionKind | 'tags'): Section {
         kind,
         title: 'Chiffres clés',
         hideTitle: true,
-        items: [newHighlightItem('3', 'jeux publiés'), newHighlightItem('1 M+', 'téléchargements'), newHighlightItem('8 ans', "d'expérience")],
+        items: [newHighlightItem('8 ans', "d'expérience"), newHighlightItem('25+', 'projets livrés'), newHighlightItem('400 k€', 'de budget géré')],
       }
   }
 }
