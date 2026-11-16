@@ -1,5 +1,6 @@
-import type { CSSProperties, HTMLAttributes, KeyboardEvent, MouseEvent, ReactNode } from 'react'
+import { Fragment, type CSSProperties, type HTMLAttributes, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react'
 import type {
+  DateFormat,
   EntryStyle,
   FactSection,
   HighlightSection,
@@ -9,6 +10,7 @@ import type {
   ListSection,
   ReferenceSection,
   Resume,
+  ResumeLocale,
   Section,
   Selection,
   TextSection,
@@ -19,6 +21,7 @@ import { autoHref, blockMd, contactHref, inlineMd, normalizeHref } from '../util
 import { buildRows, isInSidebar, mainLayout } from '../layout'
 import { ExternalIcon, Icon, IconBadge } from './icons'
 import { FLAGS } from '../flags'
+import { dateRangeParts } from '../locale'
 
 export const FONT_FAMILIES: Record<FontKey, { label: string; css: string }> = {
   'source-sans': { label: 'Source Sans 3', css: "'Source Sans 3', 'Segoe UI', sans-serif" },
@@ -194,6 +197,8 @@ export function ResumeDocument({ resume, selection, onSelect }: Props) {
             key={e.id}
             entry={e}
             entryStyle={theme.entryStyle}
+            locale={resume.meta.locale}
+            dateFormat={theme.dateFormat}
             showLinkIcon={theme.showLinkIcons}
             data-item-id={e.id}
             data-item-kind="entry"
@@ -401,7 +406,7 @@ export function ResumeDocument({ resume, selection, onSelect }: Props) {
   if (sidebarMode) {
     // Main column first in the document (name first for parsers); the grid puts the sidebar on the left.
     return (
-      <article className={classes} style={resumeStyle(resume)}>
+      <article className={classes} lang={resume.meta.locale} style={resumeStyle(resume)}>
         <div className="cv-main">
           <header className="cv-header" {...headerSel}>
             <div className="cv-header-body">
@@ -434,7 +439,7 @@ export function ResumeDocument({ resume, selection, onSelect }: Props) {
   )
 
   return (
-    <article className={classes} style={resumeStyle(resume)}>
+    <article className={classes} lang={resume.meta.locale} style={resumeStyle(resume)}>
       {/* The band is a plain wrapper, so the clickable header keeps its own highlight */}
       {theme.headerStyle === 'band' ? <div className="cv-band">{header}</div> : header}
       {renderRows()}
@@ -445,10 +450,25 @@ export function ResumeDocument({ resume, selection, onSelect }: Props) {
 interface EntryProps extends HTMLAttributes<HTMLDivElement> {
   entry: TimelineEntry
   entryStyle: EntryStyle
+  locale: ResumeLocale
+  dateFormat: DateFormat
   showLinkIcon: boolean
 }
 
-function EntryView({ entry: e, entryStyle, showLinkIcon, ...rest }: EntryProps) {
+function EntryView({ entry: e, entryStyle, locale, dateFormat, showLinkIcon, ...rest }: EntryProps) {
+  // Written in the resume's language: "mars 2019 – juin 2022", "Mar 2019 – Present"…
+  // Each date stays on one line, so a narrow date column breaks the range at the dash
+  const parts = dateRangeParts(e, locale, dateFormat)
+  const date = parts.length > 0 && (
+    <span className="cv-date">
+      {parts.map((p, i) => (
+        <Fragment key={i}>
+          {i > 0 && ' – '}
+          <span className="cv-date-part">{p}</span>
+        </Fragment>
+      ))}
+    </span>
+  )
   const flag = FLAGS[e.country]
   const location = (e.location || flag) && (
     <span className="cv-entry-loc">
@@ -462,7 +482,7 @@ function EntryView({ entry: e, entryStyle, showLinkIcon, ...rest }: EntryProps) 
     <div className="cv-entry" {...rest}>
       {!inline && (
         <div className="cv-entry-meta">
-          {e.date && <div>{e.date}</div>}
+          {date && <div>{date}</div>}
           {location && <div>{location}</div>}
           {e.subDate && <div>{e.subDate}</div>}
         </div>
@@ -480,10 +500,17 @@ function EntryView({ entry: e, entryStyle, showLinkIcon, ...rest }: EntryProps) 
             </a>
           )}
           {/* "Dates on the right": date · duration · place on the title line, read right after the title */}
-          {inline && (e.date || e.subDate || location) && (
+          {inline && (date || e.subDate || location) && (
             <span className="cv-entry-metaline">
-              {[e.date, e.subDate].filter(Boolean).join(' · ')}
-              {(e.date || e.subDate) && location ? ' · ' : ''}
+              {/* One flex item, so the spaces around the dot stay real text */}
+              {(date || e.subDate) && (
+                <span>
+                  {date}
+                  {date && e.subDate ? ' · ' : ''}
+                  {e.subDate}
+                </span>
+              )}
+              {(date || e.subDate) && location ? ' · ' : ''}
               {location}
             </span>
           )}

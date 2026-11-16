@@ -46,7 +46,12 @@ export interface Profile {
 /** A dated entry: job, project, school… */
 export interface TimelineEntry {
   id: string
-  date: string // e.g. "2022 – 2024"
+  /** "YYYY/MM/DD" or '' (stored, exported and imported in this form; shown in the resume's locale) */
+  start: string
+  /** "YYYY/MM/DD" or ''; ignored while `current` */
+  end: string
+  /** Ongoing: the end reads "Present" / "aujourd'hui"… in the resume's language */
+  current: boolean
   subDate: string // e.g. "6 mois" (shown under the date)
   country: string // ISO 3166-1 alpha-2 code for the flag, e.g. "fr"
   location: string
@@ -193,7 +198,12 @@ export interface Theme {
   photoRing: boolean
   /** Show initials in place of the photo when there is none */
   photoInitials: boolean
+  /** Precision of timeline dates (written in the resume's language) */
+  dateFormat: DateFormat
 }
+
+/** year: 2022 · month-numeric: 03/2022 · month-short: mars 2022 · month-long: septembre 2022 · full: 15/03/2022 */
+export type DateFormat = 'year' | 'month-numeric' | 'month-short' | 'month-long' | 'full'
 
 /** classic: photo left · centered · band: full-width accent band · sidebar: coloured left column */
 export type HeaderStyle = 'classic' | 'centered' | 'band' | 'sidebar'
@@ -202,8 +212,11 @@ export type TitleStyle = 'underline' | 'caps' | 'bar' | 'icon'
 /** left: dates in a left column · right: dates on the title line · timeline: line with dots · cards: tinted blocks */
 export type EntryStyle = 'left' | 'right' | 'timeline' | 'cards'
 
+/** Resume language (BCP 47): PDF /Lang, date formats. List and labels in locale.ts */
+export type ResumeLocale = 'fr' | 'en' | 'en-GB' | 'de' | 'es' | 'it' | 'nl' | 'pl' | 'pt-PT' | 'pt-BR'
+
 export interface Meta {
-  locale: 'fr' | 'en'
+  locale: ResumeLocale
   fileName: string
 }
 

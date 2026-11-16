@@ -2,7 +2,8 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Download, FileUp, Printer, Redo2, RotateCcw, Undo2, ZoomIn, ZoomOut } from 'lucide-react'
 import { useResumeStore, parseResume } from './store'
 import { MAX_IMPORT_BYTES } from './migrate'
-import { defaultResume } from './defaultResume'
+import { templateResume } from './defaultResume'
+import { defineStrings, setUiLang, strings, UI_LANGS, useStrings, useUiLang } from './i18n'
 import type { Resume, Selection } from './types'
 import { ResumeDocument } from './components/ResumeDocument'
 import { LayoutOverlay } from './components/LayoutOverlay'
@@ -10,6 +11,49 @@ import { Editor } from './components/editor/Editor'
 import { StorageBanner } from './components/StorageBanner'
 import { downloadText, downscaleImage, PHOTO_MAX_CHARS } from './utils'
 import { A4_H_MM, A4_W_MM, MM } from './layout'
+
+const S = defineStrings(
+  {
+    tooBig: (mb: number) => `fichier trop volumineux (${mb} Mo maximum)`,
+    importFailed: (msg: string) => `Import impossible : ${msg}`,
+    activeVersion: 'Version active (onglet Versions)',
+    undo: 'Annuler (Ctrl+Z)',
+    redo: 'Rétablir (Ctrl+Y)',
+    importTitle: 'Importer un fichier JSON (ajouté comme nouvelle version)',
+    import: 'Importer',
+    exportTitle: 'Exporter la version active en JSON',
+    export: 'Exporter',
+    resetTitle: 'Réinitialiser la version active avec le modèle',
+    resetConfirm: 'Remplacer toutes les données par le CV modèle ? (Annulable avec Ctrl+Z)',
+    print: 'Imprimer ou enregistrer en PDF (Ctrl+P)',
+    uiLang: "Langue de l'interface",
+    zoomOut: 'Dézoomer',
+    fit: 'Ajuster à la largeur',
+    zoomIn: 'Zoomer',
+    pages: (n: number) => (n > 1 ? `${n} pages` : `${n} page`),
+    page: (n: number) => `Page ${n}`,
+  },
+  {
+    tooBig: (mb) => `file too large (${mb} MB maximum)`,
+    importFailed: (msg) => `Import failed: ${msg}`,
+    activeVersion: 'Active version (Versions tab)',
+    undo: 'Undo (Ctrl+Z)',
+    redo: 'Redo (Ctrl+Y)',
+    importTitle: 'Import a JSON file (added as a new version)',
+    import: 'Import',
+    exportTitle: 'Export the active version as JSON',
+    export: 'Export',
+    resetTitle: 'Reset the active version to the template',
+    resetConfirm: 'Replace all the data with the template resume? (Ctrl+Z to undo)',
+    print: 'Print or save as PDF (Ctrl+P)',
+    uiLang: 'Interface language',
+    zoomOut: 'Zoom out',
+    fit: 'Fit to width',
+    zoomIn: 'Zoom in',
+    pages: (n) => (n === 1 ? '1 page' : `${n} pages`),
+    page: (n) => `Page ${n}`,
+  },
+)
 
 
 /** Injects @page rules matching the theme margins and sets the PDF file name while printing. */
@@ -49,6 +93,8 @@ export default function App() {
   const store = useResumeStore()
   const { resume, setResume, undo, redo } = store
   const [selection, setSelection] = useState<Selection>(null)
+  const t = useStrings(S)
+  const uiLang = useUiLang()
 
   usePrintSetup(resume)
 
@@ -83,7 +129,7 @@ export default function App() {
   const fileInput = useRef<HTMLInputElement>(null)
   const importJson = async (file: File) => {
     try {
-      if (file.size > MAX_IMPORT_BYTES) throw new Error(`fichier trop volumineux (${MAX_IMPORT_BYTES / 1e6} Mo maximum)`)
+      if (file.size > MAX_IMPORT_BYTES) throw new Error(strings(S).tooBig(MAX_IMPORT_BYTES / 1e6))
       let r = parseResume(await file.text())
       // A photo from another tool can weigh megabytes: shrink it like an uploaded one
       if (r.profile.photo.startsWith('data:image/') && r.profile.photo.length > PHOTO_MAX_CHARS) {
@@ -94,49 +140,62 @@ export default function App() {
       store.createVersion('copy', file.name.replace(/\.json$/i, ''), r)
       setSelection(null)
     } catch (e) {
-      alert(`Import impossible : ${(e as Error).message}`)
+      alert(strings(S).importFailed((e as Error).message))
     }
   }
 
   return (
-    <div className="app">
+    <div className="app" lang={uiLang}>
       <header className="topbar">
         <div className="brand">
           <span className="brand-logo">CV</span>
           <span>CodaCV</span>
-          <span className="brand-version" title="Version active (onglet Versions)">
+          <span className="brand-version" title={t.activeVersion}>
             {store.versions.find((v) => v.id === store.activeId)?.name}
           </span>
         </div>
 
         <div className="topbar-actions">
-          <button className="tb-btn" title="Annuler (Ctrl+Z)" disabled={!store.canUndo} onClick={undo}>
+          <button className="tb-btn" title={t.undo} disabled={!store.canUndo} onClick={undo}>
             <Undo2 size={16} />
           </button>
-          <button className="tb-btn" title="Rétablir (Ctrl+Y)" disabled={!store.canRedo} onClick={redo}>
+          <button className="tb-btn" title={t.redo} disabled={!store.canRedo} onClick={redo}>
             <Redo2 size={16} />
           </button>
           <span className="tb-sep" />
-          <button className="tb-btn" title="Importer un fichier JSON (ajouté comme nouvelle version)" onClick={() => fileInput.current?.click()}>
-            <FileUp size={16} /> <span className="tb-label">Importer</span>
+          <button className="tb-btn" title={t.importTitle} onClick={() => fileInput.current?.click()}>
+            <FileUp size={16} /> <span className="tb-label">{t.import}</span>
           </button>
           <button
             className="tb-btn"
-            title="Exporter la version active en JSON"
+            title={t.exportTitle}
             onClick={() => downloadText(`${resume.meta.fileName || 'cv'}.json`, JSON.stringify(resume, null, 2))}
           >
-            <Download size={16} /> <span className="tb-label">Exporter</span>
+            <Download size={16} /> <span className="tb-label">{t.export}</span>
           </button>
           <button
             className="tb-btn"
-            title="Réinitialiser la version active avec le modèle"
+            title={t.resetTitle}
             onClick={() => {
-              if (confirm('Remplacer toutes les données par le CV modèle ? (Annulable avec Ctrl+Z)')) setResume(structuredClone(defaultResume))
+              if (confirm(t.resetConfirm)) setResume(templateResume())
             }}
           >
             <RotateCcw size={16} />
           </button>
-          <button className="btn btn--primary" onClick={() => window.print()} title="Imprimer ou enregistrer en PDF (Ctrl+P)">
+          <select
+            className="tb-lang"
+            aria-label={t.uiLang}
+            title={t.uiLang}
+            value={uiLang}
+            onChange={(e) => setUiLang(e.target.value as typeof uiLang)}
+          >
+            {UI_LANGS.map((l) => (
+              <option key={l.value} value={l.value}>
+                {l.value.toUpperCase()} · {l.label}
+              </option>
+            ))}
+          </select>
+          <button className="btn btn--primary" onClick={() => window.print()} title={t.print}>
             <Printer size={16} /> PDF
           </button>
           <input
@@ -181,6 +240,7 @@ function PreviewPane({
   const [fit, setFit] = useState(1)
   const [zoomOverride, setZoomOverride] = useState<number | null>(null)
   const [pages, setPages] = useState(1)
+  const t = useStrings(S)
   const zoom = zoomOverride ?? fit
 
   // Fit the A4 page to the available width
@@ -213,18 +273,18 @@ function PreviewPane({
   return (
     <div className="preview" ref={scroller}>
       <div className="preview-toolbar">
-        <button className="tb-btn" title="Dézoomer" onClick={() => setZoomOverride(Math.max(0.3, +(zoom - 0.1).toFixed(2)))}>
+        <button className="tb-btn" title={t.zoomOut} onClick={() => setZoomOverride(Math.max(0.3, +(zoom - 0.1).toFixed(2)))}>
           <ZoomOut size={15} />
         </button>
-        <button className="tb-btn zoom-label" title="Ajuster à la largeur" onClick={() => setZoomOverride(null)}>
+        <button className="tb-btn zoom-label" title={t.fit} onClick={() => setZoomOverride(null)}>
           {Math.round(zoom * 100)}%
         </button>
-        <button className="tb-btn" title="Zoomer" onClick={() => setZoomOverride(Math.min(2, +(zoom + 0.1).toFixed(2)))}>
+        <button className="tb-btn" title={t.zoomIn} onClick={() => setZoomOverride(Math.min(2, +(zoom + 0.1).toFixed(2)))}>
           <ZoomIn size={15} />
         </button>
         <span className="tb-sep" />
         <span className="page-count">
-          {pages} page{pages > 1 ? 's' : ''}
+          {t.pages(pages)}
         </span>
       </div>
       <div className="preview-stage" style={{ zoom }}>
@@ -233,7 +293,7 @@ function PreviewPane({
           <LayoutOverlay shellRef={page} resume={resume} setResume={setResume} zoom={zoom} selection={selection} />
           {Array.from({ length: pages - 1 }, (_, i) => (
             <div key={i} className="page-break" style={{ top: `${resume.theme.marginY + (i + 1) * perPage}mm` }}>
-              <span>Page {i + 2}</span>
+              <span>{t.page(i + 2)}</span>
             </div>
           ))}
         </div>

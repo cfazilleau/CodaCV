@@ -531,6 +531,11 @@
   column-gap: 0.3em;
 }
 
+/* A date never breaks inside ("août / 2022"); a range breaks at its dash */
+.cv-date-part {
+  white-space: nowrap;
+}
+
 .cv-entry-metaline {
   display: inline-flex;
   align-items: center;

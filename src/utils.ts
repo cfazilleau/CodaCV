@@ -1,6 +1,7 @@
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
 import type { Contact, FactItem, HighlightItem, LevelItem, ListItem, ReferenceItem, Section, SectionKind, TimelineEntry } from './types'
+import { defineStrings, strings, type UiLang } from './i18n'
 
 export const uid = () => Math.random().toString(36).slice(2, 10)
 
@@ -92,14 +93,82 @@ function isPhone(text: string): boolean {
   return digits >= 8 && digits <= 15 && !/^\d{4}\s*[-–]\s*\d{4}$/.test(text)
 }
 
-export function newEntry(): TimelineEntry {
+/**
+ * Default texts written into a new section / item. They become resume content, so they follow the
+ * resume's language (see `contentLang()` in locale.ts), not necessarily the UI language.
+ */
+const C = defineStrings(
+  {
+    newEntry: 'Nouvelle entrée',
+    newItem: 'Nouvel élément',
+    keywords: 'Mots-clés',
+    newSection: 'Nouvelle section',
+    newList: 'Nouvelle liste',
+    newText: 'Nouveau texte',
+    languages: 'Langues',
+    languageItems: [
+      ['Français', 'Langue maternelle', 5],
+      ['Anglais', 'C1', 4],
+    ] as [string, string, number][],
+    facts: 'Informations',
+    factItems: [
+      ['Permis', 'B'],
+      ['Disponibilité', 'Immédiate'],
+      ['Mobilité', 'France, Canada'],
+    ] as [string, string][],
+    references: 'Références',
+    onRequest: 'Références disponibles sur demande',
+    reference: { name: 'Prénom Nom', role: 'Poste', company: 'Entreprise' },
+    highlights: 'Chiffres clés',
+    highlightItems: [
+      ['8 ans', "d'expérience"],
+      ['25+', 'projets livrés'],
+      ['400 k€', 'de budget géré'],
+    ] as [string, string][],
+  },
+  {
+    newEntry: 'New entry',
+    newItem: 'New item',
+    keywords: 'Keywords',
+    newSection: 'New section',
+    newList: 'New list',
+    newText: 'New text',
+    languages: 'Languages',
+    languageItems: [
+      ['English', 'Native', 5],
+      ['French', 'C1', 4],
+    ],
+    facts: 'Details',
+    factItems: [
+      ['Driving licence', 'B'],
+      ['Availability', 'Immediate'],
+      ['Mobility', 'UK, Canada'],
+    ],
+    references: 'References',
+    onRequest: 'References available on request',
+    reference: { name: 'First Last', role: 'Position', company: 'Company' },
+    highlights: 'Key figures',
+    highlightItems: [
+      ['8 years', 'of experience'],
+      ['25+', 'projects delivered'],
+      ['€400k', 'budget managed'],
+    ],
+  },
+)
+
+/** Default texts in a given language (`strings(C)` would use the UI language). */
+const content = (lang: UiLang) => C[lang]
+
+export function newEntry(lang: UiLang): TimelineEntry {
   return {
     id: uid(),
-    date: '',
+    start: '',
+    end: '',
+    current: false,
     subDate: '',
     country: '',
     location: '',
-    title: 'Nouvelle entrée',
+    title: content(lang).newEntry,
     subtitle: '',
     url: '',
     bullets: [],
@@ -107,12 +176,13 @@ export function newEntry(): TimelineEntry {
   }
 }
 
-export function newListItem(text = 'Nouvel élément'): ListItem {
+export function newListItem(text: string): ListItem {
   return { id: uid(), text, hidden: false }
 }
 
 /** 'tags' is a list section drawn as chips. */
-export function newSection(kind: SectionKind | 'tags'): Section {
+export function newSection(kind: SectionKind | 'tags', lang: UiLang): Section {
+  const t = content(lang)
   const base = { id: uid(), visible: true, place: 'row' as const }
   switch (kind) {
     case 'tags':
@@ -120,46 +190,34 @@ export function newSection(kind: SectionKind | 'tags'): Section {
         ...base,
         kind: 'list',
         display: 'chips',
-        title: 'Mots-clés',
-        items: ['Tag 1', 'Tag 2', 'Tag 3'].map((t) => newListItem(t)),
+        title: t.keywords,
+        items: ['Tag 1', 'Tag 2', 'Tag 3'].map((x) => newListItem(x)),
       }
     case 'timeline':
-      return { ...base, kind, title: 'Nouvelle section', entries: [newEntry()] }
+      return { ...base, kind, title: t.newSection, entries: [newEntry(lang)] }
     case 'list':
-      return { ...base, kind, title: 'Nouvelle liste', items: [newListItem()] }
+      return { ...base, kind, title: t.newList, items: [newListItem(t.newItem)] }
     case 'text':
-      return { ...base, kind, title: 'Nouveau texte', text: '' }
+      return { ...base, kind, title: t.newText, text: '' }
     case 'levels':
       return {
         ...base,
         kind,
-        title: 'Langues',
+        title: t.languages,
         meter: 'dots',
-        items: [newLevelItem('Français', 'Langue maternelle', 5), newLevelItem('Anglais', 'C1', 4)],
+        items: t.languageItems.map(([name, level, rating]) => newLevelItem(name, level, rating)),
       }
     case 'facts':
-      return {
-        ...base,
-        kind,
-        title: 'Informations',
-        items: [newFactItem('Permis', 'B'), newFactItem('Disponibilité', 'Immédiate'), newFactItem('Mobilité', 'France, Canada')],
-      }
+      return { ...base, kind, title: t.facts, items: t.factItems.map(([k, v]) => newFactItem(k, v)) }
     case 'references':
-      return {
-        ...base,
-        kind,
-        title: 'Références',
-        onRequest: false,
-        onRequestText: 'Références disponibles sur demande',
-        items: [newReferenceItem()],
-      }
+      return { ...base, kind, title: t.references, onRequest: false, onRequestText: t.onRequest, items: [newReferenceItem(lang)] }
     case 'highlights':
       return {
         ...base,
         kind,
-        title: 'Chiffres clés',
+        title: t.highlights,
         hideTitle: true,
-        items: [newHighlightItem('8 ans', "d'expérience"), newHighlightItem('25+', 'projets livrés'), newHighlightItem('400 k€', 'de budget géré')],
+        items: t.highlightItems.map(([v, l]) => newHighlightItem(v, l)),
       }
   }
 }
@@ -172,8 +230,8 @@ export function newFactItem(key = '', value = ''): FactItem {
   return { id: uid(), key, value, hidden: false }
 }
 
-export function newReferenceItem(): ReferenceItem {
-  return { id: uid(), name: 'Prénom Nom', role: 'Poste', company: 'Entreprise', contact: 'contact@example.com', hidden: false }
+export function newReferenceItem(lang: UiLang): ReferenceItem {
+  return { id: uid(), ...content(lang).reference, contact: 'contact@example.com', hidden: false }
 }
 
 export function newHighlightItem(value = '', label = ''): HighlightItem {
@@ -185,6 +243,8 @@ export function autoHref(text: string): string | undefined {
   return contactHref({ id: '', icon: 'none', label: text, url: '' })
 }
 
+const E = defineStrings({ badImage: 'Image illisible' }, { badImage: 'Unreadable image' })
+
 /** Largest side of a stored photo, in pixels (about 45 mm at 270 dpi: plenty for print). */
 const PHOTO_MAX_PX = 480
 
@@ -192,7 +252,7 @@ const PHOTO_MAX_PX = 480
 export function downscaleImage(src: string, maxSize = PHOTO_MAX_PX): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new Image()
-    img.onerror = () => reject(new Error('Image illisible'))
+    img.onerror = () => reject(new Error(strings(E).badImage))
     img.onload = () => {
       try {
         const scale = Math.min(1, maxSize / Math.max(img.width, img.height))

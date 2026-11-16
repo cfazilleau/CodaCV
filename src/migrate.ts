@@ -7,6 +7,7 @@ import { defaultResume } from './defaultResume'
 import { dateColumnFraction, normalizeLayout } from './layout'
 import type {
   Contact,
+  DateFormat,
   Density,
   EntryStyle,
   FontKey,
@@ -24,6 +25,10 @@ import type {
   TitleStyle,
 } from './types'
 import { uid } from './utils'
+import { normalizeDate, RESUME_LOCALE_CODES } from './locale'
+import { defineStrings, strings } from './i18n'
+
+const S = defineStrings({ notResume: 'Ce fichier n’est pas un CV CodaCV' }, { notResume: 'This file is not a CodaCV resume' })
 
 type Obj = Record<string, unknown>
 
@@ -81,7 +86,7 @@ const ENTRIES = keysOf<EntryStyle>({ left: true, right: true, timeline: true, ca
 const PLACES = keysOf<Placement>({ row: true, column: true, stack: true })
 const DISPLAYS = keysOf<ListDisplay>({ bullets: true, inline: true, chips: true })
 const METERS = keysOf<LevelMeter>({ none: true, dots: true, bar: true })
-const LOCALES: readonly Meta['locale'][] = ['fr', 'en']
+const DATE_FORMATS = keysOf<DateFormat>({ year: true, 'month-numeric': true, 'month-short': true, 'month-long': true, full: true })
 
 const LEGACY_KIND_ICON: Record<string, IconKey> = {
   website: 'link',
@@ -107,7 +112,7 @@ function idMaker(): IdFn {
 }
 
 function migrateMeta(m: Obj): Meta {
-  return { locale: oneOf(m.locale, LOCALES, defaultResume.meta.locale), fileName: str(m.fileName) }
+  return { locale: oneOf(m.locale, RESUME_LOCALE_CODES, defaultResume.meta.locale), fileName: str(m.fileName) }
 }
 
 function migrateProfile(p: Obj, id: IdFn): Profile {
@@ -143,6 +148,7 @@ function migrateTheme(t: Obj): Theme {
     entryStyle: oneOf(t.entryStyle, ENTRIES, d.entryStyle),
     photoRing: bool(t.photoRing, d.photoRing),
     photoInitials: bool(t.photoInitials, d.photoInitials),
+    dateFormat: oneOf(t.dateFormat, DATE_FORMATS, d.dateFormat),
   }
 }
 
@@ -172,7 +178,11 @@ function migrateSection(s: Obj, id: IdFn): Section | null {
         kind: 'timeline',
         entries: objs(s.entries).map((e) => ({
           ...item(e),
-          date: str(e.date),
+          // Dates are "YYYY/MM/DD" (also accepted with dashes). The old free-text `date` ("2019 – 2022")
+          // is dropped on purpose: dates are now entered as start / end and written in the resume's language.
+          start: normalizeDate(e.start),
+          end: normalizeDate(e.end),
+          current: bool(e.current, false),
           subDate: str(e.subDate),
           country: country(e.country),
           location: str(e.location),
@@ -247,7 +257,7 @@ function migrateSections(raw: Obj[], theme: Theme, id: IdFn): Section[] {
 
 export function migrate(data: unknown): Resume {
   if (!isObj(data) || !isObj(data.profile) || !Array.isArray(data.sections)) {
-    throw new Error('Ce fichier n’est pas un CV CodaCV')
+    throw new Error(strings(S).notResume)
   }
   const id = idMaker()
   const theme = migrateTheme(isObj(data.theme) ? data.theme : {})

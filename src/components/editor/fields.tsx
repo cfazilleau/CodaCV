@@ -1,4 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react'
+import { defineStrings, useUiLang, type UiLang } from '../../i18n'
 
 interface BaseProps {
   label?: string
@@ -161,29 +162,34 @@ export function IconButton({
 }
 
 /** Flag choices. Adding a country: also import its flag in src/flags.ts. */
-export const COUNTRIES: { value: string; label: string }[] = [
-  { value: '', label: '— Aucun —' },
-  { value: 'fr', label: 'France' },
-  { value: 'ca', label: 'Canada' },
-  { value: 'us', label: 'États-Unis' },
-  { value: 'gb', label: 'Royaume-Uni' },
-  { value: 'be', label: 'Belgique' },
-  { value: 'ch', label: 'Suisse' },
-  { value: 'de', label: 'Allemagne' },
-  { value: 'es', label: 'Espagne' },
-  { value: 'it', label: 'Italie' },
-  { value: 'nl', label: 'Pays-Bas' },
-  { value: 'se', label: 'Suède' },
-  { value: 'fi', label: 'Finlande' },
-  { value: 'pl', label: 'Pologne' },
-  { value: 'ie', label: 'Irlande' },
-  { value: 'pt', label: 'Portugal' },
-  { value: 'jp', label: 'Japon' },
-  { value: 'kr', label: 'Corée du Sud' },
-  { value: 'cn', label: 'Chine' },
-  { value: 'au', label: 'Australie' },
-  { value: 'sg', label: 'Singapour' },
-  { value: 'ro', label: 'Roumanie' },
-  { value: 'ua', label: 'Ukraine' },
-  { value: 'ma', label: 'Maroc' },
-]
+const COUNTRY_CODES = ['fr', 'ca', 'us', 'gb', 'be', 'ch', 'de', 'es', 'it', 'nl', 'se', 'fi', 'pl', 'ie', 'pt', 'jp', 'kr', 'cn', 'au', 'sg', 'ro', 'ua', 'ma']
+
+/** Codes that are not ISO regions (e.g. 'gb-eng'), named by hand: Intl.DisplayNames can't. */
+const SPECIAL_COUNTRIES: Record<string, Record<UiLang, string>> = {}
+
+const NO_COUNTRY = defineStrings({ none: '— Aucun —' }, { none: '— None —' })
+
+const countryCache = new Map<UiLang, { value: string; label: string }[]>()
+
+/** Flag choices with country names in the UI language, sorted by name ('' = no flag, first). */
+export function countryOptions(lang: UiLang): { value: string; label: string }[] {
+  let list = countryCache.get(lang)
+  if (!list) {
+    let names: Intl.DisplayNames | null = null
+    try {
+      names = new Intl.DisplayNames([lang], { type: 'region' })
+    } catch {
+      // very old browser: codes only
+    }
+    const named = COUNTRY_CODES.map((value) => ({
+      value,
+      label: SPECIAL_COUNTRIES[value]?.[lang] ?? names?.of(value.toUpperCase()) ?? value.toUpperCase(),
+    })).sort((a, b) => a.label.localeCompare(b.label, lang))
+    list = [{ value: '', label: NO_COUNTRY[lang].none }, ...named]
+    countryCache.set(lang, list)
+  }
+  return list
+}
+
+/** `countryOptions` for the current UI language (re-renders when it changes). */
+export const useCountries = () => countryOptions(useUiLang())

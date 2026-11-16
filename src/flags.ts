@@ -1,6 +1,6 @@
 /*
  * Flags shown on timeline entries. Only the countries offered in the editor are bundled
- * (flag-icons' own CSS ships all 271 flags, in two ratios). Keep in sync with COUNTRIES in
+ * (flag-icons' own CSS ships all 271 flags, in two ratios). Keep in sync with COUNTRY_CODES in
  * components/editor/fields.tsx.
  */
 import au from 'flag-icons/flags/4x3/au.svg'

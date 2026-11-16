@@ -1,9 +1,82 @@
 import type { ClipboardEvent } from 'react'
 import { ChevronRight, Copy, Eye, EyeOff, Plus, Trash2 } from 'lucide-react'
-import type { ListDisplay, ListItem, ListSection, TimelineEntry, TimelineSection } from '../../types'
+import type { DateFormat, ListDisplay, ListItem, ListSection, ResumeLocale, TimelineEntry, TimelineSection } from '../../types'
 import { newEntry, newListItem, uid } from '../../utils'
-import { COUNTRIES, IconButton, LinesField, Select, TextField } from './fields'
+import { contentLang, formatDateRange, fromInputDate, RESUME_LOCALES, toInputDate } from '../../locale'
+import { defineStrings, useStrings, useUiLang } from '../../i18n'
+import { countryOptions, IconButton, LinesField, Select, TextField, Toggle } from './fields'
 import { SortableList } from './Sortable'
+
+const S = defineStrings(
+  {
+    ratingTitle: 'Note (dessine les points / la barre)',
+    show: 'Afficher',
+    hide: 'Masquer',
+    remove: 'Supprimer',
+    duplicate: 'Dupliquer',
+    untitled: 'Sans titre',
+    confirmRemove: (title: string) => `Supprimer « ${title} » ?`,
+    title: 'Titre (gras)',
+    subtitle: 'Sous-titre (italique)',
+    start: 'Début',
+    end: 'Fin',
+    current: (present: string) => `En cours (« ${present} »)`,
+    subDate: 'Sous la date',
+    subDatePlaceholder: '6 mois',
+    flag: 'Drapeau',
+    city: 'Ville',
+    link: 'Lien',
+    bullets: 'Puces (une par ligne)',
+    bulletsHint: 'Markdown en ligne accepté : **gras**, *italique*, [lien](https://…)',
+    addEntry: 'Ajouter une entrée',
+    display: 'Affichage',
+    displayBullets: 'Liste à puces',
+    displayInline: 'Tags en ligne',
+    displayChips: 'Pastilles',
+    separator: 'Séparateur',
+    sepDot: 'Point médian  ·',
+    sepComma: 'Virgule  ,',
+    sepBar: 'Barre  |',
+    sepSlash: 'Barre oblique  /',
+    item: 'Élément',
+    pasteTitle: 'Coller « A, B, C » crée plusieurs éléments',
+    addItem: 'Ajouter un élément',
+  },
+  {
+    ratingTitle: 'Rating (draws the dots / bar)',
+    show: 'Show',
+    hide: 'Hide',
+    remove: 'Delete',
+    duplicate: 'Duplicate',
+    untitled: 'Untitled',
+    confirmRemove: (title) => `Delete “${title}”?`,
+    title: 'Title (bold)',
+    subtitle: 'Subtitle (italic)',
+    start: 'Start',
+    end: 'End',
+    current: (present) => `Ongoing (“${present}”)`,
+    subDate: 'Under the date',
+    subDatePlaceholder: '6 months',
+    flag: 'Flag',
+    city: 'City',
+    link: 'Link',
+    bullets: 'Bullet points (one per line)',
+    bulletsHint: 'Inline Markdown: **bold**, *italic*, [link](https://…)',
+    addEntry: 'Add an entry',
+    display: 'Display',
+    displayBullets: 'Bulleted list',
+    displayInline: 'Inline tags',
+    displayChips: 'Chips',
+    separator: 'Separator',
+    sepDot: 'Middle dot  ·',
+    sepComma: 'Comma  ,',
+    sepBar: 'Bar  |',
+    sepSlash: 'Slash  /',
+    item: 'Item',
+    pasteTitle: 'Pasting “A, B, C” creates several items',
+    addItem: 'Add an item',
+  },
+)
 
 export interface ItemSel {
   openItem: string | null
@@ -40,6 +113,7 @@ export function RecordListEditor<T extends { id: string; hidden: boolean }>({
   max?: number
   sel: ItemSel
 }) {
+  const t = useStrings(S)
   const patch = (id: string, p: Partial<T>) => setItems((xs) => xs.map((x) => (x.id === id ? { ...x, ...p } : x)))
   return (
     <div className="items">
@@ -58,7 +132,7 @@ export function RecordListEditor<T extends { id: string; hidden: boolean }>({
                       key={f.key}
                       className="item-input"
                       aria-label={f.label}
-                      title="Note (dessine les points / la barre)"
+                      title={t.ratingTitle}
                       value={Number(it[f.key])}
                       onFocus={() => sel.focusItem(it.id)}
                       onChange={(e) => patch(it.id, { [f.key]: Number(e.target.value) } as Partial<T>)}
@@ -83,10 +157,10 @@ export function RecordListEditor<T extends { id: string; hidden: boolean }>({
                 )}
               </div>
               <div className="row-actions">
-                <IconButton title={it.hidden ? 'Afficher' : 'Masquer'} onClick={() => patch(it.id, { hidden: !it.hidden } as Partial<T>)}>
+                <IconButton title={it.hidden ? t.show : t.hide} onClick={() => patch(it.id, { hidden: !it.hidden } as Partial<T>)}>
                   {it.hidden ? <EyeOff size={14} /> : <Eye size={14} />}
                 </IconButton>
-                <IconButton title="Supprimer" danger onClick={() => setItems((xs) => xs.filter((x) => x.id !== it.id))}>
+                <IconButton title={t.remove} danger onClick={() => setItems((xs) => xs.filter((x) => x.id !== it.id))}>
                   <Trash2 size={14} />
                 </IconButton>
               </div>
@@ -104,15 +178,25 @@ export function RecordListEditor<T extends { id: string; hidden: boolean }>({
 }
 
 
-interface ItemEditorProps<S> {
-  section: S
-  update: (fn: (s: S) => S) => void
+interface ItemEditorProps<Sec> {
+  section: Sec
+  update: (fn: (s: Sec) => Sec) => void
   openItem: string | null
   toggleItem: (id: string) => void
   registerItem: (id: string) => (el: HTMLElement | null) => void
 }
 
-export function TimelineEditor({ section, update, openItem, toggleItem, registerItem }: ItemEditorProps<TimelineSection>) {
+export function TimelineEditor({
+  section,
+  update,
+  openItem,
+  toggleItem,
+  registerItem,
+  locale,
+  dateFormat,
+}: ItemEditorProps<TimelineSection> & { locale: ResumeLocale; dateFormat: DateFormat }) {
+  const t = useStrings(S)
+  const countries = countryOptions(useUiLang())
   const setEntries = (fn: (e: TimelineEntry[]) => TimelineEntry[]) => update((s) => ({ ...s, entries: fn(s.entries) }))
   const patch = (id: string, p: Partial<TimelineEntry>) => setEntries((es) => es.map((e) => (e.id === id ? { ...e, ...p } : e)))
 
@@ -128,24 +212,24 @@ export function TimelineEditor({ section, update, openItem, toggleItem, register
                 <button type="button" className="item-toggle" aria-expanded={open} onClick={() => toggleItem(e.id)}>
                   <ChevronRight size={14} className="card-chevron" />
                   <span className="item-title">
-                    <strong>{e.title || 'Sans titre'}</strong>
-                    <span>{[e.subtitle, e.date].filter(Boolean).join(' · ')}</span>
+                    <strong>{e.title || t.untitled}</strong>
+                    <span>{[e.subtitle, formatDateRange(e, locale, dateFormat)].filter(Boolean).join(' · ')}</span>
                   </span>
                 </button>
                 <div className="row-actions">
-                  <IconButton title={e.hidden ? 'Afficher' : 'Masquer'} onClick={() => patch(e.id, { hidden: !e.hidden })}>
+                  <IconButton title={e.hidden ? t.show : t.hide} onClick={() => patch(e.id, { hidden: !e.hidden })}>
                     {e.hidden ? <EyeOff size={14} /> : <Eye size={14} />}
                   </IconButton>
                   <IconButton
-                    title="Dupliquer"
+                    title={t.duplicate}
                     onClick={() => setEntries((es) => [...es.slice(0, i + 1), { ...structuredClone(e), id: uid() }, ...es.slice(i + 1)])}
                   >
                     <Copy size={14} />
                   </IconButton>
                   <IconButton
-                    title="Supprimer"
+                    title={t.remove}
                     danger
-                    onClick={() => confirm(`Supprimer « ${e.title} » ?`) && setEntries((es) => es.filter((x) => x.id !== e.id))}
+                    onClick={() => confirm(t.confirmRemove(e.title)) && setEntries((es) => es.filter((x) => x.id !== e.id))}
                   >
                     <Trash2 size={14} />
                   </IconButton>
@@ -154,17 +238,24 @@ export function TimelineEditor({ section, update, openItem, toggleItem, register
               {open && (
                 <div className="item-body">
                   <div className="grid-2">
-                    <TextField label="Titre (gras)" value={e.title} onChange={(v) => patch(e.id, { title: v })} />
-                    <TextField label="Sous-titre (italique)" value={e.subtitle} onChange={(v) => patch(e.id, { subtitle: v })} />
-                    <TextField label="Date" placeholder="2022 – 2024" value={e.date} onChange={(v) => patch(e.id, { date: v })} />
-                    <TextField label="Sous la date" placeholder="6 mois" value={e.subDate} onChange={(v) => patch(e.id, { subDate: v })} />
-                    <Select label="Drapeau" value={e.country} options={COUNTRIES} onChange={(v) => patch(e.id, { country: v })} />
-                    <TextField label="Ville" value={e.location} onChange={(v) => patch(e.id, { location: v })} />
+                    <TextField label={t.title} value={e.title} onChange={(v) => patch(e.id, { title: v })} />
+                    <TextField label={t.subtitle} value={e.subtitle} onChange={(v) => patch(e.id, { subtitle: v })} />
+                    {/* Stored as YYYY/MM/DD; shown in the resume's language and the chosen precision */}
+                    <TextField label={t.start} type="date" value={toInputDate(e.start)} onChange={(v) => patch(e.id, { start: fromInputDate(v) })} />
+                    {!e.current && (
+                      <TextField label={t.end} type="date" value={toInputDate(e.end)} onChange={(v) => patch(e.id, { end: fromInputDate(v) })} />
+                    )}
                   </div>
-                  <TextField label="Lien" placeholder="https://…" value={e.url} onChange={(v) => patch(e.id, { url: v })} />
+                  <Toggle label={t.current(RESUME_LOCALES[locale].present)} checked={e.current} onChange={(v) => patch(e.id, { current: v })} />
+                  <div className="grid-2">
+                    <TextField label={t.subDate} placeholder={t.subDatePlaceholder} value={e.subDate} onChange={(v) => patch(e.id, { subDate: v })} />
+                    <Select label={t.flag} value={e.country} options={countries} onChange={(v) => patch(e.id, { country: v })} />
+                    <TextField label={t.city} value={e.location} onChange={(v) => patch(e.id, { location: v })} />
+                  </div>
+                  <TextField label={t.link} placeholder="https://…" value={e.url} onChange={(v) => patch(e.id, { url: v })} />
                   <LinesField
-                    label="Puces (une par ligne)"
-                    hint="Markdown en ligne accepté : **gras**, *italique*, [lien](https://…)"
+                    label={t.bullets}
+                    hint={t.bulletsHint}
                     value={e.bullets}
                     onChange={(v) => patch(e.id, { bullets: v })}
                   />
@@ -178,12 +269,12 @@ export function TimelineEditor({ section, update, openItem, toggleItem, register
         type="button"
         className="btn btn--small btn--ghost"
         onClick={() => {
-          const e = newEntry()
+          const e = newEntry(contentLang(locale))
           setEntries((es) => [...es, e])
           toggleItem(e.id)
         }}
       >
-        <Plus size={14} /> Ajouter une entrée
+        <Plus size={14} /> {t.addEntry}
       </button>
     </div>
   )
@@ -194,6 +285,7 @@ export function TimelineEditor({ section, update, openItem, toggleItem, register
 export function ListEditor({ section, update, openItem, toggleItem, registerItem }: ItemEditorProps<ListSection>) {
   const setItems = (fn: (e: ListItem[]) => ListItem[]) => update((s) => ({ ...s, items: fn(s.items) }))
   const patch = (id: string, p: Partial<ListItem>) => setItems((xs) => xs.map((x) => (x.id === id ? { ...x, ...p } : x)))
+  const t = useStrings(S)
   const display = section.display ?? 'bullets'
 
   // Pasting "C++, Unity, Git" (or several lines) into an item splits it into several items
@@ -211,7 +303,7 @@ export function ListEditor({ section, update, openItem, toggleItem, registerItem
     if (input.value.trim() && (input.selectionStart ?? len) === len && (input.selectionEnd ?? len) === len) {
       setItems((xs) => {
         const i = xs.findIndex((x) => x.id === it.id)
-        return [...xs.slice(0, i + 1), ...parts.map((t) => newListItem(t)), ...xs.slice(i + 1)]
+        return [...xs.slice(0, i + 1), ...parts.map((p) => newListItem(p)), ...xs.slice(i + 1)]
       })
       return
     }
@@ -222,7 +314,7 @@ export function ListEditor({ section, update, openItem, toggleItem, registerItem
     const middle = parts.slice(1, -1)
     setItems((xs) => {
       const i = xs.findIndex((x) => x.id === it.id)
-      const added = [...middle, last].map((t) => newListItem(t))
+      const added = [...middle, last].map((p) => newListItem(p))
       return [...xs.slice(0, i), { ...it, text: first }, ...added, ...xs.slice(i + 1)]
     })
   }
@@ -231,24 +323,24 @@ export function ListEditor({ section, update, openItem, toggleItem, registerItem
     <div className="items">
       <div className="grid-2">
         <Select<ListDisplay>
-          label="Affichage"
+          label={t.display}
           value={display}
           options={[
-            { value: 'bullets', label: 'Liste à puces' },
-            { value: 'inline', label: 'Tags en ligne' },
-            { value: 'chips', label: 'Pastilles' },
+            { value: 'bullets', label: t.displayBullets },
+            { value: 'inline', label: t.displayInline },
+            { value: 'chips', label: t.displayChips },
           ]}
           onChange={(v) => update((s) => ({ ...s, display: v }))}
         />
         {display === 'inline' && (
           <Select
-            label="Séparateur"
+            label={t.separator}
             value={section.separator ?? ' · '}
             options={[
-              { value: ' · ', label: 'Point médian  ·' },
-              { value: ', ', label: 'Virgule  ,' },
-              { value: ' | ', label: 'Barre  |' },
-              { value: ' / ', label: 'Barre oblique  /' },
+              { value: ' · ', label: t.sepDot },
+              { value: ', ', label: t.sepComma },
+              { value: ' | ', label: t.sepBar },
+              { value: ' / ', label: t.sepSlash },
             ]}
             onChange={(v) => update((s) => ({ ...s, separator: v }))}
           />
@@ -263,19 +355,19 @@ export function ListEditor({ section, update, openItem, toggleItem, registerItem
                 {handle}
                 <input
                   className="item-input"
-                  aria-label="Élément"
+                  aria-label={t.item}
                   value={it.text}
                   onChange={(e) => patch(it.id, { text: e.target.value })}
                   onPaste={pasteSplit(it)}
-                  title="Coller « A, B, C » crée plusieurs éléments"
+                  title={t.pasteTitle}
                   // Focusing an item selects it, so it is highlighted on the page
                   onFocus={() => !open && toggleItem(it.id)}
                 />
                 <div className="row-actions">
-                  <IconButton title={it.hidden ? 'Afficher' : 'Masquer'} onClick={() => patch(it.id, { hidden: !it.hidden })}>
+                  <IconButton title={it.hidden ? t.show : t.hide} onClick={() => patch(it.id, { hidden: !it.hidden })}>
                     {it.hidden ? <EyeOff size={14} /> : <Eye size={14} />}
                   </IconButton>
-                  <IconButton title="Supprimer" danger onClick={() => setItems((xs) => xs.filter((x) => x.id !== it.id))}>
+                  <IconButton title={t.remove} danger onClick={() => setItems((xs) => xs.filter((x) => x.id !== it.id))}>
                     <Trash2 size={14} />
                   </IconButton>
                 </div>
@@ -293,7 +385,7 @@ export function ListEditor({ section, update, openItem, toggleItem, registerItem
           toggleItem(it.id)
         }}
       >
-        <Plus size={14} /> Ajouter un élément
+        <Plus size={14} /> {t.addItem}
       </button>
     </div>
   )

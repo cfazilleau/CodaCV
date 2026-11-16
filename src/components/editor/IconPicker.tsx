@@ -1,7 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { Ban, ChevronDown } from 'lucide-react'
 import type { IconKey } from '../../types'
-import { ICONS, Icon, iconLabel } from '../icons'
+import { defineStrings, useStrings } from '../../i18n'
+import { ICONS, ICON_LABELS, Icon } from '../icons'
+
+const S = defineStrings(
+  { current: (name: string) => `Icône : ${name}`, choose: 'Choisir une icône', none: 'Aucune icône' },
+  { current: (name) => `Icon: ${name}`, choose: 'Choose an icon', none: 'No icon' },
+)
 
 interface Props {
   value: IconKey
@@ -12,6 +18,8 @@ interface Props {
 
 /** Button showing the current icon; opens a grid of all available icons. */
 export function IconPicker({ value, onChange, accent }: Props) {
+  const t = useStrings(S)
+  const labels = useStrings(ICON_LABELS)
   const [open, setOpen] = useState(false)
   const root = useRef<HTMLDivElement>(null)
 
@@ -39,7 +47,7 @@ export function IconPicker({ value, onChange, accent }: Props) {
       <button
         type="button"
         className="icon-picker-btn"
-        title={`Icône : ${iconLabel(value)}`}
+        title={t.current(labels[value] ?? value)}
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
@@ -51,7 +59,7 @@ export function IconPicker({ value, onChange, accent }: Props) {
       </button>
 
       {open && (
-        <div className="icon-picker-pop" role="listbox" aria-label="Choisir une icône">
+        <div className="icon-picker-pop" role="listbox" aria-label={t.choose}>
           <div className="icon-picker-grid">
             {ICONS.map((i) => (
               <button
@@ -60,7 +68,7 @@ export function IconPicker({ value, onChange, accent }: Props) {
                 role="option"
                 aria-selected={value === i.key}
                 className={`icon-picker-opt${value === i.key ? ' is-active' : ''}`}
-                title={i.label}
+                title={labels[i.key]}
                 onClick={() => pick(i.key)}
               >
                 {i.render(16)}
@@ -74,7 +82,7 @@ export function IconPicker({ value, onChange, accent }: Props) {
             className={`icon-picker-none${value === 'none' ? ' is-active' : ''}`}
             onClick={() => pick('none')}
           >
-            <Ban size={14} /> Aucune icône
+            <Ban size={14} /> {t.none}
           </button>
         </div>
       )}

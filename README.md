@@ -14,7 +14,7 @@ npm run build    # static site in dist/
 ## Features
 
 - **Editor** – profile, photo, contacts, and any number of sections:
-  - *Chronologie* (timeline: experience, projects, education…) with date, sub-date, flag, city, title, subtitle, link, bullets
+  - *Chronologie* (timeline: experience, projects, education…) with start / end dates (or ongoing), sub-date, flag, city, title, subtitle, link, bullets
   - *Liste* (languages, skills…) shown as bullets, inline tags (`C++ · Unity · Git`) or chips;
     pasting `A, B, C` into an item splits it into several items
   - *Texte libre* (free markdown text)
@@ -27,6 +27,11 @@ npm run build    # static site in dist/
   - Apparence: 12 curated palettes (or custom colours), header style (photo left / centered / colour band /
     sidebar), section titles (underline / small caps / left bar / icon), entries (dates left / dates right /
     timeline / cards), photo ring and initials, font, size, density, date column, margins.
+  - Language and dates: each version has its own resume language (French, English US / UK, German,
+    Spanish, Italian, Dutch, Polish, Portuguese PT / BR). Dates are written in that language with the
+    chosen precision (year, numeric month, short or full month name, full date): "sept. 2022 –
+    aujourd'hui", "Sep 2022 – Present", "Sept. 2022 – heute"…
+- **Interface language** – French or English, switched in the top bar (remembered per browser).
 - **Layout on the page** (edit mode, hover the preview):
   - section grip → drop it on a new row, in a new column (left/right edge of a section) or under
     another section in a multi-column row; the blue line shows where it lands
@@ -43,8 +48,8 @@ npm run build    # static site in dist/
   (`mailto:` / `tel:`) are created automatically from the text.
 - **Versions** tab: several complete CVs (content, layout, style, language, PDF file name), e.g. one
   per language or per company. Duplicate, rename, reorder, delete; the top bar shows the active one.
-- Data is auto-saved in the browser (localStorage). **Exporter** saves the active version as JSON,
-  **Importer** adds a JSON file as a new version. Undo / redo with Ctrl+Z / Ctrl+Y.
+- Data is auto-saved in the browser (localStorage). **Export** saves the active version as JSON,
+  **Import** adds a JSON file as a new version. Dates in the JSON are always `YYYY/MM/DD`. Undo / redo with Ctrl+Z / Ctrl+Y.
 
 ## Recruiter tools (ATS) & AI agents
 

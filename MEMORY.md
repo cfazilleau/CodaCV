@@ -7,11 +7,12 @@ users; this file records how things work, why, and what was learned the hard way
 
 A client-only resume builder (Vite + React 19 + TypeScript, no backend). Sidebar editor on the left,
 live A4 preview on the right with on-page layout editing, print-to-PDF tuned for ATS / AI parsers,
-several resume "versions" stored in the browser. UI text is in **French**; code and comments in English.
+several resume "versions" stored in the browser. The editor UI is in **French and English** (switch in the top bar); code and comments in English.
 
 ```bash
 npm install
 npm run dev        # http://localhost:5173 (also .claude/launch.json "codacv")
+                   # "codacv-test" = port 5180: its own localStorage, never the owner's data on :5173
 npm run build      # tsc --noEmit && vite build → dist/
 npm run typecheck
 ```
@@ -37,7 +38,9 @@ headless printing, and PDF text extraction (see "Testing" below).
 | `src/components/editor/Sortable.tsx` | dnd-kit vertical sortable list (grip handle, keyboard support) |
 | `src/components/editor/fields.tsx`, `IconPicker.tsx`, `icons.tsx` | Form fields, icon picker, icon set (lucide + a few hand-drawn brand SVGs) |
 | `src/App.tsx` | Top bar, preview pane (zoom, page-break guides), print setup (`@page` rules, PDF file name) |
-| `src/flags.ts` | Flag SVGs bundled for the countries offered in the editor (`COUNTRIES` in `fields.tsx`); flag-icons' CSS is not used |
+| `src/flags.ts` | Flag SVGs bundled for the countries offered in the editor (`COUNTRY_CODES` in `fields.tsx`); flag-icons' CSS is not used |
+| `src/i18n.ts` | Editor UI language (`fr` / `en`, key `codacv.uiLang`, default from the browser); `defineStrings` / `useStrings` / `strings` |
+| `src/locale.ts` | Resume languages (`RESUME_LOCALES`: label + word for "present"), date storage format and locale formatting, `contentLang()` |
 | `src/styles/resume.css` | Resume styles (mm/pt units), `print.css` print overrides, `app.css` editor UI |
 
 ## Data model and storage
@@ -49,7 +52,7 @@ headless printing, and PDF text extraction (see "Testing" below).
   are downscaled the same way. A failed save (storage full) shows a banner until a save succeeds.
   The old single-resume key `codacv.resume.v1` is read once to seed the library ("Principal") and
   then left untouched as a backup — never delete it automatically.
-- Other keys: `codacv.sidebarTab` (last sidebar tab, written only after the tab rendered),
+- Other keys: `codacv.uiLang` (editor UI language), `codacv.sidebarTab` (last sidebar tab, written only after the tab rendered),
   `codacv.library.rev` (revision, bumped on every save), `codacv.quarantine.<ISO date>` (versions
   that could not be read, kept aside; an identical copy is reused).
 - Everything loaded (library entries, imported JSON) goes through `migrate()` in `migrate.ts`, which
@@ -57,7 +60,8 @@ headless printing, and PDF text extraction (see "Testing" below).
   new field is a compile error until it is handled). Ids are made `[\w-]{1,64}` and unique per
   resume (they end up in CSS selectors). Unknown section kinds are skipped. Past migrations handled:
   contact `kind` → `icon`, boolean `summaryIcon`, `pairWithNext` → layout `place`, removed
-  `details` fields (web page feature), removed `spaceBefore`, removed theme `layout`.
+  `details` fields (web page feature), removed `spaceBefore`, removed theme `layout`, timeline free-text
+  `date` (dropped on purpose at the owner's request, replaced by `start` / `end` / `current`).
 - `resume.version` is still `1`; migrations are shape-based, not version-based.
 - Import adds the JSON as a **new version** (5 MB max); export / reset act on the active version.
 - Undo history is per session and resets when switching versions. Rapid edits within 600 ms are
@@ -68,6 +72,26 @@ headless printing, and PDF text extraction (see "Testing" below).
 - Several tabs: a save first checks `codacv.library.rev`; `storage` events warn the other tabs. A
   stale tab stops saving and offers "Recharger" or "Garder cet onglet" (StorageBanner).
 - A render error shows the ErrorBoundary screen; the crashed tree never commits, so nothing is saved.
+
+## Languages and dates
+
+- Two separate settings. **UI language** (`i18n.ts`): editor only, per browser. **Resume language**
+  (`meta.locale`, per version, Apparence → "Langue et dates"): `<html lang>` / PDF `/Lang`, date
+  formatting, the "present" word. Ten locales (fr, en = US, en-GB, de, es, it, nl, pl, pt-PT, pt-BR);
+  `pt` alone would format as Brazil in Intl, so Portugal is `pt-PT`.
+- UI strings live next to their component: `const S = defineStrings({ …fr }, { …en })` (English must
+  match the French shape, checked by TS via `NoInfer`), `useStrings(S)` in components, `strings(S)`
+  outside React. French is the reference text; add new UI text to both tables.
+- Default texts written into a resume (new sections / entries, the template in `defaultResume.ts`,
+  `templateResume(lang)`) use `contentLang(meta.locale)`: the resume's language when it is fr / en,
+  else the UI language. Version names ("Principal", "(copie)") use the UI language at creation.
+- Timeline dates: `start` / `end` stored, exported and imported as **`YYYY/MM/DD`** (import also
+  accepts `-`; invalid dates become ''), `current` = ongoing. Shown with `Intl.DateTimeFormat` in the
+  resume's locale, UTC on both sides, precision `theme.dateFormat` (year · month-numeric ·
+  month-short · month-long · full). Same formatted start and end collapse to one ("2023").
+- A range is rendered as two `nowrap` spans around a plain " – " (not Intl `formatRange`, which uses
+  thin spaces in some locales), so the narrow date column breaks at the dash, never inside a date.
+- `subDate` ("8 mois") stays free text.
 
 ## Layout model (`src/layout.ts`)
 
@@ -167,7 +191,7 @@ with **pypdf** (stream order, like most ATS / LLM loaders) and **pdfminer** (lay
   storage and must never be committed or written into the repo (or into this file).
 - Commit after each completed change (attribution trailer as configured); **ask before every push**.
 - Keep the owner's data safe: no destructive storage changes without migration, and keep backups.
-- Communicate in English; the app UI stays French.
+- Communicate in English. The app UI is French + English: every new UI string goes in both tables.
 
 ## Open ideas / not done
 

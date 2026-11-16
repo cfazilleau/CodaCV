@@ -22,6 +22,7 @@ import {
   User,
 } from 'lucide-react'
 import type { IconKey } from '../types'
+import { defineStrings, strings } from '../i18n'
 
 type P = { size?: number }
 
@@ -61,37 +62,96 @@ export const ExternalIcon = ({ size = 10 }: P) => (
 const stroke = 2.6
 
 /** Every icon available for contacts and the summary line, in picker order. */
-export const ICONS: { key: IconKey; label: string; render: (size: number) => ReactNode }[] = [
-  { key: 'link', label: 'Lien / site web', render: (s) => <Link size={s} strokeWidth={stroke} /> },
-  { key: 'globe', label: 'Globe', render: (s) => <Globe size={s} strokeWidth={stroke} /> },
-  { key: 'mail', label: 'E-mail', render: (s) => <Mail size={s} strokeWidth={stroke} /> },
-  { key: 'at', label: 'Arobase', render: (s) => <AtSign size={s} strokeWidth={stroke} /> },
-  { key: 'phone', label: 'Téléphone', render: (s) => <Phone size={s} strokeWidth={stroke} /> },
-  { key: 'smartphone', label: 'Mobile', render: (s) => <Smartphone size={s} strokeWidth={stroke} /> },
-  { key: 'pin', label: 'Localisation', render: (s) => <MapPin size={s} strokeWidth={stroke} /> },
-  { key: 'house', label: 'Adresse', render: (s) => <House size={s} strokeWidth={stroke} /> },
-  { key: 'linkedin', label: 'LinkedIn', render: (s) => <LinkedinIcon size={s} /> },
-  { key: 'github', label: 'GitHub', render: (s) => <GithubIcon size={s} /> },
-  { key: 'x', label: 'X / Twitter', render: (s) => <XIcon size={s} /> },
-  { key: 'youtube', label: 'YouTube', render: (s) => <YoutubeIcon size={s} /> },
-  { key: 'message', label: 'Messagerie', render: (s) => <MessageCircle size={s} strokeWidth={stroke} /> },
-  { key: 'briefcase', label: 'Portfolio / travail', render: (s) => <Briefcase size={s} strokeWidth={stroke} /> },
-  { key: 'code', label: 'Code', render: (s) => <Code size={s} strokeWidth={stroke} /> },
-  { key: 'gamepad', label: 'Jeux', render: (s) => <Gamepad2 size={s} strokeWidth={stroke} /> },
-  { key: 'user', label: 'Profil', render: (s) => <User size={s} strokeWidth={stroke} /> },
-  { key: 'calendar', label: 'Date / âge', render: (s) => <Calendar size={s} strokeWidth={stroke} /> },
-  { key: 'car', label: 'Permis', render: (s) => <Car size={s} strokeWidth={stroke} /> },
-  { key: 'languages', label: 'Langues', render: (s) => <Languages size={s} strokeWidth={stroke} /> },
-  { key: 'graduation', label: 'Diplôme', render: (s) => <GraduationCap size={s} strokeWidth={stroke} /> },
-  { key: 'award', label: 'Récompense', render: (s) => <Award size={s} strokeWidth={stroke} /> },
-  { key: 'star', label: 'Étoile', render: (s) => <Star size={s} strokeWidth={stroke} /> },
-  { key: 'heart', label: 'Centres d’intérêt', render: (s) => <Heart size={s} strokeWidth={stroke} /> },
+export const ICONS: { key: IconKey; render: (size: number) => ReactNode }[] = [
+  { key: 'link', render: (s) => <Link size={s} strokeWidth={stroke} /> },
+  { key: 'globe', render: (s) => <Globe size={s} strokeWidth={stroke} /> },
+  { key: 'mail', render: (s) => <Mail size={s} strokeWidth={stroke} /> },
+  { key: 'at', render: (s) => <AtSign size={s} strokeWidth={stroke} /> },
+  { key: 'phone', render: (s) => <Phone size={s} strokeWidth={stroke} /> },
+  { key: 'smartphone', render: (s) => <Smartphone size={s} strokeWidth={stroke} /> },
+  { key: 'pin', render: (s) => <MapPin size={s} strokeWidth={stroke} /> },
+  { key: 'house', render: (s) => <House size={s} strokeWidth={stroke} /> },
+  { key: 'linkedin', render: (s) => <LinkedinIcon size={s} /> },
+  { key: 'github', render: (s) => <GithubIcon size={s} /> },
+  { key: 'x', render: (s) => <XIcon size={s} /> },
+  { key: 'youtube', render: (s) => <YoutubeIcon size={s} /> },
+  { key: 'message', render: (s) => <MessageCircle size={s} strokeWidth={stroke} /> },
+  { key: 'briefcase', render: (s) => <Briefcase size={s} strokeWidth={stroke} /> },
+  { key: 'code', render: (s) => <Code size={s} strokeWidth={stroke} /> },
+  { key: 'gamepad', render: (s) => <Gamepad2 size={s} strokeWidth={stroke} /> },
+  { key: 'user', render: (s) => <User size={s} strokeWidth={stroke} /> },
+  { key: 'calendar', render: (s) => <Calendar size={s} strokeWidth={stroke} /> },
+  { key: 'car', render: (s) => <Car size={s} strokeWidth={stroke} /> },
+  { key: 'languages', render: (s) => <Languages size={s} strokeWidth={stroke} /> },
+  { key: 'graduation', render: (s) => <GraduationCap size={s} strokeWidth={stroke} /> },
+  { key: 'award', render: (s) => <Award size={s} strokeWidth={stroke} /> },
+  { key: 'star', render: (s) => <Star size={s} strokeWidth={stroke} /> },
+  { key: 'heart', render: (s) => <Heart size={s} strokeWidth={stroke} /> },
 ]
 
 const BY_KEY = new Map(ICONS.map((i) => [i.key, i]))
 
+/** Icon names shown in the picker (tooltips), per UI language. */
+export const ICON_LABELS = defineStrings<Record<IconKey, string>>(
+  {
+    none: 'Aucune icône',
+    link: 'Lien / site web',
+    globe: 'Globe',
+    mail: 'E-mail',
+    at: 'Arobase',
+    phone: 'Téléphone',
+    smartphone: 'Mobile',
+    pin: 'Localisation',
+    house: 'Adresse',
+    linkedin: 'LinkedIn',
+    github: 'GitHub',
+    x: 'X / Twitter',
+    youtube: 'YouTube',
+    message: 'Messagerie',
+    briefcase: 'Portfolio / travail',
+    code: 'Code',
+    gamepad: 'Jeux',
+    user: 'Profil',
+    calendar: 'Date / âge',
+    car: 'Permis',
+    languages: 'Langues',
+    graduation: 'Diplôme',
+    award: 'Récompense',
+    star: 'Étoile',
+    heart: 'Centres d’intérêt',
+  },
+  {
+    none: 'No icon',
+    link: 'Link / website',
+    globe: 'Globe',
+    mail: 'Email',
+    at: 'At sign',
+    phone: 'Phone',
+    smartphone: 'Mobile',
+    pin: 'Location',
+    house: 'Address',
+    linkedin: 'LinkedIn',
+    github: 'GitHub',
+    x: 'X / Twitter',
+    youtube: 'YouTube',
+    message: 'Messaging',
+    briefcase: 'Portfolio / work',
+    code: 'Code',
+    gamepad: 'Games',
+    user: 'Profile',
+    calendar: 'Date / age',
+    car: 'Driving licence',
+    languages: 'Languages',
+    graduation: 'Degree',
+    award: 'Award',
+    star: 'Star',
+    heart: 'Interests',
+  },
+)
+
+/** Name of an icon in the current UI language (components: prefer `useStrings(ICON_LABELS)`). */
 export function iconLabel(key: IconKey): string {
-  return key === 'none' ? 'Aucune icône' : (BY_KEY.get(key)?.label ?? key)
+  return strings(ICON_LABELS)[key] ?? key
 }
 
 /** Raw glyph for an icon key (null for 'none' / unknown). */

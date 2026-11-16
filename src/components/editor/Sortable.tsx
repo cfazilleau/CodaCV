@@ -4,6 +4,18 @@ import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, v
 import { restrictToParentElement, restrictToVerticalAxis } from '@dnd-kit/modifiers'
 import { CSS } from '@dnd-kit/utilities'
 import { GripVertical } from 'lucide-react'
+import { defineStrings, useStrings } from '../../i18n'
+
+const S = defineStrings(
+  {
+    instructions: 'Espace pour saisir, flèches pour déplacer, Espace pour déposer, Échap pour annuler.',
+    drag: 'Glisser pour réordonner',
+  },
+  {
+    instructions: 'Space to pick up, arrow keys to move, Space to drop, Escape to cancel.',
+    drag: 'Drag to reorder',
+  },
+)
 
 interface Props<T extends { id: string }> {
   items: T[]
@@ -20,6 +32,7 @@ interface Props<T extends { id: string }> {
  * Space to drop, Esc to cancel.
  */
 export function SortableList<T extends { id: string }>({ items, onReorder, className, children }: Props<T>) {
+  const t = useStrings(S)
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -41,7 +54,7 @@ export function SortableList<T extends { id: string }>({ items, onReorder, class
       onDragEnd={onDragEnd}
       accessibility={{
         screenReaderInstructions: {
-          draggable: 'Espace pour saisir, flèches pour déplacer, Espace pour déposer, Échap pour annuler.',
+          draggable: t.instructions,
         },
       }}
     >
@@ -59,6 +72,7 @@ export function SortableList<T extends { id: string }>({ items, onReorder, class
 }
 
 function SortableRow({ id, children }: { id: string; children: (handle: ReactNode) => ReactNode }) {
+  const t = useStrings(S)
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id })
   const style: CSSProperties = {
     transform: CSS.Translate.toString(transform),
@@ -69,8 +83,8 @@ function SortableRow({ id, children }: { id: string; children: (handle: ReactNod
       type="button"
       ref={setActivatorNodeRef}
       className="drag-handle"
-      title="Glisser pour réordonner"
-      aria-label="Glisser pour réordonner"
+      title={t.drag}
+      aria-label={t.drag}
       {...attributes}
       {...listeners}
       // Don't toggle the card / row the handle sits in

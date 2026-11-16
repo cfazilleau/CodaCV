@@ -2,7 +2,29 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type Pointer
 import { createPortal } from 'react-dom'
 import { GripVertical } from 'lucide-react'
 import type { Resume, Selection } from '../types'
+import { defineStrings, useStrings } from '../i18n'
 import { A4_H_MM, A4_W_MM, COL_GAP_MM, MM, dateColumnFraction, moveItem, moveSectionAnywhere, setColumnWidths, type SidebarAwareDrop } from '../layout'
+
+const S = defineStrings(
+  {
+    marginX: 'Marge gauche / droite',
+    marginY: 'Marge haut / bas',
+    moveSection: 'Glisser pour déplacer la section (ligne, colonne, dessous)',
+    reorder: 'Glisser pour réordonner',
+    resizeColumns: 'Glisser pour redimensionner les colonnes',
+    percent: (n: number) => `${n} %`,
+    margin: (mm: number) => `Marge : ${mm} mm`,
+  },
+  {
+    marginX: 'Left / right margin',
+    marginY: 'Top / bottom margin',
+    moveSection: 'Drag to move the section (row, column, below)',
+    reorder: 'Drag to reorder',
+    resizeColumns: 'Drag to resize the columns',
+    percent: (n) => `${n}%`,
+    margin: (mm) => `Margin: ${mm} mm`,
+  },
+)
 
 /**
  * Direct-manipulation layer drawn over the A4 preview (edit mode only, never printed):
@@ -49,6 +71,7 @@ const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(mi
 const halfMm = (v: number) => Math.round(v * 2) / 2
 
 export function LayoutOverlay({ shellRef, resume, setResume, zoom, selection }: Props) {
+  const str = useStrings(S)
   const [hover, setHover] = useState<{ sectionId?: string; itemId?: string }>({})
   const itemBand = useRef<DOMRect | null>(null)
   const itemInline = useRef(false)
@@ -333,7 +356,7 @@ export function LayoutOverlay({ shellRef, resume, setResume, zoom, selection }: 
           widths[drag.index] = cum - prev
           widths[drag.index + 1] = next - cum
           setResume((r) => ({ ...r, sections: setColumnWidths(r.sections, drag.colIds.map((id, i) => ({ sectionId: id, width: widths[i] }))) }))
-          setGhost({ x, y, text: widths.map((w) => `${Math.round(w * 100)} %`).join(' · ') + (snap !== undefined ? '  ⟂' : '') })
+          setGhost({ x, y, text: widths.map((w) => str.percent(Math.round(w * 100))).join(' · ') + (snap !== undefined ? '  ⟂' : '') })
           break
         }
         case 'margin': {
@@ -341,7 +364,7 @@ export function LayoutOverlay({ shellRef, resume, setResume, zoom, selection }: 
           const v = clamp(halfMm(px / f.scale / MM), 4, 35)
           const key = drag.side === 'left' || drag.side === 'right' ? 'marginX' : 'marginY'
           setResume((r) => ({ ...r, theme: { ...r.theme, [key]: v } }))
-          setGhost({ x, y, text: `Marge : ${v} mm` })
+          setGhost({ x, y, text: str.margin(v) })
           break
         }
       }
@@ -419,10 +442,10 @@ export function LayoutOverlay({ shellRef, resume, setResume, zoom, selection }: 
     <div className={`layout-overlay${drag ? ' is-dragging' : ''}`} aria-hidden="true" style={{ ['--lo-accent' as string]: theme.accent }}>
       {/* Page margins */}
       <div className="margin-guides">
-        <div className={`margin-guide margin-guide--v margin-guide--left${xActive ? ' is-active' : ''}`} style={{ left: mx, top: 0, height: '100%' }} onPointerDown={start({ kind: 'margin', side: 'left' })} title="Marge gauche / droite" />
-        <div className={`margin-guide margin-guide--v margin-guide--right${xActive ? ' is-active' : ''}`} style={{ left: pageW - mx, top: 0, height: '100%' }} onPointerDown={start({ kind: 'margin', side: 'right' })} title="Marge gauche / droite" />
-        <div className={`margin-guide margin-guide--h margin-guide--top${yActive ? ' is-active' : ''}`} style={{ top: my, left: 0, width: pageW }} onPointerDown={start({ kind: 'margin', side: 'top' })} title="Marge haut / bas" />
-        <div className={`margin-guide margin-guide--h margin-guide--bottom${yActive ? ' is-active' : ''}`} style={{ top: pageH - my, left: 0, width: pageW }} onPointerDown={start({ kind: 'margin', side: 'bottom' })} title="Marge haut / bas" />
+        <div className={`margin-guide margin-guide--v margin-guide--left${xActive ? ' is-active' : ''}`} style={{ left: mx, top: 0, height: '100%' }} onPointerDown={start({ kind: 'margin', side: 'left' })} title={str.marginX} />
+        <div className={`margin-guide margin-guide--v margin-guide--right${xActive ? ' is-active' : ''}`} style={{ left: pageW - mx, top: 0, height: '100%' }} onPointerDown={start({ kind: 'margin', side: 'right' })} title={str.marginX} />
+        <div className={`margin-guide margin-guide--h margin-guide--top${yActive ? ' is-active' : ''}`} style={{ top: my, left: 0, width: pageW }} onPointerDown={start({ kind: 'margin', side: 'top' })} title={str.marginY} />
+        <div className={`margin-guide margin-guide--h margin-guide--bottom${yActive ? ' is-active' : ''}`} style={{ top: pageH - my, left: 0, width: pageW }} onPointerDown={start({ kind: 'margin', side: 'bottom' })} title={str.marginY} />
       </div>
 
       {/* Hovered section: outline and grip */}
@@ -435,7 +458,7 @@ export function LayoutOverlay({ shellRef, resume, setResume, zoom, selection }: 
             className="lo-grip lo-grip--section"
             style={{ left: geo.section.rect.x - 26, top: geo.section.titleRect.y + geo.section.titleRect.h / 2 - 11 }}
             onPointerDown={start({ kind: 'section', id: geo.section.id, label: geo.section.label })}
-            title="Glisser pour déplacer la section (ligne, colonne, dessous)"
+            title={str.moveSection}
           >
             <GripVertical size={14} />
           </button>
@@ -454,7 +477,7 @@ export function LayoutOverlay({ shellRef, resume, setResume, zoom, selection }: 
               : { left: geo.item.rect.x - 17, top: geo.item.rect.y + (geo.item.kind === 'entry' ? 0 : geo.item.rect.h / 2 - 9) }
           }
           onPointerDown={start({ kind: 'item', sectionId: geo.item.owner, itemId: geo.item.id, itemKind: geo.item.kind, label: geo.item.label })}
-          title="Glisser pour réordonner"
+          title={str.reorder}
         >
           <GripVertical size={12} />
         </button>
@@ -471,7 +494,7 @@ export function LayoutOverlay({ shellRef, resume, setResume, zoom, selection }: 
               className={`lo-divider${drag?.kind === 'col' && drag.index === i ? ' is-active' : ''}`}
               style={{ left: x - 5, top: geo.row!.rect.y, height: geo.row!.rect.h }}
               onPointerDown={start({ kind: 'col', index: i, colIds: geo.row!.cols.map((cc) => cc.id), widths: colWidths(geo.row!.cols.map((cc) => cc.rect.w)) })}
-              title="Glisser pour redimensionner les colonnes"
+              title={str.resizeColumns}
             />
           )
         })}

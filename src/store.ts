@@ -1,8 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { defaultResume } from './defaultResume'
+import { templateResume } from './defaultResume'
+import { defineStrings, strings } from './i18n'
 import { migrate } from './migrate'
 import type { Resume } from './types'
 import { uid } from './utils'
+
+// Default names written into the library (stored data: they keep the language they were created in)
+const S = defineStrings(
+  { untitled: 'Sans nom', main: 'Principal', copyOf: (name: string) => `${name} (copie)`, newResume: 'Nouveau CV' },
+  { untitled: 'Untitled', main: 'Main', copyOf: (name) => `${name} (copy)`, newResume: 'New resume' },
+)
 
 export { parseResume } from './migrate'
 
@@ -145,7 +152,7 @@ function loadLibrary(): Loaded {
         ids.add(id)
         versions.push({
           id,
-          name: typeof v.name === 'string' ? v.name : 'Sans nom',
+          name: typeof v.name === 'string' ? v.name : strings(S).untitled,
           updatedAt: typeof v.updatedAt === 'number' ? v.updatedAt : Date.now(),
           resume: migrate(v.resume),
         })
@@ -165,7 +172,7 @@ function loadLibrary(): Loaded {
     }
   }
 
-  let resume = structuredClone(defaultResume)
+  let resume = templateResume()
   try {
     const legacy = localStorage.getItem(LEGACY_KEY)
     if (legacy) resume = migrate(JSON.parse(legacy))
@@ -173,7 +180,7 @@ function loadLibrary(): Loaded {
     console.warn('Could not load the saved resume, using the example', e)
   }
   const id = uid()
-  return { library: { activeId: id, versions: [{ id, name: 'Principal', updatedAt: Date.now(), resume }] }, rev, issue }
+  return { library: { activeId: id, versions: [{ id, name: strings(S).main, updatedAt: Date.now(), resume }] }, rev, issue }
 }
 
 /** Loading copies unreadable data aside: do it once, even though StrictMode runs state initializers twice. */
@@ -372,8 +379,8 @@ export function useResumeStore() {
     const list = snapshot()
     const source = list.find((v) => v.id === activeId)!
     const id = uid()
-    const resumeCopy = resumeOverride ?? (from === 'copy' ? structuredClone(source.resume) : structuredClone(defaultResume))
-    const version: Version = { id, name: name ?? (from === 'copy' ? `${source.name} (copie)` : 'Nouveau CV'), updatedAt: Date.now(), resume: resumeCopy }
+    const resumeCopy = resumeOverride ?? (from === 'copy' ? structuredClone(source.resume) : templateResume())
+    const version: Version = { id, name: name ?? (from === 'copy' ? strings(S).copyOf(source.name) : strings(S).newResume), updatedAt: Date.now(), resume: resumeCopy }
     const at = list.findIndex((v) => v.id === activeId) + 1
     activate([...list.slice(0, at), version, ...list.slice(at)], id)
   }
