@@ -296,7 +296,8 @@ export function moveItem(
   const to = sections.find((s) => s.id === toSectionId)
   if (!from || !to || from.kind !== to.kind) return sections
   const item = itemsOf(from)?.find((i) => i.id === itemId)
-  if (!item) return sections
+  // Without its anchor in the target the item would be removed from its section and added nowhere
+  if (!item || !itemsOf(to)?.some((i) => i.id === anchorId)) return sections
   return sections.map((s) => {
     let list = itemsOf(s)
     if (!list || (s.id !== fromSectionId && s.id !== toSectionId)) return s
