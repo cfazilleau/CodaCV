@@ -363,19 +363,34 @@ export function LayoutOverlay({ shellRef, resume, setResume, zoom, selection }: 
       setGhost(null)
     }
 
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape') return
+    // Cancel (Esc, pointer cancelled, window left): no drop, and column / margin drags, which
+    // apply live, go back to how they were when the drag started (`resume` is that state here)
+    const cancel = () => {
+      const start = resume
+      if (drag.kind === 'col') setResume((r) => (r.sections === start.sections ? r : { ...r, sections: start.sections }))
+      if (drag.kind === 'margin') {
+        const { marginX, marginY } = start.theme
+        setResume((r) => (r.theme.marginX === marginX && r.theme.marginY === marginY ? r : { ...r, theme: { ...r.theme, marginX, marginY } }))
+      }
       dropRef.current = null
       onUp()
     }
 
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') cancel()
+    }
+
     window.addEventListener('pointermove', onMove)
     window.addEventListener('pointerup', onUp)
+    window.addEventListener('pointercancel', cancel)
+    window.addEventListener('blur', cancel)
     window.addEventListener('keydown', onKey)
     return () => {
       document.body.classList.remove('is-layout-dragging')
       window.removeEventListener('pointermove', onMove)
       window.removeEventListener('pointerup', onUp)
+      window.removeEventListener('pointercancel', cancel)
+      window.removeEventListener('blur', cancel)
       window.removeEventListener('keydown', onKey)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
