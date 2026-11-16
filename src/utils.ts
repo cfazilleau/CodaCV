@@ -182,7 +182,11 @@ export function downscaleImage(src: string, maxSize = PHOTO_MAX_PX): Promise<str
         const canvas = document.createElement('canvas')
         canvas.width = Math.max(1, Math.round(img.width * scale))
         canvas.height = Math.max(1, Math.round(img.height * scale))
-        canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height)
+        const g = canvas.getContext('2d')!
+        // JPEG has no transparency: paint white first, or transparent areas come out black
+        g.fillStyle = '#fff'
+        g.fillRect(0, 0, canvas.width, canvas.height)
+        g.drawImage(img, 0, 0, canvas.width, canvas.height)
         resolve(canvas.toDataURL('image/jpeg', 0.9))
       } catch (e) {
         reject(e)
