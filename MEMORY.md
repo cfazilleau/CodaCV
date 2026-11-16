@@ -33,7 +33,7 @@ headless printing, and PDF text extraction (see "Testing" below).
 | `src/components/ResumeDocument.tsx` | Renders the resume (preview **and** print). All style variants live here |
 | `src/components/LayoutOverlay.tsx` | On-page handles drawn over the preview (edit only, never printed) |
 | `src/components/editor/Editor.tsx` | Sidebar: tabs Contenu / Apparence / Versions, section cards (fields per section kind) |
-| `src/components/editor/ProfileEditor.tsx`, `ItemEditors.tsx`, `ThemeEditor.tsx`, `PlacementFields.tsx`, `Card.tsx` | Personal info; timeline / list / record item editors; Apparence tab; placement + column width fields; collapsible card |
+| `src/components/editor/ProfileEditor.tsx`, `ItemEditors.tsx`, `ThemeEditor.tsx`, `Card.tsx` | Personal info; timeline / list / record item editors; Apparence tab; collapsible card |
 | `src/components/editor/VersionsPanel.tsx` | Versions tab |
 | `src/components/editor/Sortable.tsx` | dnd-kit vertical sortable list (grip handle, keyboard support) |
 | `src/components/editor/fields.tsx`, `IconPicker.tsx`, `icons.tsx` | Form fields, icon picker, icon set (lucide + a few hand-drawn brand SVGs) |
@@ -148,17 +148,21 @@ with **pypdf** (stream order, like most ATS / LLM loaders) and **pdfminer** (lay
 - On-page overlay shows only the tools for what is under the pointer: item grip over an item; section
   outline + grip + column divider over a section title / its empty space; margin guides only when
   hovering that page edge. Hover stays "sticky" in a small band so grips stay reachable.
-- Keyboard alternative to the on-page handles: each section card has "Placement sur la page"
-  (row / column / under the previous section, `setPlacement`) and, for a column's first section,
-  "Largeur de la colonne" (`setColumnWidth`). Page margins are sliders in Apparence. The overlay is
-  `aria-hidden` and its grips are `tabIndex={-1}` (mouse only).
+- Section position and column width are set **only by drag and drop on the page** (owner's choice):
+  the side-panel "Placement sur la page" / "Largeur de la colonne" fields were removed, with their
+  `layout.ts` helpers (`placementInfo`, `setPlacement`, `setColumnWidth`, `editPageLayout`). The side
+  list still reorders sections (keyboard-accessible). Page margins are also sliders in Apparence. The
+  overlay is `aria-hidden` and its grips are `tabIndex={-1}` (mouse only).
 - Keyboard on the preview: Tab stops on the header and sections; arrow keys move through every
   clickable entry / item (`clickable()` in ResumeDocument). Side-panel tabs follow the WAI tabs
   pattern (one tab stop, arrows / Home / End).
+- Editor accent is **orange** (`--ui-primary`, #b35f22) and stays so. Highlights on the page (hover,
+  focus, selected item / section, the overlay's hover frame) use it too, never the resume's accent.
 - Selected section = dashed frame around the whole `<section>` (not the title). The overlay's hover
   frame steps aside when the section is selected.
 - Removed on purpose (don't bring back unless asked): the "Page web" / `#/view` interactive page and
-  per-item "Détails", per-section spacing, the one-column layout option, sidebar Position select.
+  per-item "Détails", per-section spacing, the one-column layout option, sidebar Position select,
+  side-panel placement / column width fields.
 - **No en dash (–) anywhere in the interface or the rendered CV** (owner's choice): use a plain
   hyphen "-" (date ranges are "2019 - 2022"). Em dashes (—) are a separate character and are kept
   (e.g. "Anglais — C1", "— Aucun —"). Input parsing may still accept "–" (phone-number check).

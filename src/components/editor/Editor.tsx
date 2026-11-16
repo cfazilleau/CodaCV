@@ -12,7 +12,6 @@ import { SortableList } from './Sortable'
 import { VersionsPanel } from './VersionsPanel'
 import { Card } from './Card'
 import { ListEditor, RecordListEditor, TimelineEditor, type ItemSel } from './ItemEditors'
-import { PlacementFields } from './PlacementFields'
 import { ProfileEditor } from './ProfileEditor'
 import { ThemeEditor } from './ThemeEditor'
 import { TAB_KEY, type ResumeStore } from '../../store'
@@ -369,9 +368,6 @@ export function Editor({ resume, setResume, selection, onSelect, store }: Props)
                   </div>
                 ) : (
                   <TextField label={t.sectionTitle} value={s.title} onChange={(v) => setSection(s.id, (x) => ({ ...x, title: v }))} />
-                )}
-                {!(resume.theme.headerStyle === 'sidebar' && isInSidebar(s)) && (
-                  <PlacementFields sections={resume.sections} section={s} sidebarMode={resume.theme.headerStyle === 'sidebar'} setResume={setResume} />
                 )}
                 {resume.theme.headerStyle === 'sidebar' && (
                   <Toggle

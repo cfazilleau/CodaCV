@@ -3,7 +3,7 @@
  * section's `place` flag. The sections array order stays the reading order (and the PDF text
  * order), so every operation here rewrites that order plus the flags.
  */
-import type { Placement, Section } from './types'
+import type { Section } from './types'
 
 export const COL_GAP_MM = 4
 /** A4 page, in mm, and CSS px per mm */
@@ -200,75 +200,6 @@ export function setColumnWidths(sections: Section[], widths: { sectionId: string
     for (const row of rows) for (const col of row) if (col.ids.includes(sectionId)) col.width = width
   }
   return fromStructure(sections, rows)
-}
-
-/* ------------------------------------------------------------- Side-panel layout controls */
-
-/** Where a section sits, for the side-panel controls (keyboard alternative to the on-page handles). */
-export interface PlacementInfo {
-  /** First section: always starts a row */
-  first: boolean
-  place: Placement
-  /** First section of its column, in a row of several columns: its column width can be set */
-  columnStart: boolean
-  /** Normalized width of its column (fraction of the row) */
-  width: number
-}
-
-export function placementInfo(sections: Section[], id: string): PlacementInfo | null {
-  const i = sections.findIndex((s) => s.id === id)
-  if (i < 0) return null
-  for (const row of toStructure(sections)) {
-    const total = row.reduce((a, c) => a + c.width, 0) || 1
-    for (const col of row) {
-      if (!col.ids.includes(id)) continue
-      return { first: i === 0, place: sections[i].place, columnStart: row.length > 1 && col.ids[0] === id, width: col.width / total }
-    }
-  }
-  return null
-}
-
-/**
- * Change a section's `place` (relative to the previous section, as on the page). A new column
- * takes an equal share of its row; the other columns keep their proportions.
- */
-export function setPlacement(sections: Section[], id: string, place: Placement): Section[] {
-  const i = sections.findIndex((s) => s.id === id)
-  if (i <= 0 || sections[i].place === place) return sections
-  const flagged = sections.map((s, k) => (k === i ? { ...s, place, colWidth: place === 'column' ? undefined : s.colWidth } : s))
-  const rows = toStructure(flagged)
-  if (place === 'column') {
-    const row = rows.find((r) => r.some((c) => c.ids[0] === id))
-    if (row && row.length > 1) {
-      const share = 1 / row.length
-      const others = row.filter((c) => c.ids[0] !== id)
-      const sum = others.reduce((a, c) => a + c.width, 0) || 1
-      for (const c of row) c.width = c.ids[0] === id ? share : (c.width / sum) * (1 - share)
-    }
-  }
-  return fromStructure(flagged, rows)
-}
-
-/** Set the width of the column holding this section (10–90 %); the other columns share the rest in proportion. */
-export function setColumnWidth(sections: Section[], id: string, width: number): Section[] {
-  const rows = toStructure(sections)
-  const row = rows.find((r) => r.some((c) => c.ids.includes(id)))
-  if (!row || row.length < 2) return sections
-  const w = Math.min(0.9, Math.max(0.1, width))
-  const others = row.filter((c) => !c.ids.includes(id))
-  const sum = others.reduce((a, c) => a + c.width, 0) || 1
-  for (const c of row) c.width = c.ids.includes(id) ? w : (c.width / sum) * (1 - w)
-  return fromStructure(sections, rows)
-}
-
-/**
- * Apply a layout change to what the page shows. In the "sidebar" header style that is the main
- * column (mainLayout); the array is then rebuilt as main column first, sidebar sections as rows
- * (same as an on-page drag in that style).
- */
-export function editPageLayout(sections: Section[], sidebarMode: boolean, fn: (main: Section[]) => Section[]): Section[] {
-  if (!sidebarMode) return fn(sections)
-  return [...fn(mainLayout(sections)), ...sections.filter(isInSidebar).map(asRow)]
 }
 
 type Item = { id: string }

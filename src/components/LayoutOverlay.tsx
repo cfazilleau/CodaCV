@@ -439,7 +439,7 @@ export function LayoutOverlay({ shellRef, resume, setResume, zoom, selection }: 
   const yActive = marginDrag === 'top' || marginDrag === 'bottom'
 
   return (
-    <div className={`layout-overlay${drag ? ' is-dragging' : ''}`} aria-hidden="true" style={{ ['--lo-accent' as string]: theme.accent }}>
+    <div className={`layout-overlay${drag ? ' is-dragging' : ''}`} aria-hidden="true">
       {/* Page margins */}
       <div className="margin-guides">
         <div className={`margin-guide margin-guide--v margin-guide--left${xActive ? ' is-active' : ''}`} style={{ left: mx, top: 0, height: '100%' }} onPointerDown={start({ kind: 'margin', side: 'left' })} title={str.marginX} />

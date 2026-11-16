@@ -972,7 +972,7 @@ button {
 .lo-outline {
   position: absolute;
   /* Same frame as a selected section, lighter: hover preview of the whole section */
-  border: 1.5px dashed color-mix(in srgb, var(--lo-accent, var(--ui-primary)) 45%, transparent);
+  border: 1.5px dashed color-mix(in srgb, var(--ui-primary) 45%, transparent);
   border-radius: 1.2mm;
   pointer-events: none !important;
 }
