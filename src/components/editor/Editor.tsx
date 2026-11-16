@@ -10,6 +10,7 @@ import {
   Gauge,
   Image as ImageIcon,
   ImagePlus,
+  Layers,
   LayoutTemplate,
   List,
   ListTree,
@@ -55,28 +56,32 @@ import { isInSidebar, orderForSidebar } from '../../layout'
 import { COUNTRIES, ColorField, IconButton, LinesField, Select, Slider, TextArea, TextField, Toggle } from './fields'
 import { IconPicker } from './IconPicker'
 import { SortableList } from './Sortable'
+import { VersionsPanel } from './VersionsPanel'
+import type { ResumeStore } from '../../store'
 
 interface Props {
   resume: Resume
   setResume: (fn: (r: Resume) => Resume) => void
   selection: Selection
   onSelect: (sel: Selection) => void
+  store: ResumeStore
 }
 
 const MD_HINT = 'Markdown : **gras**, *italique*, [lien](https://…), listes, ![image](https://…)'
 
-type Tab = 'content' | 'style'
+type Tab = 'content' | 'style' | 'versions'
 const TAB_KEY = 'codacv.sidebarTab'
 
 function loadTab(): Tab {
   try {
-    return localStorage.getItem(TAB_KEY) === 'style' ? 'style' : 'content'
+    const t = localStorage.getItem(TAB_KEY)
+    return t === 'style' || t === 'versions' ? t : 'content'
   } catch {
     return 'content'
   }
 }
 
-export function Editor({ resume, setResume, selection, onSelect }: Props) {
+export function Editor({ resume, setResume, selection, onSelect, store }: Props) {
   const [tab, setTabState] = useState<Tab>(loadTab)
   const [openCard, setOpenCard] = useState<string | null>('profile')
   const [openItem, setOpenItem] = useState<string | null>(null)
@@ -99,7 +104,7 @@ export function Editor({ resume, setResume, selection, onSelect }: Props) {
   const switchTab = (t: Tab) => {
     if (t === tab) return
     setTab(t)
-    if (t === 'style') onSelect(null)
+    if (t !== 'content') onSelect(null)
     else if (openCard === 'profile') onSelect({ kind: 'profile' })
     else if (openCard) onSelect({ kind: 'section', sectionId: openCard, itemId: openItem ?? undefined })
   }
@@ -176,9 +181,32 @@ export function Editor({ resume, setResume, selection, onSelect }: Props) {
         <button role="tab" aria-selected={tab === 'style'} className={tab === 'style' ? 'is-active' : ''} onClick={() => switchTab('style')}>
           <Palette size={15} /> Apparence
         </button>
+        <button
+          role="tab"
+          aria-selected={tab === 'versions'}
+          className={tab === 'versions' ? 'is-active' : ''}
+          onClick={() => switchTab('versions')}
+        >
+          <Layers size={15} /> Versions <span className="tab-count">{store.versions.length}</span>
+        </button>
       </div>
 
-      {tab === 'style' ? (
+      {tab === 'versions' ? (
+        <VersionsPanel
+          versions={store.versions}
+          activeId={store.activeId}
+          onSwitch={(id) => {
+            onSelect(null)
+            setOpenCard('profile')
+            setOpenItem(null)
+            store.switchVersion(id)
+          }}
+          onCreate={(from) => store.createVersion(from)}
+          onRename={store.renameVersion}
+          onDelete={store.deleteVersion}
+          onReorder={store.moveVersions}
+        />
+      ) : tab === 'style' ? (
         <ThemeEditor resume={resume} setResume={setResume} />
       ) : (
         <>

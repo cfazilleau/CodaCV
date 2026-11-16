@@ -41,8 +41,10 @@ npm run build    # static site in dist/
   configured file name. In the print dialog choose *Save as PDF* and untick *Headers and footers*.
 - **Icons** – every contact (and the summary line) has an icon picker; e-mail and phone links
   (`mailto:` / `tel:`) are created automatically from the text.
-- Data is auto-saved in the browser (localStorage). Use **Exporter / Importer** (JSON) for backups,
-  versioning, or moving between browsers. Undo / redo with Ctrl+Z / Ctrl+Y.
+- **Versions** tab: several complete CVs (content, layout, style, language, PDF file name), e.g. one
+  per language or per company. Duplicate, rename, reorder, delete; the top bar shows the active one.
+- Data is auto-saved in the browser (localStorage). **Exporter** saves the active version as JSON,
+  **Importer** adds a JSON file as a new version. Undo / redo with Ctrl+Z / Ctrl+Y.
 
 ## Recruiter tools (ATS) & AI agents
 

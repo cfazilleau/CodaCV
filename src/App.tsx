@@ -84,7 +84,8 @@ export default function App() {
   const importJson = async (file: File) => {
     try {
       const r = parseResume(await file.text())
-      setResume(r)
+      // Imported files become a new version (named after the file), the current one is kept
+      store.createVersion('copy', file.name.replace(/\.json$/i, ''), r)
       setSelection(null)
     } catch (e) {
       alert(`Import impossible : ${(e as Error).message}`)
@@ -97,6 +98,9 @@ export default function App() {
         <div className="brand">
           <span className="brand-logo">CV</span>
           <span>CodaCV</span>
+          <span className="brand-version" title="Version active (onglet Versions)">
+            {store.versions.find((v) => v.id === store.activeId)?.name}
+          </span>
         </div>
 
         <div className="topbar-actions">
@@ -107,19 +111,19 @@ export default function App() {
             <Redo2 size={16} />
           </button>
           <span className="tb-sep" />
-          <button className="tb-btn" title="Importer un fichier JSON" onClick={() => fileInput.current?.click()}>
+          <button className="tb-btn" title="Importer un fichier JSON (ajouté comme nouvelle version)" onClick={() => fileInput.current?.click()}>
             <FileUp size={16} /> <span className="tb-label">Importer</span>
           </button>
           <button
             className="tb-btn"
-            title="Exporter les données en JSON"
+            title="Exporter la version active en JSON"
             onClick={() => downloadText(`${resume.meta.fileName || 'cv'}.json`, JSON.stringify(resume, null, 2))}
           >
             <Download size={16} /> <span className="tb-label">Exporter</span>
           </button>
           <button
             className="tb-btn"
-            title="Réinitialiser avec le modèle"
+            title="Réinitialiser la version active avec le modèle"
             onClick={() => {
               if (confirm('Remplacer toutes les données par le CV modèle ? (Annulable avec Ctrl+Z)')) setResume(structuredClone(defaultResume))
             }}
@@ -145,7 +149,7 @@ export default function App() {
 
       <main className="workspace">
         <aside className="sidebar">
-          <Editor resume={resume} setResume={setResume} selection={selection} onSelect={setSelection} />
+          <Editor resume={resume} setResume={setResume} selection={selection} onSelect={setSelection} store={store} />
         </aside>
         <PreviewPane resume={resume} setResume={setResume} selection={selection} onSelect={setSelection} />
       </main>
