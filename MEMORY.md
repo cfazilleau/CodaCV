@@ -60,7 +60,8 @@ headless printing, and PDF text extraction (see "Testing" below).
   then left untouched as a backup — never delete it automatically.
 - Other keys: `codacv.uiLang` (editor UI language), `codacv.sidebarTab` (last sidebar tab, written only after the tab rendered),
   `codacv.library.rev` (revision, bumped on every save), `codacv.quarantine.<ISO date>` (versions
-  that could not be read, kept aside; an identical copy is reused).
+  that could not be read, kept aside; an identical copy is reused), `codacv.welcomeSeen` (`'1'` once
+  the welcome screen was closed).
 - Everything loaded (library entries, imported JSON) goes through `migrate()` in `migrate.ts`, which
   rebuilds every field with a type check and a default (`Theme` / `Meta` are object literals, so a
   new field is a compile error until it is handled). Ids are made `[\w-]{1,64}` and unique per
@@ -182,6 +183,19 @@ with **pypdf** (stream order, like most ATS / LLM loaders) and **pdfminer** (lay
   "one bullet per line" field): "- " lines are bullets, a single line break stays a line break
   (`breaks: true`). Its `ul > li` uses a hanging indent with an inline-block "•" (`.cv-desc`): a grid
   `li` like `.cv-list--bullets` would split bare text and `<strong>` into separate cells.
+- **No outside requests**: the app is static, keeps everything in localStorage, sets no cookies and
+  makes no requests of its own (fonts and flags are bundled). Two exceptions, both kept on purpose
+  (owner's choice): an image written in a free-text section's markdown loads from its site, and the
+  **Gravatar** button, on the user's click only, sends the SHA-256 of the typed address to
+  gravatar.com once (the picture is then stored embedded, nothing is fetched afterwards). The photo
+  is shown only when embedded (`isEmbeddedImage`: data:image png/jpeg/gif/webp); a web address from
+  an imported file stays in the data but is never loaded. Theme colours go through `cssColor()`
+  before reaching CSS variables (`url(…)` would be fetched by `background: var(--accent)`).
+- **Welcome screen** (`WelcomeDialog.tsx`, native `<dialog>`): opens on the first visit, closing it
+  (button, Esc, backdrop) sets `codacv.welcomeSeen`; the top bar's ⓘ button reopens it. It states
+  free / open source (link to `REPO_URL`) / data only in this browser / no cookies, plus the two
+  exceptions above (markdown images, Gravatar on click) — keep it true if any of that changes.
+  Hidden in print. The README "Privacy" section says the same.
 
 ## Gotchas hit while developing
 

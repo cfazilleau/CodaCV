@@ -17,7 +17,8 @@ import type {
   TimelineEntry,
   TimelineSection,
 } from '../types'
-import { autoHref, blockMd, contactHref, descriptionMd, inlineMd, normalizeHref } from '../utils'
+import { autoHref, blockMd, contactHref, cssColor, descriptionMd, inlineMd, isEmbeddedImage, normalizeHref } from '../utils'
+import { defaultResume } from '../defaultResume'
 import { buildRows, isInSidebar, mainLayout } from '../layout'
 import { ExternalIcon, Icon, IconBadge } from './icons'
 import { FLAGS } from '../flags'
@@ -50,8 +51,9 @@ export function resumeStyle(resume: Resume): CSSProperties {
   const t = resume.theme
   const d = DENSITY[t.density]
   return {
-    '--accent': t.accent,
-    '--text': t.text,
+    // Only real colours reach CSS: "url(…)" in an imported theme would be fetched by `background: var(--accent)`
+    '--accent': cssColor(t.accent, defaultResume.theme.accent),
+    '--text': cssColor(t.text, defaultResume.theme.text),
     '--font': FONT_FAMILIES[t.font].css,
     '--fs': `${t.fontSize}pt`,
     '--lh': d.line,
@@ -342,7 +344,9 @@ export function ResumeDocument({ resume, selection, onSelect }: Props) {
 
   const headerSel = clickable({ kind: 'profile' }, selection?.kind === 'profile')
 
-  const photoSrc = theme.showPhoto ? profile.photo || (theme.photoInitials ? initialsImage(profile.name, theme.accent, FONT_FAMILIES[theme.font].css) : '') : ''
+  // Embedded photos only: a web address (possible in an imported file) is never loaded
+  const embedded = isEmbeddedImage(profile.photo) ? profile.photo : ''
+  const photoSrc = theme.showPhoto ? embedded || (theme.photoInitials ? initialsImage(profile.name, theme.accent, FONT_FAMILIES[theme.font].css) : '') : ''
   const photo = photoSrc ? (
     <img className={`cv-photo cv-photo--${theme.photoShape}${theme.photoRing ? ' cv-photo--ring' : ''}`} src={photoSrc} alt="" />
   ) : null
