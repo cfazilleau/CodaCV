@@ -34,7 +34,7 @@ type Drop =
 
 interface Geometry {
   section?: { id: string; rect: Rect; titleRect: Rect; label: string; selected: boolean }
-  item?: { id: string; owner: string; kind: ItemKind; rect: Rect; label: string }
+  item?: { id: string; owner: string; kind: ItemKind; rect: Rect; label: string; inline: boolean }
   row?: { rect: Rect; cols: { id: string; rect: Rect }[] }
 }
 
@@ -53,6 +53,7 @@ const halfMm = (v: number) => Math.round(v * 2) / 2
 export function LayoutOverlay({ shellRef, resume, setResume, zoom, selection }: Props) {
   const [hover, setHover] = useState<{ sectionId?: string; itemId?: string }>({})
   const itemBand = useRef<DOMRect | null>(null)
+  const itemInline = useRef(false)
   const sectionBand = useRef<DOMRect | null>(null)
   const [geo, setGeo] = useState<Geometry>({})
   const [drag, setDrag] = useState<Drag | null>(null)
@@ -81,7 +82,10 @@ export function LayoutOverlay({ shellRef, resume, setResume, zoom, selection }: 
       if (t.closest('.layout-overlay')) return // keep hover while on our handles
       const sec = t.closest<HTMLElement>('[data-section-id]')
       const item = t.closest<HTMLElement>('[data-item-id]')
-      if (item) itemBand.current = item.getBoundingClientRect()
+      if (item) {
+        itemBand.current = item.getBoundingClientRect()
+        itemInline.current = item.dataset.itemFlow === 'inline'
+      }
       if (sec) sectionBand.current = sec.getBoundingClientRect()
       const scale = frame()?.scale ?? 1
       const { clientX: x, clientY: y } = e
@@ -89,8 +93,11 @@ export function LayoutOverlay({ shellRef, resume, setResume, zoom, selection }: 
         let itemId = item?.dataset.itemId
         // Keep the item while the pointer travels left from it to its grip
         const ib = itemBand.current
-        if (!itemId && h.itemId && ib && y >= ib.top && y <= ib.bottom && x >= ib.left - 40 * scale && x <= ib.left + 4 * scale) {
-          itemId = h.itemId
+        if (!itemId && h.itemId && ib) {
+          // Keep the item while the pointer travels to its grip: left of a row, above a tag
+          const towardRowGrip = y >= ib.top && y <= ib.bottom && x >= ib.left - 40 * scale && x <= ib.left + 4 * scale
+          const towardTagGrip = itemInline.current && x >= ib.left && x <= ib.right && y >= ib.top - 22 * scale && y <= ib.top + 2 * scale
+          if (towardRowGrip || towardTagGrip) itemId = h.itemId
         }
         let sectionId = sec?.dataset.sectionId
         // Keep the section only just around it: grip on the left, column gap on the right
@@ -150,6 +157,7 @@ export function LayoutOverlay({ shellRef, resume, setResume, zoom, selection }: 
         id: hover.itemId!,
         owner: itemEl.dataset.owner!,
         kind: itemEl.dataset.itemKind as ItemKind,
+        inline: itemEl.dataset.itemFlow === 'inline',
         rect: f.rel(itemEl.getBoundingClientRect()),
         label,
       }
@@ -245,10 +253,21 @@ export function LayoutOverlay({ shellRef, resume, setResume, zoom, selection }: 
     }
     if (!best) return null
     const r = best.getBoundingClientRect()
+    const drop = (after: boolean): Drop => ({ kind: 'item', toSectionId: best.dataset.owner!, anchorId: best.dataset.itemId!, after })
+    // Tags sit side by side: drop before / after by x, with a vertical marker
+    if (best.dataset.itemFlow === 'inline') {
+      const after = x > r.left + r.width / 2
+      const lineX = after ? r.right + 2 : r.left - 2
+      return {
+        drop: drop(after),
+        line: { x: (lineX - f.s.left) / f.scale - 1.5, y: (r.top - f.s.top) / f.scale, w: 3, h: r.height / f.scale },
+        vertical: true,
+      }
+    }
     const after = y > r.top + r.height / 2
     const lineY = after ? r.bottom + 1 : r.top - 1
     return {
-      drop: { kind: 'item', toSectionId: best.dataset.owner!, anchorId: best.dataset.itemId!, after },
+      drop: drop(after),
       line: { x: (r.left - f.s.left) / f.scale, y: (lineY - f.s.top) / f.scale - 1.5, w: r.width / f.scale, h: 3 },
       vertical: false,
     }
@@ -389,7 +408,12 @@ export function LayoutOverlay({ shellRef, resume, setResume, zoom, selection }: 
       {!drag && geo.item && (
         <button
           className="lo-grip lo-grip--item"
-          style={{ left: geo.item.rect.x - 17, top: geo.item.rect.y + (geo.item.kind === 'entry' ? 0 : geo.item.rect.h / 2 - 9) }}
+          style={
+            geo.item.inline
+              ? // Tags: grip centered above the tag, so it doesn't cover the previous one
+                { left: geo.item.rect.x + geo.item.rect.w / 2 - 8, top: geo.item.rect.y - 19 }
+              : { left: geo.item.rect.x - 17, top: geo.item.rect.y + (geo.item.kind === 'entry' ? 0 : geo.item.rect.h / 2 - 9) }
+          }
           onPointerDown={start({ kind: 'item', sectionId: geo.item.owner, itemId: geo.item.id, itemKind: geo.item.kind, label: geo.item.label })}
           title="Glisser pour réordonner"
         >

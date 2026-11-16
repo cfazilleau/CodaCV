@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ClipboardEvent, type ReactNode } from 'react'
 import {
   ChevronRight,
   Columns2,
@@ -13,6 +13,7 @@ import {
   Palette,
   PenLine,
   Plus,
+  Tags,
   Text,
   Trash2,
   Type,
@@ -21,6 +22,7 @@ import {
 import type {
   Contact,
   ListItem,
+  ListDisplay,
   ListSection,
   Profile,
   Resume,
@@ -106,7 +108,7 @@ export function Editor({ resume, setResume, selection, onSelect }: Props) {
   const setSection = (id: string, fn: (s: Section) => Section) =>
     setResume((r) => ({ ...r, sections: r.sections.map((s) => (s.id === id ? fn(s) : s)) }))
 
-  const addSection = (kind: SectionKind) => {
+  const addSection = (kind: SectionKind | 'tags') => {
     const s = newSection(kind)
     setResume((r) => ({ ...r, sections: [...r.sections, s] }))
     setOpenCard(s.id)
@@ -166,7 +168,19 @@ export function Editor({ resume, setResume, selection, onSelect }: Props) {
               <Card
                 handle={handle}
                 ref={registerCard(s.id)}
-                icon={s.kind === 'timeline' ? <ListTree size={16} /> : s.kind === 'list' ? <List size={16} /> : <Text size={16} />}
+                icon={
+                  s.kind === 'timeline' ? (
+                    <ListTree size={16} />
+                  ) : s.kind === 'list' ? (
+                    s.display === 'inline' || s.display === 'chips' ? (
+                      <Tags size={16} />
+                    ) : (
+                      <List size={16} />
+                    )
+                  ) : (
+                    <Text size={16} />
+                  )
+                }
                 title={s.title || 'Sans titre'}
                 muted={!s.visible}
                 open={openCard === s.id}
@@ -233,6 +247,9 @@ export function Editor({ resume, setResume, selection, onSelect }: Props) {
               </button>
               <button type="button" onClick={() => addSection('list')}>
                 <List size={15} /> Liste
+              </button>
+              <button type="button" onClick={() => addSection('tags')}>
+                <Tags size={15} /> Tags
               </button>
               <button type="button" onClick={() => addSection('text')}>
                 <Text size={15} /> Texte libre
@@ -458,9 +475,66 @@ function TimelineEditor({ section, update, openItem, toggleItem, registerItem }:
 function ListEditor({ section, update, openItem, toggleItem, registerItem }: ItemEditorProps<ListSection>) {
   const setItems = (fn: (e: ListItem[]) => ListItem[]) => update((s) => ({ ...s, items: fn(s.items) }))
   const patch = (id: string, p: Partial<ListItem>) => setItems((xs) => xs.map((x) => (x.id === id ? { ...x, ...p } : x)))
+  const display = section.display ?? 'bullets'
+
+  // Pasting "C++, Unity, Git" (or several lines) into an item splits it into several items
+  const pasteSplit = (it: ListItem) => (e: ClipboardEvent<HTMLInputElement>) => {
+    const text = e.clipboardData.getData('text')
+    const parts = text
+      .split(/[,;\n\t]+/)
+      .map((p) => p.trim())
+      .filter(Boolean)
+    if (parts.length < 2) return
+    e.preventDefault()
+    const input = e.currentTarget
+    const len = input.value.length
+    // Pasting at the end of an item that already has text: every part becomes a new item after it
+    if (input.value.trim() && (input.selectionStart ?? len) === len && (input.selectionEnd ?? len) === len) {
+      setItems((xs) => {
+        const i = xs.findIndex((x) => x.id === it.id)
+        return [...xs.slice(0, i + 1), ...parts.map((t) => newListItem(t)), ...xs.slice(i + 1)]
+      })
+      return
+    }
+    const before = input.value.slice(0, input.selectionStart ?? len)
+    const after = input.value.slice(input.selectionEnd ?? len)
+    const first = (before + parts[0]).trim()
+    const last = (parts[parts.length - 1] + after).trim()
+    const middle = parts.slice(1, -1)
+    setItems((xs) => {
+      const i = xs.findIndex((x) => x.id === it.id)
+      const added = [...middle, last].map((t) => newListItem(t))
+      return [...xs.slice(0, i), { ...it, text: first }, ...added, ...xs.slice(i + 1)]
+    })
+  }
 
   return (
     <div className="items">
+      <div className="grid-2">
+        <Select<ListDisplay>
+          label="Affichage"
+          value={display}
+          options={[
+            { value: 'bullets', label: 'Liste à puces' },
+            { value: 'inline', label: 'Tags en ligne' },
+            { value: 'chips', label: 'Pastilles' },
+          ]}
+          onChange={(v) => update((s) => ({ ...s, display: v }))}
+        />
+        {display === 'inline' && (
+          <Select
+            label="Séparateur"
+            value={section.separator ?? ' · '}
+            options={[
+              { value: ' · ', label: 'Point médian  ·' },
+              { value: ', ', label: 'Virgule  ,' },
+              { value: ' | ', label: 'Barre  |' },
+              { value: ' / ', label: 'Barre oblique  /' },
+            ]}
+            onChange={(v) => update((s) => ({ ...s, separator: v }))}
+          />
+        )}
+      </div>
       <SortableList items={section.items} onReorder={(items) => update((s) => ({ ...s, items }))}>
         {(it, handle) => {
           const open = openItem === it.id
@@ -472,6 +546,8 @@ function ListEditor({ section, update, openItem, toggleItem, registerItem }: Ite
                   className="item-input"
                   value={it.text}
                   onChange={(e) => patch(it.id, { text: e.target.value })}
+                  onPaste={pasteSplit(it)}
+                  title="Coller « A, B, C » crée plusieurs éléments"
                   // Focusing an item selects it, so it is highlighted on the page
                   onFocus={() => !open && toggleItem(it.id)}
                 />

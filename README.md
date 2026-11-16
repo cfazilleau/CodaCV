@@ -15,7 +15,8 @@ npm run build    # static site in dist/
 
 - **Editor** – profile, photo, contacts, and any number of sections:
   - *Chronologie* (timeline: experience, projects, education…) with date, sub-date, flag, city, title, subtitle, link, bullets
-  - *Liste* (languages, skills…)
+  - *Liste* (languages, skills…) shown as bullets, inline tags (`C++ · Unity · Git`) or chips;
+    pasting `A, B, C` into an item splits it into several items
   - *Texte libre* (free markdown text)
   - Drag and drop (grip handle ⋮⋮) to reorder sections, entries, list items and contacts —
     also with the keyboard: focus the grip, Space, arrows, Space. Hide / duplicate / delete.

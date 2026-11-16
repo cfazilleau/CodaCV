@@ -121,8 +121,12 @@ export function ResumeDocument({ resume, selection, onSelect }: Props) {
     </div>
   )
 
-  const renderList = (s: ListSection) => (
-    <ul className="cv-list">
+  const renderList = (s: ListSection) => {
+    const display = s.display ?? 'bullets'
+    // The inline separator is generated content (CSS ::after) so it is real text in the PDF
+    const style = display === 'inline' ? ({ '--sep': JSON.stringify(s.separator ?? ' · ') } as CSSProperties) : undefined
+    return (
+    <ul className={`cv-list cv-list--${display}`} style={style}>
       {s.items
         .filter((it) => !it.hidden)
         .map((it) => (
@@ -130,6 +134,7 @@ export function ResumeDocument({ resume, selection, onSelect }: Props) {
             key={it.id}
             data-item-id={it.id}
             data-item-kind="list"
+            data-item-flow={display === 'bullets' ? undefined : 'inline'}
             data-owner={s.id}
             {...clickable({ kind: 'section', sectionId: s.id, itemId: it.id }, isSel(s.id, it.id))}
           >
@@ -137,7 +142,8 @@ export function ResumeDocument({ resume, selection, onSelect }: Props) {
           </li>
         ))}
     </ul>
-  )
+    )
+  }
 
   const renderText = (s: TextSection) => (
     <div

@@ -50,9 +50,18 @@ export function newListItem(text = 'Nouvel élément'): ListItem {
   return { id: uid(), text, hidden: false }
 }
 
-export function newSection(kind: SectionKind): Section {
+/** 'tags' is a list section drawn as chips. */
+export function newSection(kind: SectionKind | 'tags'): Section {
   const base = { id: uid(), visible: true, place: 'row' as const }
   switch (kind) {
+    case 'tags':
+      return {
+        ...base,
+        kind: 'list',
+        display: 'chips',
+        title: 'Mots-clés',
+        items: ['Tag 1', 'Tag 2', 'Tag 3'].map((t) => newListItem(t)),
+      }
     case 'timeline':
       return { ...base, kind, title: 'Nouvelle section', entries: [newEntry()] }
     case 'list':

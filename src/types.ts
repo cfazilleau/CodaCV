@@ -85,9 +85,14 @@ export interface TimelineSection extends SectionBase {
   entries: TimelineEntry[]
 }
 
+/** How a list is drawn: bullet points, inline tags with a separator, or chips. */
+export type ListDisplay = 'bullets' | 'inline' | 'chips'
+
 export interface ListSection extends SectionBase {
   kind: 'list'
   items: ListItem[]
+  display?: ListDisplay // default: bullets
+  separator?: string // inline tags only, default ' · '
 }
 
 export interface TextSection extends SectionBase {

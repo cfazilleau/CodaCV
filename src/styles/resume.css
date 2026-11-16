@@ -169,20 +169,56 @@
 /* Bullets are a real "•" character in normal flow (no position: relative/absolute):
    positioned elements are painted — and written into the PDF — after everything else,
    which detaches bullet text from its entry for parsers that read in stream order. */
-.cv-list li,
+.cv-list--bullets li,
 .cv-bullets li {
   display: grid;
   grid-template-columns: 1.05em minmax(0, 1fr);
 }
 
-.cv-list li::before,
+.cv-list--bullets li::before,
 .cv-bullets li::before {
   content: "•";
   padding-left: 0.2em;
 }
 
-.cv-col--narrow .cv-list li {
+.cv-col--narrow .cv-list--bullets li {
   margin-bottom: 1.2mm;
+}
+
+/* Inline tags: "C++ · Unity · Git". The separator is generated text, so parsers read it too.
+   Items never break internally; the separator stays at the end of the line. */
+.cv-list--inline li {
+  display: inline-block;
+}
+
+.cv-list--inline li:not(:last-child)::after {
+  content: var(--sep, " · ");
+  white-space: pre;
+  color: color-mix(in srgb, var(--accent) 70%, var(--text));
+}
+
+/* Chips: one rounded box per item (flex wrap, no positioning: reading order is kept) */
+.cv-list--chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.3mm 1.4mm;
+}
+
+.cv-list--chips li {
+  padding: 0.25mm 2.2mm;
+  border: 0.2mm solid color-mix(in srgb, var(--accent) 30%, transparent);
+  border-radius: 99px;
+  background: var(--accent-soft);
+  line-height: 1.45;
+}
+
+/* Invisible comma after each chip: chips have no visible separator, but parsers need one
+   to tell "Unreal Engine 5" from "Unity". It takes no space. */
+.cv-list--chips li:not(:last-child)::after {
+  content: ",";
+  display: inline-block;
+  width: 0;
+  color: transparent;
 }
 
 .cv-text p + p {
