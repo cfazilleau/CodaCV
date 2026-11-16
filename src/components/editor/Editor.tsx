@@ -4,7 +4,6 @@ import type {
   Contact,
   ListItem,
   ListSection,
-  Placement,
   Profile,
   Resume,
   Section,
@@ -14,7 +13,6 @@ import type {
   TimelineSection,
 } from '../../types'
 import { newEntry, newListItem, newSection, readImageFile, uid } from '../../utils'
-import { normalizeLayout } from '../../layout'
 import { FONT_FAMILIES } from '../ResumeDocument'
 import { COUNTRIES, ColorField, IconButton, LinesField, Select, Slider, TextArea, TextField, Toggle } from './fields'
 import { IconPicker } from './IconPicker'
@@ -135,32 +133,6 @@ export function Editor({ resume, setResume, selection, onSelect }: Props) {
             }
           >
             <TextField label="Titre de la section" value={s.title} onChange={(v) => setSection(s.id, (x) => ({ ...x, title: v }))} />
-            <div className="grid-2">
-              <Select<Placement>
-                label="Position"
-                value={s.place}
-                options={[
-                  { value: 'row', label: 'Nouvelle ligne' },
-                  { value: 'column', label: 'À droite de la précédente' },
-                  { value: 'stack', label: 'Sous la précédente (colonne)' },
-                ]}
-                onChange={(v) =>
-                  setResume((r) => ({
-                    ...r,
-                    sections: normalizeLayout(r.sections.map((x) => (x.id === s.id ? { ...x, place: v, colWidth: undefined } : x))),
-                  }))
-                }
-              />
-              <Slider
-                label="Espace au-dessus"
-                min={-10}
-                max={30}
-                step={0.5}
-                unit=" mm"
-                value={s.spaceBefore ?? 0}
-                onChange={(v) => setSection(s.id, (x) => ({ ...x, spaceBefore: v }))}
-              />
-            </div>
             {s.kind === 'timeline' && (
               <TimelineEditor
                 section={s}

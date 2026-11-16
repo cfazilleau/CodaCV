@@ -26,7 +26,7 @@ npm run build    # static site in dist/
   - entry / list-item grip → reorder, also into another section of the same kind
   - divider between columns → resize (snaps to the date column, ¼ ⅓ ½ ⅔ ¾)
   - bar above a section → its spacing; page edges → page margins
-  - Same settings in the sidebar: *Position* and *Espace au-dessus* per section. Ctrl+Z undoes any drop.
+  - Ctrl+Z undoes any drop.
   - Model (`src/layout.ts`): sections keep one ordered list = reading / PDF order, each with a
     `place` (`row` | `column` | `stack`), a column width and a spacing.
 - **Click to edit** – click anything on the preview to jump to its fields.
