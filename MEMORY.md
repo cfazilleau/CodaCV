@@ -8,6 +8,7 @@ users; this file records how things work, why, and what was learned the hard way
 A client-only resume builder (Vite + React 19 + TypeScript, no backend). Sidebar editor on the left,
 live A4 preview on the right with on-page layout editing, print-to-PDF tuned for ATS / AI parsers,
 several resume "versions" stored in the browser. The editor UI is in **French and English** (switch in the top bar); code and comments in English.
+A public instance runs at https://cv.cfaz.dev (linked from the README).
 
 ```bash
 npm install
