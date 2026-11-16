@@ -672,9 +672,15 @@ function ProfileEditor({ profile, setProfile, accent }: { profile: Profile; setP
           accept="image/*"
           hidden
           onChange={async (e) => {
-            const file = e.target.files?.[0]
-            if (file) setProfile({ photo: await readImageFile(file) })
-            e.target.value = ''
+            const input = e.target
+            const file = input.files?.[0]
+            input.value = ''
+            if (!file) return
+            try {
+              setProfile({ photo: await readImageFile(file) })
+            } catch (err) {
+              alert(`Impossible d'utiliser cette image : ${(err as Error).message ?? err}`)
+            }
           }}
         />
       </div>
