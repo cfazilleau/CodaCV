@@ -275,7 +275,7 @@ button {
   box-shadow: 0 2px 10px rgb(0 0 0 / 0.05);
 }
 
-.card.is-muted .card-head h3 {
+.card.is-muted .card-title {
   color: var(--ui-muted);
   text-decoration: line-through;
 }
@@ -285,16 +285,48 @@ button {
   align-items: center;
   gap: 8px;
   padding: 10px 12px;
-  cursor: pointer;
   user-select: none;
 }
 
 .card-head h3 {
   flex: 1;
+  min-width: 0;
   margin: 0;
-  overflow: hidden;
   font-size: 14px;
   font-weight: 600;
+}
+
+/* Title buttons of cards and timeline entries: look like plain text, fill the free space */
+.card-toggle,
+.item-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.item-toggle {
+  flex: 1;
+  gap: 6px;
+}
+
+.card-toggle:focus-visible,
+.item-toggle:focus-visible {
+  outline: 2px solid var(--ui-primary);
+  outline-offset: 2px;
+}
+
+.card-title {
+  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -801,12 +833,10 @@ button {
   gap: 6px;
   min-height: 40px;
   padding: 4px 6px 4px 10px;
-  cursor: pointer;
 }
 
 .item--list .item-head {
   padding-left: 4px;
-  cursor: default;
 }
 
 .item-title {

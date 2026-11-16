@@ -577,11 +577,16 @@ function Card({ icon, title, open, selected, muted, onToggle, actions, children,
       ref={ref}
       className={`card${open ? ' is-open' : ''}${selected ? ' is-selected' : ''}${muted ? ' is-muted' : ''}${handle ? ' has-handle' : ''}`}
     >
-      <header className="card-head" onClick={onToggle}>
+      <header className="card-head">
         {handle}
-        <ChevronRight size={16} className="card-chevron" />
-        <span className="card-icon">{icon}</span>
-        <h3>{title}</h3>
+        {/* A real button: the card opens with Enter / Space too */}
+        <h3>
+          <button type="button" className="card-toggle" aria-expanded={open} onClick={onToggle}>
+            <ChevronRight size={16} className="card-chevron" />
+            <span className="card-icon">{icon}</span>
+            <span className="card-title">{title}</span>
+          </button>
+        </h3>
         <div className="card-actions">{actions}</div>
       </header>
       {open && <div className="card-body">{children}</div>}
@@ -699,13 +704,15 @@ function TimelineEditor({ section, update, openItem, toggleItem, registerItem }:
           const open = openItem === e.id
           return (
             <div ref={registerItem(e.id)} className={`item${open ? ' is-open' : ''}${e.hidden ? ' is-muted' : ''}`}>
-              <div className="item-head" onClick={() => toggleItem(e.id)}>
+              <div className="item-head">
                 {handle}
-                <ChevronRight size={14} className="card-chevron" />
-                <div className="item-title">
-                  <strong>{e.title || 'Sans titre'}</strong>
-                  <span>{[e.subtitle, e.date].filter(Boolean).join(' · ')}</span>
-                </div>
+                <button type="button" className="item-toggle" aria-expanded={open} onClick={() => toggleItem(e.id)}>
+                  <ChevronRight size={14} className="card-chevron" />
+                  <span className="item-title">
+                    <strong>{e.title || 'Sans titre'}</strong>
+                    <span>{[e.subtitle, e.date].filter(Boolean).join(' · ')}</span>
+                  </span>
+                </button>
                 <div className="row-actions">
                   <IconButton title={e.hidden ? 'Afficher' : 'Masquer'} onClick={() => patch(e.id, { hidden: !e.hidden })}>
                     {e.hidden ? <EyeOff size={14} /> : <Eye size={14} />}
