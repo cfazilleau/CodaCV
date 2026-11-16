@@ -65,6 +65,8 @@ npm run build    # static site in dist/
     chosen precision (year, numeric month, short or full month name, full date): "sept. 2022 -
     aujourd'hui", "Sep 2022 - Present", "Sept. 2022 - heute"…
 - **Interface language** – French or English, switched in the top bar (remembered per browser).
+- **Phones and tablets** – on a phone, *Modifier* / *Aperçu* at the bottom switch between the editor
+  and the page; the less used top-bar actions are in the ⋯ menu.
 - **Layout on the page** (edit mode, hover the preview):
   - section grip → drop it on a new row, in a new column (left/right edge of a section) or under
     another section in a multi-column row; the blue line shows where it lands
@@ -72,6 +74,8 @@ npm run build    # static site in dist/
   - divider between columns → resize (snaps to the date column, ¼ ⅓ ½ ⅔ ¾)
   - page edges → page margins
   - Ctrl+Z undoes any drop.
+  - On a touch screen: tap a section, then drag the grip at the end of its title, or the knobs
+    between columns (entries and margins are edited in the side panel there).
   - Model (`src/layout.ts`): sections keep one ordered list = reading / PDF order, each with a
     `place` (`row` | `column` | `stack`) and a column width.
 - **Click to edit** – click anything on the preview to jump to its fields.

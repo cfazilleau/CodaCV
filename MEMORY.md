@@ -40,6 +40,7 @@ headless printing, and PDF text extraction (see "Testing" below).
 | `src/components/editor/fields.tsx`, `IconPicker.tsx`, `icons.tsx` | Form fields, icon picker, icon set (lucide + a few hand-drawn brand SVGs) |
 | `src/App.tsx` | Top bar, preview pane (zoom, page-break guides), print setup (`@page` rules, PDF file name) |
 | `src/flags.ts` | Flag SVGs bundled for the countries offered in the editor (`COUNTRY_CODES` in `fields.tsx`); flag-icons' CSS is not used |
+| `src/media.ts` | `useMediaQuery` hook and the `PHONE` / `TOUCH` queries (phone layout, touch overlay) |
 | `src/i18n.ts` | Editor UI language (`fr` / `en`, key `codacv.uiLang`, default from the browser); `defineStrings` / `useStrings` / `strings` |
 | `src/locale.ts` | Resume languages (`RESUME_LOCALES`: label + word for "present"), date storage format and locale formatting, `contentLang()` |
 | `ai-import/` | `resume-template.json` + `prompt.md`: lets an AI assistant convert an existing CV for Import. **Update both when the data model changes**; check the template still passes `validateResume()` unchanged (only its `<..>` country placeholders are cleared) |
@@ -156,7 +157,21 @@ with **pypdf** (stream order, like most ATS / LLM loaders) and **pdfminer** (lay
   the side-panel "Placement sur la page" / "Largeur de la colonne" fields were removed, with their
   `layout.ts` helpers (`placementInfo`, `setPlacement`, `setColumnWidth`, `editPageLayout`). The side
   list still reorders sections (keyboard-accessible). Page margins are also sliders in Apparence. The
-  overlay is `aria-hidden` and its grips are `tabIndex={-1}` (mouse only).
+  overlay is `aria-hidden` and its grips are `tabIndex={-1}` (pointer only: mouse, or touch below).
+- **Phones and touch** (`src/media.ts`: `useMediaQuery`, `PHONE` = max-width 700px, `TOUCH` =
+  `hover: none`). Breakpoints: ≤ 640px the top bar's import / export / reset / UI language / ⓘ move
+  into a native `popover` menu ("⋯"); ≤ 700px an Edit / Preview bottom bar shows one pane at a time
+  (tapping the page selects and stays in Preview; back in the editor the selected card scrolls into
+  view, via Editor's `visible` prop); ≤ 900px editor above preview. `.app` is `100dvh`. On coarse
+  pointers text fields are 16px (iOS zooms into smaller ones) and buttons / grips are finger-sized.
+  **Touch overlay**: the tools follow the *selected* section instead of the hover: a grip at the
+  end of its title and, in a multi-column row, a knob on each divider, all sized `N px / zoom`
+  (`--lo-inv`) so they stay finger-sized at 45%. Item grips and margin guides are mouse-only
+  (owner's choice: items are reordered in the editor, margins with the sliders). Section / item
+  drags autoscroll the preview near its top / bottom edge (mouse too).
+- Testing the touch path: the in-app browser's "mobile" preset matches `(hover: none)`; drive it
+  with dispatched `PointerEvent`s (`pointerType: 'touch'`). When the browser pane is hidden, no
+  frames run: ResizeObserver (preview fit) and rAF (autoscroll) never fire until a screenshot.
 - Keyboard on the preview: Tab stops on the header and sections; arrow keys move through every
   clickable entry / item (`clickable()` in ResumeDocument). Side-panel tabs follow the WAI tabs
   pattern (one tab stop, arrows / Home / End).
