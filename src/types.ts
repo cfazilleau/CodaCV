@@ -41,8 +41,6 @@ export interface Profile {
   summary: string
   summaryIcon: IconKey
   contacts: Contact[]
-  /** Long-form text shown when the header is clicked on the web page */
-  details: string
 }
 
 /** A dated entry: job, project, school… */
@@ -56,15 +54,12 @@ export interface TimelineEntry {
   subtitle: string // italic, e.g. role
   url: string
   bullets: string[]
-  /** Markdown shown in the details panel of the web page */
-  details: string
   hidden: boolean
 }
 
 export interface ListItem {
   id: string
   text: string
-  details: string
   hidden: boolean
 }
 

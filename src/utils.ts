@@ -18,7 +18,7 @@ export function inlineMd(src: string): string {
   return DOMPurify.sanitize(marked.parseInline(src, { async: false }) as string)
 }
 
-/** Block markdown for long-form details. */
+/** Block markdown (free-text sections). */
 export function blockMd(src: string): string {
   return DOMPurify.sanitize(marked.parse(src, { async: false }) as string)
 }
@@ -42,13 +42,12 @@ export function newEntry(): TimelineEntry {
     subtitle: '',
     url: '',
     bullets: [],
-    details: '',
     hidden: false,
   }
 }
 
 export function newListItem(text = 'Nouvel élément'): ListItem {
-  return { id: uid(), text, details: '', hidden: false }
+  return { id: uid(), text, hidden: false }
 }
 
 export function newSection(kind: SectionKind): Section {
@@ -94,22 +93,3 @@ export function downloadText(fileName: string, text: string, type = 'application
   a.click()
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
-
-export const STRINGS = {
-  fr: {
-    details: 'Détails',
-    moreDetails: 'Plus de détails',
-    close: 'Fermer',
-    print: 'Imprimer / PDF',
-    openLink: 'Ouvrir le lien',
-    clickHint: 'Cliquez sur une section pour en savoir plus',
-  },
-  en: {
-    details: 'Details',
-    moreDetails: 'More details',
-    close: 'Close',
-    print: 'Print / PDF',
-    openLink: 'Open link',
-    clickHint: 'Click any section to learn more',
-  },
-} as const

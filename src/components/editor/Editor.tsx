@@ -311,14 +311,6 @@ function ProfileEditor({ profile, setProfile, accent }: { profile: Profile; setP
           <Plus size={14} /> Ajouter un contact
         </button>
       </div>
-
-      <TextArea
-        label="Détails (page web uniquement)"
-        hint={`Affiché quand on clique sur l'en-tête dans la page web. ${MD_HINT}`}
-        minRows={3}
-        value={profile.details}
-        onChange={(v) => setProfile({ details: v })}
-      />
     </>
   )
 }
@@ -387,13 +379,6 @@ function TimelineEditor({ section, update, openItem, toggleItem, registerItem }:
                     value={e.bullets}
                     onChange={(v) => patch(e.id, { bullets: v })}
                   />
-                  <TextArea
-                    label="Détails (page web uniquement)"
-                    hint={`Affiché dans le panneau de détails de la page web, jamais dans le PDF. ${MD_HINT}`}
-                    minRows={3}
-                    value={e.details}
-                    onChange={(v) => patch(e.id, { details: v })}
-                  />
                 </div>
               )}
             </div>
@@ -430,20 +415,13 @@ function ListEditor({ section, update, openItem, toggleItem, registerItem }: Ite
             <div ref={registerItem(it.id)} className={`item item--list${open ? ' is-open' : ''}${it.hidden ? ' is-muted' : ''}`}>
               <div className="item-head">
                 {handle}
-                <button type="button" className="item-expand" title="Détails" onClick={() => toggleItem(it.id)}>
-                  <ChevronRight size={14} className="card-chevron" />
-                </button>
                 <input
                   className="item-input"
                   value={it.text}
                   onChange={(e) => patch(it.id, { text: e.target.value })}
+                  // Focusing an item selects it, so it is highlighted on the page
                   onFocus={() => !open && toggleItem(it.id)}
                 />
-                {it.details.trim() && (
-                  <span className="badge" title="A des détails">
-                    +
-                  </span>
-                )}
                 <div className="row-actions">
                   <IconButton title={it.hidden ? 'Afficher' : 'Masquer'} onClick={() => patch(it.id, { hidden: !it.hidden })}>
                     {it.hidden ? <EyeOff size={14} /> : <Eye size={14} />}
@@ -453,16 +431,6 @@ function ListEditor({ section, update, openItem, toggleItem, registerItem }: Ite
                   </IconButton>
                 </div>
               </div>
-              {open && (
-                <div className="item-body">
-                  <TextArea
-                    label="Détails (page web uniquement)"
-                    hint={MD_HINT}
-                    value={it.details}
-                    onChange={(v) => patch(it.id, { details: v })}
-                  />
-                </div>
-              )}
             </div>
           )
         }}
@@ -578,7 +546,7 @@ function ThemeEditor({ resume, setResume }: { resume: Resume; setResume: (fn: (r
       <div className="grid-2">
         <TextField label="Nom du fichier PDF" value={resume.meta.fileName} onChange={(v) => setMeta({ fileName: v })} />
         <Select
-          label="Langue de la page web"
+          label="Langue du CV"
           value={resume.meta.locale}
           options={[
             { value: 'fr', label: 'Français' },

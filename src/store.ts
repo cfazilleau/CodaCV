@@ -10,7 +10,7 @@ function migrate(data: unknown): Resume {
   if (!r || typeof r !== 'object' || !r.profile || !Array.isArray(r.sections)) {
     throw new Error('Not a CodaCV resume file')
   }
-  const profile = { ...defaultResume.profile, ...r.profile }
+  const profile = stripDetails({ ...defaultResume.profile, ...r.profile })
   // v1 early format: contacts had a `kind` instead of an `icon`, summaryIcon was a boolean
   const legacy = profile as unknown as { summaryIcon: unknown; contacts: (Contact & { kind?: string })[] }
   if (typeof legacy.summaryIcon === 'boolean') profile.summaryIcon = legacy.summaryIcon ? 'pin' : 'none'
@@ -33,8 +33,19 @@ function migrate(data: unknown): Resume {
 type LegacySection = Section & { pairWithNext?: boolean }
 
 /** Early format: `pairWithNext` put a section in a narrow column next to the following one. */
+/** Drop the `details` field of the removed web-page feature. */
+function stripDetails<T extends object>(o: T): T {
+  const { details: _removed, ...rest } = o as T & { details?: unknown }
+  return rest as T
+}
+
 function migrateSections(sections: LegacySection[], theme: Resume['theme']): Section[] {
-  const out = sections.map(({ pairWithNext: _legacy, ...s }) => ({ ...s, place: s.place ?? 'row', spaceBefore: s.spaceBefore ?? 0 }) as Section)
+  const out = sections.map(({ pairWithNext: _legacy, ...s }) => {
+    const base = { ...s, place: s.place ?? 'row', spaceBefore: s.spaceBefore ?? 0 } as Section
+    if (base.kind === 'timeline') return { ...base, entries: base.entries.map(stripDetails) }
+    if (base.kind === 'list') return { ...base, items: base.items.map(stripDetails) }
+    return base
+  })
   sections.forEach((s, i) => {
     if (s.place || !s.pairWithNext || !out[i + 1]) return
     const narrow = dateColumnFraction(theme.dateColumn, theme.marginX)

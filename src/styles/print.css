@@ -15,21 +15,15 @@
   .topbar,
   .sidebar,
   .preview-toolbar,
-  .preview-hint,
   .page-break,
   .layout-overlay,
-  .lo-ghost,
-  .viewer-toolbar,
-  .drawer-root,
-  .cv-more-badge {
+  .lo-ghost {
     display: none !important;
   }
 
   .app,
   .workspace,
-  .preview,
-  .viewer,
-  .viewer-page {
+  .preview {
     display: block !important;
     height: auto !important;
     overflow: visible !important;

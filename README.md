@@ -1,7 +1,7 @@
 # CodaCV
 
-A resume builder: edit everything in a side panel, see a live A4 preview, publish an
-interactive web version, and print a pixel-accurate PDF.
+A resume builder: edit everything in a side panel, arrange the layout directly on a live A4
+preview, and print a pixel-accurate, ATS-friendly PDF.
 
 ## Getting started
 
@@ -13,7 +13,7 @@ npm run build    # static site in dist/
 
 ## Features
 
-- **Editor (Éditer)** – profile, photo, contacts, and any number of sections:
+- **Editor** – profile, photo, contacts, and any number of sections:
   - *Chronologie* (timeline: experience, projects, education…) with date, sub-date, flag, city, title, subtitle, link, bullets
   - *Liste* (languages, skills…)
   - *Texte libre* (free markdown text)
@@ -30,9 +30,6 @@ npm run build    # static site in dist/
   - Model (`src/layout.ts`): sections keep one ordered list = reading / PDF order, each with a
     `place` (`row` | `column` | `stack`), a column width and a spacing.
 - **Click to edit** – click anything on the preview to jump to its fields.
-- **Page web** – interactive mode: clicking an entry opens a details panel (bullets + the
-  markdown *Détails* field, which never appears in the PDF). `#/view` opens it standalone
-  (also the ↗ button in the toolbar).
 - **PDF** – the *PDF* button (or Ctrl+P) prints only the resume, A4, with the theme margins and the
   configured file name. In the print dialog choose *Save as PDF* and untick *Headers and footers*.
 - **Icons** – every contact (and the summary line) has an icon picker; e-mail and phone links
@@ -67,8 +64,8 @@ src/
   defaultResume.ts       seed resume (fictional example)
   store.ts               state, localStorage persistence, undo/redo
   components/
-    ResumeDocument.tsx   the resume itself (shared by preview, web page and print)
-    DetailsDrawer.tsx    web-page details panel
+    ResumeDocument.tsx   the resume itself (shared by preview and print)
+    LayoutOverlay.tsx    on-page layout handles (edit only, never printed)
     editor/              options panel
   styles/                app UI, resume, and print styles
 ```

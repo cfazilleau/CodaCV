@@ -1,41 +1,16 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
-import {
-  Download,
-  ExternalLink,
-  FileUp,
-  Globe,
-  PenLine,
-  Printer,
-  Redo2,
-  RotateCcw,
-  Undo2,
-  ZoomIn,
-  ZoomOut,
-} from 'lucide-react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { Download, FileUp, Printer, Redo2, RotateCcw, Undo2, ZoomIn, ZoomOut } from 'lucide-react'
 import { useResumeStore, parseResume } from './store'
 import { defaultResume } from './defaultResume'
 import type { Resume, Selection } from './types'
 import { ResumeDocument } from './components/ResumeDocument'
-import { DetailsDrawer } from './components/DetailsDrawer'
 import { LayoutOverlay } from './components/LayoutOverlay'
 import { Editor } from './components/editor/Editor'
-import { downloadText, STRINGS } from './utils'
-
-type Mode = 'edit' | 'view'
+import { downloadText } from './utils'
 
 const MM = 96 / 25.4 // CSS px per mm
 const A4_W = 210
 const A4_H = 297
-
-function useHashRoute() {
-  const [hash, setHash] = useState(() => window.location.hash)
-  useEffect(() => {
-    const on = () => setHash(window.location.hash)
-    window.addEventListener('hashchange', on)
-    return () => window.removeEventListener('hashchange', on)
-  }, [])
-  return hash
-}
 
 /** Injects @page rules matching the theme margins and sets the PDF file name while printing. */
 function usePrintSetup(resume: Resume) {
@@ -65,11 +40,7 @@ function usePrintSetup(resume: Resume) {
 export default function App() {
   const store = useResumeStore()
   const { resume, setResume, undo, redo } = store
-  const hash = useHashRoute()
-  const standalone = hash.startsWith('#/view')
-  const [mode, setMode] = useState<Mode>(standalone ? 'view' : 'edit')
   const [selection, setSelection] = useState<Selection>(null)
-  const effectiveMode: Mode = standalone ? 'view' : mode
 
   usePrintSetup(resume)
 
@@ -77,14 +48,6 @@ export default function App() {
   useEffect(() => {
     document.documentElement.lang = resume.meta.locale
   }, [resume.meta.locale])
-
-  useEffect(() => {
-    if (standalone) document.title = resume.profile.name ? `${resume.profile.name} — CV` : 'CV'
-    else document.title = 'CodaCV'
-  }, [standalone, resume.profile.name])
-
-  // Clear selection when switching mode so the drawer doesn't pop open
-  useEffect(() => setSelection(null), [effectiveMode])
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -95,11 +58,11 @@ export default function App() {
       if (k === 'p') {
         e.preventDefault()
         window.print()
-      } else if (!standalone && k === 'z' && !e.shiftKey) {
+      } else if (k === 'z' && !e.shiftKey) {
         if ((e.target as HTMLElement).closest('input, textarea')) return
         e.preventDefault()
         undo()
-      } else if (!standalone && (k === 'y' || (k === 'z' && e.shiftKey))) {
+      } else if (k === 'y' || (k === 'z' && e.shiftKey)) {
         if ((e.target as HTMLElement).closest('input, textarea')) return
         e.preventDefault()
         redo()
@@ -107,7 +70,7 @@ export default function App() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [standalone, undo, redo])
+  }, [undo, redo])
 
   const fileInput = useRef<HTMLInputElement>(null)
   const importJson = async (file: File) => {
@@ -120,35 +83,12 @@ export default function App() {
     }
   }
 
-  const closeDrawer = useCallback(() => setSelection(null), [])
-
-  if (standalone) {
-    return (
-      <div className="viewer">
-        <ViewerToolbar resume={resume} />
-        <div className="viewer-page">
-          <ResumeDocument resume={resume} mode="view" selection={selection} onSelect={setSelection} />
-        </div>
-        <DetailsDrawer resume={resume} selection={selection} onClose={closeDrawer} />
-      </div>
-    )
-  }
-
   return (
     <div className="app">
       <header className="topbar">
         <div className="brand">
           <span className="brand-logo">CV</span>
           <span>CodaCV</span>
-        </div>
-
-        <div className="segmented" role="tablist">
-          <button role="tab" aria-selected={mode === 'edit'} className={mode === 'edit' ? 'is-active' : ''} onClick={() => setMode('edit')}>
-            <PenLine size={15} /> Éditer
-          </button>
-          <button role="tab" aria-selected={mode === 'view'} className={mode === 'view' ? 'is-active' : ''} onClick={() => setMode('view')}>
-            <Globe size={15} /> Page web
-          </button>
         </div>
 
         <div className="topbar-actions">
@@ -178,9 +118,6 @@ export default function App() {
           >
             <RotateCcw size={16} />
           </button>
-          <a className="tb-btn" href="#/view" target="_blank" rel="noopener" title="Ouvrir la page web seule dans un nouvel onglet">
-            <ExternalLink size={16} />
-          </a>
           <button className="btn btn--primary" onClick={() => window.print()} title="Imprimer ou enregistrer en PDF (Ctrl+P)">
             <Printer size={16} /> PDF
           </button>
@@ -198,41 +135,23 @@ export default function App() {
         </div>
       </header>
 
-      <main className={`workspace workspace--${mode}`}>
-        {mode === 'edit' && (
-          <aside className="sidebar">
-            <Editor resume={resume} setResume={setResume} selection={selection} onSelect={setSelection} />
-          </aside>
-        )}
-        <PreviewPane resume={resume} setResume={setResume} mode={mode} selection={selection} onSelect={setSelection} />
+      <main className="workspace">
+        <aside className="sidebar">
+          <Editor resume={resume} setResume={setResume} selection={selection} onSelect={setSelection} />
+        </aside>
+        <PreviewPane resume={resume} setResume={setResume} selection={selection} onSelect={setSelection} />
       </main>
-
-      {mode === 'view' && <DetailsDrawer resume={resume} selection={selection} onClose={closeDrawer} />}
-    </div>
-  )
-}
-
-function ViewerToolbar({ resume }: { resume: Resume }) {
-  const t = STRINGS[resume.meta.locale]
-  return (
-    <div className="viewer-toolbar">
-      <span className="viewer-hint">{t.clickHint}</span>
-      <button className="btn btn--primary" onClick={() => window.print()}>
-        <Printer size={16} /> {t.print}
-      </button>
     </div>
   )
 }
 
 function PreviewPane({
   resume,
-  mode,
   selection,
   onSelect,
   setResume,
 }: {
   resume: Resume
-  mode: Mode
   selection: Selection
   onSelect: (s: Selection) => void
   setResume: (fn: (r: Resume) => Resume) => void
@@ -290,8 +209,8 @@ function PreviewPane({
       </div>
       <div className="preview-stage" style={{ zoom }}>
         <div className="page-shell" ref={page} style={{ minHeight: `${pages * A4_H}mm` }}>
-          <ResumeDocument resume={resume} mode={mode} selection={selection} onSelect={onSelect} />
-          {mode === 'edit' && <LayoutOverlay shellRef={page} resume={resume} setResume={setResume} zoom={zoom} selection={selection} />}
+          <ResumeDocument resume={resume} selection={selection} onSelect={onSelect} />
+          <LayoutOverlay shellRef={page} resume={resume} setResume={setResume} zoom={zoom} selection={selection} />
           {Array.from({ length: pages - 1 }, (_, i) => (
             <div key={i} className="page-break" style={{ top: `${resume.theme.marginY + (i + 1) * perPage}mm` }}>
               <span>Page {i + 2}</span>
@@ -299,7 +218,6 @@ function PreviewPane({
           ))}
         </div>
       </div>
-      {mode === 'view' && <p className="preview-hint">{STRINGS[resume.meta.locale].clickHint}</p>}
     </div>
   )
 }

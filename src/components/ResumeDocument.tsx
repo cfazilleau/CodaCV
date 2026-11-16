@@ -27,11 +27,8 @@ const DENSITY = {
   airy: { section: 6, entry: 4.2, line: 1.48 },
 }
 
-export type DocMode = 'edit' | 'view'
-
 interface Props {
   resume: Resume
-  mode: DocMode
   selection?: Selection
   onSelect?: (sel: Selection) => void
 }
@@ -54,23 +51,22 @@ export function resumeStyle(resume: Resume): CSSProperties {
   } as CSSProperties
 }
 
-export function ResumeDocument({ resume, mode, selection, onSelect }: Props) {
+/** The resume page. With `onSelect`, its parts are clickable to edit them (preview); without, it is static. */
+export function ResumeDocument({ resume, selection, onSelect }: Props) {
   const { profile, theme } = resume
 
   const isSel = (sectionId: string, itemId?: string) =>
     selection?.kind === 'section' && selection.sectionId === sectionId && selection.itemId === itemId
 
-  // Clickable wrapper props. In view mode, only things with something to reveal are clickable.
-  const clickable = (sel: Selection, active: boolean, enabled = true) => {
-    if (!onSelect || !enabled) return {}
+  // Clickable wrapper props (click to edit)
+  const clickable = (sel: Selection, active: boolean) => {
+    if (!onSelect) return {}
     return {
       'data-clickable': true,
       'data-selected': active || undefined,
       // No role="button": it would flatten headings/lists in the tagged PDF that ATS read.
       tabIndex: 0,
       onClick: (e: MouseEvent) => {
-        // Let real links work in view mode
-        if (mode === 'view' && (e.target as HTMLElement).closest('a')) return
         e.preventDefault()
         e.stopPropagation()
         onSelect(sel)
@@ -89,7 +85,7 @@ export function ResumeDocument({ resume, mode, selection, onSelect }: Props) {
 
   const renderSection = (s: Section) => {
     // The whole section is the click / highlight target (items inside handle their own clicks)
-    const sectionSel = clickable({ kind: 'section', sectionId: s.id }, isSel(s.id), mode === 'edit')
+    const sectionSel = clickable({ kind: 'section', sectionId: s.id }, isSel(s.id))
     return (
       <section
         key={s.id}
@@ -118,7 +114,6 @@ export function ResumeDocument({ resume, mode, selection, onSelect }: Props) {
             entry={e}
             showLinkIcon={theme.showLinkIcons}
             single={theme.layout === 'single-column'}
-            hasMore={mode === 'view' && !!e.details.trim()}
             data-item-id={e.id}
             data-item-kind="entry"
             data-owner={s.id}
@@ -132,40 +127,32 @@ export function ResumeDocument({ resume, mode, selection, onSelect }: Props) {
     <ul className="cv-list">
       {s.items
         .filter((it) => !it.hidden)
-        .map((it) => {
-          const hasMore = !!it.details.trim()
-          return (
-            <li
-              key={it.id}
-              className={mode === 'view' && hasMore ? 'has-more' : undefined}
-              data-item-id={it.id}
-              data-item-kind="list"
-              data-owner={s.id}
-              {...clickable({ kind: 'section', sectionId: s.id, itemId: it.id }, isSel(s.id, it.id), mode === 'edit' || hasMore)}
-            >
-              <span dangerouslySetInnerHTML={{ __html: inlineMd(it.text) }} />
-            </li>
-          )
-        })}
+        .map((it) => (
+          <li
+            key={it.id}
+            data-item-id={it.id}
+            data-item-kind="list"
+            data-owner={s.id}
+            {...clickable({ kind: 'section', sectionId: s.id, itemId: it.id }, isSel(s.id, it.id))}
+          >
+            <span dangerouslySetInnerHTML={{ __html: inlineMd(it.text) }} />
+          </li>
+        ))}
     </ul>
   )
 
   const renderText = (s: TextSection) => (
     <div
       className="cv-text md"
-      {...clickable({ kind: 'section', sectionId: s.id, itemId: 'text' }, isSel(s.id, 'text'), mode === 'edit')}
+      {...clickable({ kind: 'section', sectionId: s.id, itemId: 'text' }, isSel(s.id, 'text'))}
       dangerouslySetInnerHTML={{ __html: blockMd(s.text) }}
     />
   )
 
-  const headerSel = clickable(
-    { kind: 'profile' },
-    selection?.kind === 'profile',
-    mode === 'edit' || !!profile.details.trim(),
-  )
+  const headerSel = clickable({ kind: 'profile' }, selection?.kind === 'profile')
 
   return (
-    <article className={`cv cv--${mode} cv--${theme.layout}`} style={resumeStyle(resume)}>
+    <article className={`cv${onSelect ? ' cv--edit' : ''} cv--${theme.layout}`} style={resumeStyle(resume)}>
       <header className={`cv-header${theme.showPhoto && profile.photo ? '' : ' cv-header--nophoto'}`} {...headerSel}>
         {theme.showPhoto && profile.photo && (
           <img className={`cv-photo cv-photo--${theme.photoShape}`} src={profile.photo} alt="" />
@@ -229,11 +216,10 @@ export function ResumeDocument({ resume, mode, selection, onSelect }: Props) {
 interface EntryProps extends HTMLAttributes<HTMLDivElement> {
   entry: TimelineEntry
   showLinkIcon: boolean
-  hasMore: boolean
   single: boolean
 }
 
-function EntryView({ entry: e, showLinkIcon, hasMore, single, ...rest }: EntryProps) {
+function EntryView({ entry: e, showLinkIcon, single, ...rest }: EntryProps) {
   const location = (e.location || e.country) && (
     <span className="cv-entry-loc">
       {e.country && <span className={`fi fi-${e.country.toLowerCase()} cv-flag`} />}
@@ -249,7 +235,7 @@ function EntryView({ entry: e, showLinkIcon, hasMore, single, ...rest }: EntryPr
     </span>
   )
   return (
-    <div className={`cv-entry${hasMore ? ' has-more' : ''}`} {...rest}>
+    <div className="cv-entry" {...rest}>
       {!single && (
         <div className="cv-entry-meta">
           {e.date && <div>{e.date}</div>}
@@ -269,7 +255,6 @@ function EntryView({ entry: e, showLinkIcon, hasMore, single, ...rest }: EntryPr
               <ExternalIcon size={9} />
             </a>
           )}
-          {hasMore && <span className="cv-more-badge">+</span>}
           {singleMeta}
         </div>
         {e.bullets.some((b) => b.trim()) && (

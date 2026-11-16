@@ -20,7 +20,6 @@ export const defaultResume: Resume = {
       { id: 'c3', icon: 'phone', label: '06 39 98 12 34', url: '' },
       { id: 'c4', icon: 'mail', label: 'alex.martin@example.com', url: '' },
     ],
-    details: '',
   },
   sections: [
     {
@@ -32,8 +31,8 @@ export const defaultResume: Resume = {
       colWidth: 0.1452, // lines up with the date column
       spaceBefore: 0,
       items: [
-        { id: 'l1', text: 'Français', details: 'Langue maternelle.', hidden: false },
-        { id: 'l2', text: 'Anglais', details: 'Courant — plusieurs années en environnement anglophone.', hidden: false },
+        { id: 'l1', text: 'Français', hidden: false },
+        { id: 'l2', text: 'Anglais', hidden: false },
       ],
     },
     {
@@ -45,12 +44,12 @@ export const defaultResume: Resume = {
       colWidth: 0.8548,
       spaceBefore: 0,
       items: [
-        { id: 's1', text: 'C / C# / C++ (moderne) et APIs graphiques (OpenGL, DirectX, Vulkan)', details: '', hidden: false },
-        { id: 's2', text: 'Unreal Engine 5 (Blueprints, C++, IA, Shaders, Outils, Plugins)', details: '', hidden: false },
-        { id: 's3', text: 'Unity (Architecture, Render pipelines, Input system)', details: '', hidden: false },
-        { id: 's4', text: 'Gestion de version (Git, Perforce, SVN)', details: '', hidden: false },
-        { id: 's5', text: 'Langages de scripting (Shell, Python, JavaScript)', details: '', hidden: false },
-        { id: 's6', text: 'Méthodologies Scrum et Agile (Jira, Confluence, Notion)', details: '', hidden: false },
+        { id: 's1', text: 'C / C# / C++ (moderne) et APIs graphiques (OpenGL, DirectX, Vulkan)', hidden: false },
+        { id: 's2', text: 'Unreal Engine 5 (Blueprints, C++, IA, Shaders, Outils, Plugins)', hidden: false },
+        { id: 's3', text: 'Unity (Architecture, Render pipelines, Input system)', hidden: false },
+        { id: 's4', text: 'Gestion de version (Git, Perforce, SVN)', hidden: false },
+        { id: 's5', text: 'Langages de scripting (Shell, Python, JavaScript)', hidden: false },
+        { id: 's6', text: 'Méthodologies Scrum et Agile (Jira, Confluence, Notion)', hidden: false },
       ],
     },
     {
@@ -76,8 +75,6 @@ export const defaultResume: Resume = {
             'Programmation backend et outils (C++, JavaScript)',
             'Intégration de plugins utilisant les API natives iOS et Android (C++, Java)',
           ],
-          details:
-            "Encadrement d'une équipe de quatre programmeurs gameplay.\n\n- Revue de code et mentorat\n- Planification technique des sprints\n- Suivi des performances sur appareils bas de gamme",
           hidden: false,
         },
         {
@@ -94,7 +91,6 @@ export const defaultResume: Resume = {
             'Architecture, diagnostic et optimisation pour PC, mobile et VR.',
             'Développement sur plusieurs licences mobile et console.',
           ],
-          details: '',
           hidden: false,
         },
         {
@@ -110,7 +106,6 @@ export const defaultResume: Resume = {
             'Design technique et développement C++ pour Unreal Engine',
             "Création d'un prototype VR multijoueur en réseau",
           ],
-          details: '',
           hidden: false,
         },
       ],
@@ -137,7 +132,6 @@ export const defaultResume: Resume = {
             'Intégration de SDK tiers (stores, analytics, publicité, notifications)',
             'Publication et suivi sur App Store et Google Play',
           ],
-          details: '',
           hidden: false,
         },
         {
@@ -154,7 +148,6 @@ export const defaultResume: Resume = {
             'Unity et technologies avancées (Scriptable Render Pipelines, Input system)',
             'Optimisation pour une console portable',
           ],
-          details: '',
           hidden: false,
         },
         {
@@ -171,7 +164,6 @@ export const defaultResume: Resume = {
             "Développement d'un éditeur en Qt",
             "Programmation d'outils de développement",
           ],
-          details: '',
           hidden: false,
         },
       ],
@@ -197,7 +189,6 @@ export const defaultResume: Resume = {
             'Diplôme de niveau 7 (Bac +5)',
             'C++, C#, Unreal Engine, Unity, mathématiques et physique appliquées au jeu vidéo',
           ],
-          details: '',
           hidden: false,
         },
       ],

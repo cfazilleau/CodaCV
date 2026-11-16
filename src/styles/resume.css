@@ -16,7 +16,9 @@
   text-align: left;
   /* Ligatures (fi, fl…) can be extracted as odd glyphs by resume parsers */
   font-variant-ligatures: none;
-  font-feature-settings: 'liga' 0, 'clig' 0;
+  font-feature-settings:
+    "liga" 0,
+    "clig" 0;
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
 }
@@ -179,7 +181,7 @@
 
 .cv-list li::before,
 .cv-bullets li::before {
-  content: '•';
+  content: "•";
   padding-left: 0.2em;
 }
 
@@ -250,21 +252,6 @@
   vertical-align: 0.05em;
 }
 
-.cv-more-badge {
-  display: inline-grid;
-  place-items: center;
-  width: 1.3em;
-  height: 1.3em;
-  margin-left: 1.5mm;
-  border-radius: 50%;
-  background: var(--accent-soft);
-  color: var(--accent);
-  font-size: 0.85em;
-  font-weight: 700;
-  line-height: 1;
-  vertical-align: 0.1em;
-}
-
 .md :is(p, ul, ol) {
   margin: 0 0 0.6em;
 }
@@ -292,7 +279,9 @@
     border-radius: 1.2mm;
     outline: 0.35mm solid transparent;
     outline-offset: 0.8mm;
-    transition: outline-color 0.12s, background-color 0.12s;
+    transition:
+      outline-color 0.12s,
+      background-color 0.12s;
   }
 
   .cv--edit [data-clickable]:hover {
@@ -313,20 +302,5 @@
   .cv--edit .cv-section[data-clickable][data-selected] {
     outline-offset: 1.2mm;
     background: color-mix(in srgb, var(--accent) 4%, transparent);
-  }
-
-  .cv--view [data-clickable]:hover,
-  .cv--view [data-clickable]:focus-visible {
-    background: var(--accent-soft);
-    outline-color: color-mix(in srgb, var(--accent) 25%, transparent);
-  }
-
-  .cv--view .cv-list li.has-more {
-    text-decoration: underline dotted color-mix(in srgb, var(--accent) 60%, transparent);
-    text-underline-offset: 0.2em;
-  }
-
-  .cv--view a:hover {
-    color: var(--accent);
   }
 }
