@@ -81,11 +81,12 @@ export function Select<T extends string>({
   value,
   onChange,
   options,
+  disabled,
   ...base
-}: BaseProps & { value: T; onChange: (v: T) => void; options: { value: T; label: string }[] }) {
+}: BaseProps & { value: T; onChange: (v: T) => void; options: { value: T; label: string }[]; disabled?: boolean }) {
   return (
     <Field {...base}>
-      <select value={value} onChange={(e) => onChange(e.target.value as T)}>
+      <select value={value} disabled={disabled} onChange={(e) => onChange(e.target.value as T)}>
         {options.map((o) => (
           <option key={o.value} value={o.value}>
             {o.label}

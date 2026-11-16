@@ -417,7 +417,9 @@ export function LayoutOverlay({ shellRef, resume, setResume, zoom, selection }: 
       {showSectionTools && geo.section && (
         <>
           {!geo.section.selected && <div className="lo-outline" style={box(geo.section.rect, 1.2 * MM)} />}
+          {/* Mouse only (the overlay is aria-hidden): the keyboard uses the section card's placement fields */}
           <button
+            tabIndex={-1}
             className="lo-grip lo-grip--section"
             style={{ left: geo.section.rect.x - 26, top: geo.section.titleRect.y + geo.section.titleRect.h / 2 - 11 }}
             onPointerDown={start({ kind: 'section', id: geo.section.id, label: geo.section.label })}
@@ -431,6 +433,7 @@ export function LayoutOverlay({ shellRef, resume, setResume, zoom, selection }: 
       {/* Hovered entry / list item grip */}
       {!drag && geo.item && (
         <button
+          tabIndex={-1}
           className="lo-grip lo-grip--item"
           style={
             geo.item.inline

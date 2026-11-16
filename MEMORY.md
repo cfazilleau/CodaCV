@@ -121,6 +121,10 @@ with **pypdf** (stream order, like most ATS / LLM loaders) and **pdfminer** (lay
 - On-page overlay shows only the tools for what is under the pointer: item grip over an item; section
   outline + grip + column divider over a section title / its empty space; margin guides only when
   hovering that page edge. Hover stays "sticky" in a small band so grips stay reachable.
+- Keyboard alternative to the on-page handles: each section card has "Placement sur la page"
+  (row / column / under the previous section, `setPlacement`) and, for a column's first section,
+  "Largeur de la colonne" (`setColumnWidth`). Page margins are sliders in Apparence. The overlay is
+  `aria-hidden` and its grips are `tabIndex={-1}` (mouse only).
 - Selected section = dashed frame around the whole `<section>` (not the title). The overlay's hover
   frame steps aside when the section is selected.
 - Removed on purpose (don't bring back unless asked): the "Page web" / `#/view` interactive page and
