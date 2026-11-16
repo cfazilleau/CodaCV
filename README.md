@@ -21,6 +21,18 @@ open the page and start editing the example resume, or import a JSON file you ex
 - The interface is in French or English (switch in the top bar); each resume has its own language
   for dates and the PDF.
 
+### Bring your existing CV with an AI assistant
+
+Instead of retyping your CV, let an AI assistant convert it:
+
+1. Give the assistant your current CV (PDF, Word, text...), the template
+   [`ai-import/resume-template.json`](ai-import/resume-template.json) and the prompt in
+   [`ai-import/prompt.md`](ai-import/prompt.md).
+2. Save its answer as a `.json` file.
+3. Click **Import** in CodaCV: the CV is added as a new version, ready to check and style.
+
+Your CV holds personal data: check the AI service's privacy terms before sending it.
+
 ## Run it locally
 
 To work on the code or host your own copy:

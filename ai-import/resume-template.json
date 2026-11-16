@@ -1,0 +1,159 @@
+{
+  "version": 1,
+  "meta": {
+    "locale": "en",
+    "fileName": "<Firstname>-<Lastname>-Resume"
+  },
+  "profile": {
+    "name": "<Firstname LASTNAME>",
+    "title": "<Current or target job title>",
+    "photo": "",
+    "summary": "<Short profile paragraph, copied from the CV>",
+    "summaryIcon": "none",
+    "contacts": [
+      { "icon": "mail", "label": "<name@example.com>", "url": "" },
+      { "icon": "phone", "label": "<+33 6 00 00 00 00>", "url": "" },
+      { "icon": "pin", "label": "<City, Country>", "url": "" },
+      { "icon": "linkedin", "label": "<linkedin.com/in/your-name>", "url": "<https://www.linkedin.com/in/your-name/>" },
+      { "icon": "github", "label": "<github.com/your-name>", "url": "<https://github.com/your-name>" },
+      { "icon": "link", "label": "<your-site.example.com>", "url": "<https://your-site.example.com>" }
+    ]
+  },
+  "sections": [
+    {
+      "kind": "highlights",
+      "title": "<Key figures>",
+      "hideTitle": true,
+      "items": [
+        { "value": "<10+>", "label": "<years of experience>" },
+        { "value": "<1 M>", "label": "<users reached>" }
+      ]
+    },
+    {
+      "kind": "timeline",
+      "title": "<Experience>",
+      "entries": [
+        {
+          "start": "2022/09/01",
+          "end": "",
+          "current": true,
+          "subDate": "",
+          "country": "<fr>",
+          "location": "<City>",
+          "title": "<Company or organisation>",
+          "subtitle": "<Job title>",
+          "url": "",
+          "description": "<Optional intro sentence>\n- <One achievement or responsibility per bullet>\n- <Another one, wording kept from the CV>"
+        },
+        {
+          "start": "2019/03/01",
+          "end": "2022/08/01",
+          "current": false,
+          "subDate": "",
+          "country": "<gb>",
+          "location": "<City>",
+          "title": "<Company or organisation>",
+          "subtitle": "<Job title>",
+          "url": "<https://company.example.com>",
+          "description": "- <...>"
+        }
+      ]
+    },
+    {
+      "kind": "timeline",
+      "title": "<Projects>",
+      "entries": [
+        {
+          "start": "2021/02/01",
+          "end": "2021/05/01",
+          "current": false,
+          "subDate": "<4 months>",
+          "country": "",
+          "location": "",
+          "title": "<Project name>",
+          "subtitle": "<Context: client, team or employer>",
+          "url": "<https://project.example.com>",
+          "description": "- <What was done and the result>"
+        }
+      ]
+    },
+    {
+      "kind": "timeline",
+      "title": "<Education>",
+      "entries": [
+        {
+          "start": "2015/09/01",
+          "end": "2017/06/01",
+          "current": false,
+          "subDate": "",
+          "country": "<fr>",
+          "location": "<City>",
+          "title": "<Degree or diploma>",
+          "subtitle": "<School or university>",
+          "url": "",
+          "description": "<Specialisation, honours, thesis...>"
+        }
+      ]
+    },
+    {
+      "kind": "list",
+      "title": "<Skills>",
+      "display": "bullets",
+      "items": [
+        { "text": "<Skill group: skill, skill, skill>" },
+        { "text": "<Tools: tool, tool, tool>" }
+      ]
+    },
+    {
+      "kind": "levels",
+      "title": "<Languages>",
+      "meter": "none",
+      "items": [
+        { "name": "<French>", "level": "<Native>", "rating": 5 },
+        { "name": "<English>", "level": "<C1>", "rating": 4 }
+      ]
+    },
+    {
+      "kind": "list",
+      "title": "<Certifications>",
+      "display": "bullets",
+      "items": [
+        { "text": "<Certification name, issuer, year>" }
+      ]
+    },
+    {
+      "kind": "list",
+      "title": "<Interests>",
+      "display": "inline",
+      "items": [
+        { "text": "<Interest>" },
+        { "text": "<Interest>" }
+      ]
+    },
+    {
+      "kind": "facts",
+      "title": "<Additional information>",
+      "items": [
+        { "key": "<Driving licence>", "value": "<B>" },
+        { "key": "<Availability>", "value": "<Immediate>" }
+      ]
+    },
+    {
+      "kind": "text",
+      "title": "<Publications>",
+      "text": "<Free text for anything that fits no other section. Markdown: **bold**, *italic*, [link](https://example.com), - bullet lists>"
+    },
+    {
+      "kind": "references",
+      "title": "<References>",
+      "onRequest": false,
+      "onRequestText": "<References available on request>",
+      "items": [
+        { "name": "<Firstname LASTNAME>", "role": "<Job title>", "company": "<Company>", "contact": "<name@example.com>" }
+      ]
+    }
+  ],
+  "theme": {
+    "dateFormat": "month-short"
+  }
+}
