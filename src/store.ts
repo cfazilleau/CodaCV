@@ -239,10 +239,17 @@ export function useResumeStore() {
 
   const savingBlocked = issue?.kind === 'other-tab' || issue?.kind === 'unreadable'
 
+  /** The save waiting for its debounce, run at once when the page is hidden or closed */
+  const pendingSave = useRef<(() => void) | null>(null)
+
   useEffect(() => {
     const s = saved.current
     if (savingBlocked || (s.versions === versions && s.activeId === activeId && s.resume === resume)) return
-    const t = setTimeout(() => {
+    let done = false
+    const save = () => {
+      if (done) return
+      done = true
+      pendingSave.current = null
       if (readRev() !== rev.current) {
         setIssue({ kind: 'other-tab' })
         return
@@ -259,11 +266,28 @@ export function useResumeStore() {
         console.warn('Could not save', e)
         setIssue((i) => (i?.kind === 'other-tab' || i?.kind === 'unreadable' ? i : { kind: 'save-failed' }))
       }
-    }, 300)
-    return () => clearTimeout(t)
+    }
+    pendingSave.current = save
+    const t = setTimeout(save, 300)
+    return () => {
+      clearTimeout(t)
+      if (pendingSave.current === save) pendingSave.current = null
+    }
     // liveVersions is derived from these
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [versions, activeId, resume, savingBlocked])
+
+  // Closing or hiding the tab within the debounce would lose the last edit: save it now
+  useEffect(() => {
+    const flush = () => pendingSave.current?.()
+    const onVisibility = () => document.visibilityState === 'hidden' && flush()
+    window.addEventListener('pagehide', flush)
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => {
+      window.removeEventListener('pagehide', flush)
+      document.removeEventListener('visibilitychange', onVisibility)
+    }
+  }, [])
 
   // Another tab saved (storage events only reach the other tabs): stop saving here
   useEffect(() => {
