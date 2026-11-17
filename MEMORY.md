@@ -45,6 +45,17 @@ headless printing, and PDF text extraction (see "Testing" below).
 | `src/locale.ts` | Resume languages (`RESUME_LOCALES`: label + word for "present"), date storage format and locale formatting, `contentLang()` |
 | `ai-import/` | `resume-template.json` + `prompt.md`: lets an AI assistant convert an existing CV for Import. **Update both when the data model changes**; check the template still passes `validateResume()` unchanged (only its `<..>` country placeholders are cleared) |
 | `src/styles/resume.css` | Resume styles (mm/pt units), `print.css` print overrides, `app.css` editor UI |
+| `index.html`, `public/`, `scripts/` | Link previews (see below): meta tags in `index.html`; `public/og-image.png` (1200 x 630) and `apple-touch-icon.png` (180) are screenshots of `scripts/og-image.html` / `icon.html` (render command in their header comment) |
+
+## Link previews (Discord, X, LinkedIn, Slack, WhatsApp…)
+
+- Static Open Graph + `twitter:*` tags in `index.html` (crawlers do not run JS, so nothing can be
+  set from React). They use **absolute** `https://cv.cfaz.dev/...` URLs (required by crawlers):
+  change them when hosting elsewhere. Text is English (like the README), `og:locale:alternate` fr.
+- `twitter:card` = `summary_large_image`; image is 1200 x 630 PNG (LinkedIn wants ≥ 1200 x 627,
+  X crops edges: keep content inside the middle). `theme-color` (#b35f22) colours Discord's embed bar.
+- Crawlers cache previews: after changing the image, re-scrape with LinkedIn Post Inspector /
+  Facebook Sharing Debugger; Discord refreshes after a while (or add `?v=2` to the shared link).
 
 ## Data model and storage
 

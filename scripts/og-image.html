@@ -1,0 +1,104 @@
+<!doctype html>
+<!--
+  Source of public/og-image.png, the 1200 x 630 link preview (Open Graph / Twitter card) image.
+  Render after `npm install` (fonts come from node_modules), from the repo root:
+    msedge --headless=new --hide-scrollbars --force-device-scale-factor=1 --window-size=1200,630 ^
+      --screenshot=public/og-image.png scripts/og-image.html
+  (use an absolute file:/// path to this file). Keep text inside the middle ~1100 px: X and some
+  chat apps crop the edges.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<style>
+  @font-face { font-family: 'Inter'; font-weight: 400; src: url('../node_modules/@fontsource/inter/files/inter-latin-400-normal.woff2'); }
+  @font-face { font-family: 'Inter'; font-weight: 600; src: url('../node_modules/@fontsource/inter/files/inter-latin-600-normal.woff2'); }
+  @font-face { font-family: 'Inter'; font-weight: 800; src: url('../node_modules/@fontsource/inter/files/inter-latin-800-normal.woff2'); }
+  :root { --accent: #b35f22; --soft: #fbefe6; --ink: #1f2328; --muted: #5b6168; --line: #e3ddd7; }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { width: 1200px; height: 630px; overflow: hidden; }
+  body {
+    font-family: 'Inter', sans-serif; color: var(--ink);
+    background: radial-gradient(circle at 85% 20%, #fff 0, #fbf6f1 55%, #f6ece2 100%);
+    display: grid; grid-template-columns: 1fr 400px; gap: 56px; align-items: center;
+    padding: 0 90px;
+  }
+  .brand { display: flex; align-items: center; gap: 22px; margin-bottom: 34px; }
+  .logo {
+    width: 88px; height: 88px; border-radius: 20px; background: var(--accent); color: #fff;
+    display: grid; place-items: center; font-weight: 800; font-size: 40px;
+    box-shadow: 0 10px 24px rgba(179, 95, 34, .28);
+  }
+  .name { font-size: 64px; font-weight: 800; letter-spacing: -0.02em; }
+  h1 { font-size: 46px; line-height: 1.15; font-weight: 800; letter-spacing: -0.015em; margin-bottom: 22px; }
+  h1 em { font-style: normal; color: var(--accent); }
+  p { font-size: 25px; line-height: 1.45; color: var(--muted); margin-bottom: 34px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 12px; }
+  .chip {
+    font-size: 20px; font-weight: 600; color: var(--accent); background: var(--soft);
+    border: 1.5px solid #f0d6c2; border-radius: 999px; padding: 9px 18px;
+  }
+  .url { margin-top: 30px; font-size: 22px; font-weight: 600; color: var(--ink); }
+
+  /* Stylised A4 page */
+  .page {
+    width: 400px; height: 566px; background: #fff; border-radius: 6px; overflow: hidden;
+    box-shadow: 0 24px 60px rgba(60, 35, 15, .18), 0 2px 6px rgba(60, 35, 15, .08);
+    transform: rotate(2.5deg); display: grid; grid-template-rows: auto 1fr;
+  }
+  .band { background: var(--accent); padding: 30px 30px 26px; display: flex; gap: 18px; align-items: center; }
+  .photo { width: 64px; height: 64px; border-radius: 50%; background: #f3d9c5; border: 3px solid #fff; }
+  .band .bar { background: rgba(255, 255, 255, .9); }
+  .band .bar.sub { background: rgba(255, 255, 255, .55); }
+  .body { padding: 24px 30px; display: grid; grid-template-columns: 1fr 110px; gap: 22px; }
+  .bar { height: 10px; border-radius: 5px; background: var(--line); margin-bottom: 9px; }
+  .bar.title { height: 12px; width: 55%; background: var(--accent); margin: 6px 0 14px; }
+  .bar.strong { background: #c9c2bb; }
+  .gap { height: 14px; }
+</style>
+</head>
+<body>
+  <main>
+    <div class="brand"><div class="logo">CV</div><div class="name">CodaCV</div></div>
+    <h1>Build your resume,<br /><em>export a clean PDF.</em></h1>
+    <p>Free and open source. Live A4 preview, <span style="white-space: nowrap">ATS-friendly</span> PDF, several versions. Your data stays in your browser.</p>
+    <div class="chips">
+      <span class="chip">No account</span>
+      <span class="chip">No cookies</span>
+      <span class="chip">FR / EN</span>
+    </div>
+    <div class="url">cv.cfaz.dev</div>
+  </main>
+
+  <div class="page" aria-hidden="true">
+    <div class="band">
+      <div class="photo"></div>
+      <div style="flex: 1">
+        <div class="bar" style="width: 75%; height: 14px"></div>
+        <div class="bar sub" style="width: 50%; margin: 0"></div>
+      </div>
+    </div>
+    <div class="body">
+      <div>
+        <div class="bar title"></div>
+        <div class="bar strong" style="width: 70%"></div>
+        <div class="bar"></div><div class="bar" style="width: 88%"></div><div class="bar" style="width: 64%"></div>
+        <div class="gap"></div>
+        <div class="bar strong" style="width: 60%"></div>
+        <div class="bar"></div><div class="bar" style="width: 80%"></div>
+        <div class="gap"></div>
+        <div class="bar title"></div>
+        <div class="bar strong" style="width: 66%"></div>
+        <div class="bar"></div><div class="bar" style="width: 92%"></div><div class="bar" style="width: 58%"></div>
+      </div>
+      <div>
+        <div class="bar title" style="width: 80%"></div>
+        <div class="bar"></div><div class="bar" style="width: 70%"></div><div class="bar" style="width: 85%"></div>
+        <div class="gap"></div>
+        <div class="bar title" style="width: 80%"></div>
+        <div class="bar"></div><div class="bar" style="width: 60%"></div><div class="bar" style="width: 75%"></div><div class="bar" style="width: 50%"></div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
